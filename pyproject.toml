@@ -1,0 +1,84 @@
+[tool.poetry]
+name = "segy-ninja"
+version = "0.1.0"
+description = ""
+authors = ["Altay Sansal <altay.sansal@tgs.com>"]
+readme = "README.md"
+packages = [
+    { include = "segy_ninja", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fsspec = "^2023.12.2"
+numpy = "^1.26.2"
+pydantic = "^2.5.3"
+numba = "^0.58.1"
+gcsfs = {version = "^2023.12.2.post1", optional = true}
+s3fs = {version = "^2023.12.2", optional = true}
+adlfs = {version = "^2023.12.0", optional = true}
+pandas = {version = "^2.1.4", optional = true}
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.1.9"
+
+[tool.poetry.extras]
+cloud = ["s3fs", "gcsfs", "adlfs"]
+pandas = ["pandas"]
+
+[tool.poetry.group.interactive.dependencies]
+notebook = "^7.0.6"
+matplotlib = "^3.8.2"
+
+[tool.ruff]
+src = ["src"]
+select = [
+    "E",  # pycodestyle
+    "F",   # pyflakes
+    "B",  # bugbear
+    "I",  # isort
+    "UP",  # pyupgrade
+    "N",  # pep8-naming
+    "D",   # pydocstyle
+    "ANN",  # annotations
+    "S",  # bandit
+    "A",  # builtins
+    "C4",  # comprehensions
+    "DTZ",  # datetimez
+    "EM",  # errmsg
+    "ICN",  # import-conventions
+    "PIE",  # pie
+    "PT",  # pytest-style
+    "RSE",  # raise
+    "RET",  # return
+    "SIM",  # simplify
+    "TID",  # tidy-imports
+    "TCH",  # type-checking
+    "ARG",  # unused-arguments
+    "PTH",  # use-pathlib
+    "TD",  # todos
+    "PL",  # pylint
+    "FLY", # flynt
+    "NPY",  # numpy
+]
+ignore = [
+    "ANN101",  # Missing type annotation for `self`
+]
+line-length = 88
+
+[tool.ruff.per-file-ignores]
+"tests/*" = ["S101"]
+
+[tool.ruff.flake8-annotations]
+mypy-init-return = true
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.ruff.isort]
+force-single-line = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
