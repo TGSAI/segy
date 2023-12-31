@@ -1,6 +1,9 @@
 """SEG-Y Revision 1 Specification."""
+
+
 from typing import Optional
 
+import fsspec
 import numpy as np
 
 from segy_ninja.schema.header import BinaryHeaderDescriptor
@@ -933,7 +936,12 @@ def open_rev1(
 
     bin_dtype = rev1_desc.binary_file_header.dtype
     bin_offset = rev1_desc.binary_file_header.offset
-    bin_hdr = np.fromfile(path, dtype=bin_dtype, count=1, offset=bin_offset).squeeze()
+
+    with fsspec.open(path, mode="rb") as fp:
+        fp.seek(bin_offset)
+        buffer = bytearray(bin_dtype.itemsize)
+        fp.readinto(buffer)
+        bin_hdr = np.frombuffer(buffer, dtype=bin_dtype).squeeze()
 
     # Update number of samples
     rev1_desc.traces.data_descriptor.samples = bin_hdr[samples_per_trace_key]
