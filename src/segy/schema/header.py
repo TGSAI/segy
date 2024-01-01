@@ -106,32 +106,26 @@ class TextHeaderDescriptor(BaseTypeDescriptor):
 
         return buffer
 
-    def _unwrap(self, wrapped_text: str, line_sep: str = "\n") -> str:
-        if len(wrapped_text) != len(self):
+    def _wrap(self, string: str) -> str:
+        if len(string) != len(self):
             raise ValueError("rows x cols must be equal wrapped text length.")
 
-        rows_text = []
-        for idx in range(self.rows):
-            start = idx * self.cols
-            stop = start + self.cols
-            rows_text.append(wrapped_text[start:stop])
+        wrapped = textwrap.fill(string, width=80, drop_whitespace=False)
 
-        unwrapped = line_sep.join(rows_text)
-
-        return unwrapped
+        return wrapped
 
     @staticmethod
-    def _wrap(text_header: str, line_sep: str = "\n") -> str:
-        return text_header.replace(line_sep, "")
+    def _unwrap(text_header: str) -> str:
+        return text_header.replace("\n", "")
 
     def read(self, file_pointer: BufferedReader) -> str:
         file_pointer.seek(self.offset)
         buffer = file_pointer.read(self.dtype.itemsize)
         text_header = self._decode(buffer)
-        return self._unwrap(text_header)
+        return self._wrap(text_header)
 
     def write(self, text_header: str, file_pointer: BufferedReader) -> None:
-        text_header = self._wrap(text_header)
+        text_header = self._unwrap(text_header)
         buffer = self._encode(text_header)
 
         file_pointer.seek(self.offset)
