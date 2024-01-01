@@ -1,24 +1,9 @@
 """Low-level floating point conversion operations."""
 
 
-import os
 
 import numba as nb
 import numpy as np
-
-# If Numba's JIT compilation is disabled, force vectorized
-# functions to Numba's Object Mode. This is only used when running
-# tests and we want a coverage report to JIT functions.
-# In every other case, functions will be JIT compiled.
-try:
-    NUMBA_DISABLE_JIT = os.environ["NUMBA_DISABLE_JIT"]
-except KeyError:  # pragma: no cover
-    NUMBA_DISABLE_JIT = 0
-
-OBJECT_MODE = True if NUMBA_DISABLE_JIT else False
-JIT_CACHE = False if NUMBA_DISABLE_JIT else True
-JIT_TARGET = "cpu"
-JIT_KWARGS = dict(cache=JIT_CACHE, forceobj=OBJECT_MODE)
 
 # IEEE to IBM MASKS ETC
 IEEE32_SIGN = np.uint32(0x80000000)
@@ -33,7 +18,7 @@ IBM32_FRACTION = np.uint32(0xFFFFFF)
 
 @nb.njit(
     "uint32(float32)",
-    cache=JIT_CACHE,
+    cache=True,
     locals={
         "sign": nb.uint32,
         "exponent": nb.int32,
@@ -97,7 +82,7 @@ def ieee2ibm_single(ieee: np.float32) -> np.uint32:
 
 @nb.njit(
     "float32(uint32)",
-    cache=JIT_CACHE,
+    cache=True,
     locals={
         "sign_bit": nb.boolean,
         "sign": nb.int8,
@@ -139,13 +124,13 @@ def ibm2ieee_single(ibm: np.uint32) -> np.float32:
     return ieee
 
 
-@nb.vectorize("uint32(float32)", target=JIT_TARGET, **JIT_KWARGS)
+@nb.vectorize("uint32(float32)", cache=True)
 def ieee2ibm(ieee_array: np.float32) -> np.uint32:  # pragma: no cover
     """Wrapper for vectorizing IEEE to IBM conversion to arrays."""
     return ieee2ibm_single(ieee_array)
 
 
-@nb.vectorize("float32(uint32)", target=JIT_TARGET, **JIT_KWARGS)
+@nb.vectorize("float32(uint32)", cache=True)
 def ibm2ieee(ibm_array: np.uint32) -> np.float32:  # pragma: no cover
     """Wrapper for vectorizing IBM to IEEE conversion to arrays."""
     return ibm2ieee_single(ibm_array)

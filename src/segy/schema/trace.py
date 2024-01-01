@@ -5,11 +5,11 @@ import numpy as np
 from numpy.typing import NDArray
 from pydantic import Field
 
-from segy_ninja.ibm import ibm2ieee
-from segy_ninja.schema.base import BaseTypeDescriptor
-from segy_ninja.schema.data_type import Endianness
-from segy_ninja.schema.data_type import ScalarType
-from segy_ninja.schema.header import TraceHeaderDescriptor
+from segy.ibm import ibm2ieee
+from segy.schema.base import BaseTypeDescriptor
+from segy.schema.data_type import Endianness
+from segy.schema.data_type import ScalarType
+from segy.schema.header import TraceHeaderDescriptor
 
 
 class TraceDataDescriptor(BaseTypeDescriptor):

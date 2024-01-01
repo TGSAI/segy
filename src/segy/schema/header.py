@@ -1,4 +1,5 @@
 """Classes for managing headers and header groups."""
+import textwrap
 from enum import StrEnum
 from io import BufferedReader
 from typing import Optional
@@ -8,11 +9,11 @@ import numpy as np
 from numpy.typing import NDArray
 from pydantic import Field
 
-from segy_ninja.ebcdic import ASCII_TO_EBCDIC
-from segy_ninja.ebcdic import EBCDIC_TO_ASCII
-from segy_ninja.schema.base import BaseTypeDescriptor
-from segy_ninja.schema.data_type import DataTypeDescriptor
-from segy_ninja.schema.data_type import ScalarType
+from segy.ebcdic import ASCII_TO_EBCDIC
+from segy.ebcdic import EBCDIC_TO_ASCII
+from segy.schema.base import BaseTypeDescriptor
+from segy.schema.data_type import DataTypeDescriptor
+from segy.schema.data_type import ScalarType
 
 
 class StructuredFieldDescriptor(DataTypeDescriptor):

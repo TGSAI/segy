@@ -6,7 +6,7 @@ from enum import StrEnum
 import numpy as np
 from pydantic import Field
 
-from segy_ninja.schema.base import BaseTypeDescriptor
+from segy.schema.base import BaseTypeDescriptor
 
 
 class Endianness(StrEnum):

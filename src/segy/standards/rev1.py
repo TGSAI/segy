@@ -6,14 +6,14 @@ from typing import Optional
 import fsspec
 import numpy as np
 
-from segy_ninja.schema.header import BinaryHeaderDescriptor
-from segy_ninja.schema.header import HeaderFieldDescriptor
-from segy_ninja.schema.header import TextHeaderDescriptor
-from segy_ninja.schema.header import TraceHeaderDescriptor
-from segy_ninja.schema.segy import SegyDescriptor
-from segy_ninja.schema.segy import SegyStandard
-from segy_ninja.schema.trace import TraceDataDescriptor
-from segy_ninja.schema.trace import TraceDescriptor
+from segy.schema.header import BinaryHeaderDescriptor
+from segy.schema.header import HeaderFieldDescriptor
+from segy.schema.header import TextHeaderDescriptor
+from segy.schema.header import TraceHeaderDescriptor
+from segy.schema.segy import SegyDescriptor
+from segy.schema.segy import SegyStandard
+from segy.schema.trace import TraceDataDescriptor
+from segy.schema.trace import TraceDescriptor
 
 REV1_TEXTUAL_FILE_HEADER = TextHeaderDescriptor(
     offset=0,  # depends on how many extended headers

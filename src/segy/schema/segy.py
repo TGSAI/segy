@@ -3,10 +3,10 @@ from typing import Optional
 
 from pydantic import Field
 
-from segy_ninja.schema.base import CamelCaseModel
-from segy_ninja.schema.header import BinaryHeaderDescriptor
-from segy_ninja.schema.header import TextHeaderDescriptor
-from segy_ninja.schema.trace import TraceDescriptor
+from segy.schema.base import CamelCaseModel
+from segy.schema.header import BinaryHeaderDescriptor
+from segy.schema.header import TextHeaderDescriptor
+from segy.schema.trace import TraceDescriptor
 
 
 class SegyStandard(Enum):
