@@ -1,7 +1,6 @@
 """Low-level floating point conversion operations."""
 
 
-
 import numba as nb
 import numpy as np
 
@@ -67,7 +66,7 @@ def ieee2ibm_single(ieee: np.float32) -> np.uint32:
     exponent = exponent + 64
     # From here down exponent -> ibm_exponent
     exponent = 0 if exponent < 0 else exponent
-    exponent = 127 if exponent > 127 else exponent
+    exponent = 127 if exponent > 127 else exponent  # noqa: PLR2004
     exponent = exponent << 24
     exponent = exponent if ieee else 0
 
@@ -75,9 +74,8 @@ def ieee2ibm_single(ieee: np.float32) -> np.uint32:
     # 24-bit IBM mantissa. Downshift it by the remainder from the exponent's
     # division by 4. It is allowed to have up to 3 leading 0s.
     ibm_mantissa = ((ieee & IEEE32_FRACTION) | 0x800000) >> downshift
-    ibm = sign | exponent | ibm_mantissa
 
-    return ibm
+    return sign | exponent | ibm_mantissa
 
 
 @nb.njit(
@@ -119,9 +117,7 @@ def ibm2ieee_single(ibm: np.uint32) -> np.float32:
     # This 16.0 (instead of just 16) is super important.
     # If the base is not a float, it won't work for negative
     # exponents, and fail silently and return zero.
-    ieee = sign * mantissa * 16.0 ** (exponent - 64)
-
-    return ieee
+    return sign * mantissa * 16.0 ** (exponent - 64)
 
 
 @nb.vectorize("uint32(float32)", cache=True)

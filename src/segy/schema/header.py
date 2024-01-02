@@ -6,7 +6,6 @@ from typing import Optional
 from typing import TypeAlias
 
 import numpy as np
-from numpy.typing import NDArray
 from pydantic import Field
 
 from segy.ebcdic import ASCII_TO_EBCDIC
@@ -17,11 +16,15 @@ from segy.schema.data_type import ScalarType
 
 
 class StructuredFieldDescriptor(DataTypeDescriptor):
+    """A descriptor class for a structured data-type field."""
+
     name: str = Field(..., description="The short name of the field.")
     offset: int = Field(..., ge=0, description="Starting byte offset.")
 
 
 class StructuredDataTypeDescriptor(BaseTypeDescriptor):
+    """A descriptor class for a structured array data-type."""
+
     fields: list[StructuredFieldDescriptor] = Field(
         ..., description="Fields of the structured data type."
     )
@@ -34,7 +37,7 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
 
     @property
     def dtype(self) -> np.dtype:
-        """The NumPy structured dtype object corresponding to the header fields."""
+        """Get numpy dtype."""
         names = [field.name for field in self.fields]
         offsets = [field.offset for field in self.fields]
         formats = [field.dtype for field in self.fields]
@@ -50,53 +53,47 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
 
         return np.dtype(dtype_conf)
 
-    def read(self, file_pointer: BufferedReader) -> NDArray:
-        file_pointer.seek(self.offset)
-
-        buffer_size = self.itemsize
-        buffer = bytearray(buffer_size)
-        file_pointer.readinto(buffer)
-
-        array = np.frombuffer(buffer, dtype=self.dtype)
-
-        # TODO: Add little-endian support. Currently assume big-endian.
-        # TODO: Add IBM32 parsing support.
-        array = array.byteswap(inplace=True).newbyteorder()
-
-        return array
-
 
 class TextHeaderEncoding(StrEnum):
+    """Supported textual header encodings."""
+
     ASCII = "ascii"
     EBCDIC = "ebcdic"
 
 
 class TextHeaderDescriptor(BaseTypeDescriptor):
+    """A descriptor class for SEG-Y textual headers."""
+
     rows: int = Field(..., description="Number of rows in text header.")
     cols: int = Field(..., description="Number of columns in text header.")
     encoding: TextHeaderEncoding = Field(..., description="String encoding.")
-    format: ScalarType = Field(..., description="Type of string.")
+    format: ScalarType = Field(..., description="Type of string.")  # noqa: A003
     offset: Optional[int] = Field(
         default=None, ge=0, description="Starting byte offset."
     )
 
     def __len__(self) -> int:
+        """Get length of the textual header (number of characters)."""
         return self.rows * self.cols
 
     @property
     def dtype(self) -> np.dtype:
+        """Get numpy dtype."""
         return np.dtype((self.format, len(self)))
 
     def _decode(self, buffer: bytes) -> str:
+        """Decode EBCDIC or ASCII bytes into string."""
         if self.encoding == TextHeaderEncoding.EBCDIC:
             buffer = np.frombuffer(buffer, dtype=self.dtype)
             buffer = EBCDIC_TO_ASCII[buffer].tobytes()
 
         return buffer.decode("ascii")
 
-    def _encode(self, text_header) -> bytes:
+    def _encode(self, text_header: str) -> bytes:
+        """Encode string to EBCDIC or ASCII bytes."""
         if len(text_header) != len(self):
-            raise ValueError("Text length must be equal to rows x cols.")
+            msg = "Text length must be equal to rows x cols."
+            raise ValueError(msg)
 
         buffer = text_header.encode("ascii")
 
@@ -107,24 +104,27 @@ class TextHeaderDescriptor(BaseTypeDescriptor):
         return buffer
 
     def _wrap(self, string: str) -> str:
+        """Wrap text header string to be multi-line with 80 character columns."""
         if len(string) != len(self):
-            raise ValueError("rows x cols must be equal wrapped text length.")
+            msg = "rows x cols must be equal wrapped text length."
+            raise ValueError(msg)
 
-        wrapped = textwrap.fill(string, width=80, drop_whitespace=False)
-
-        return wrapped
+        return textwrap.fill(string, width=80, drop_whitespace=False)
 
     @staticmethod
     def _unwrap(text_header: str) -> str:
+        """Unwrap a multi-line string to a single line."""
         return text_header.replace("\n", "")
 
     def read(self, file_pointer: BufferedReader) -> str:
+        """Read and decode textual header from a file."""
         file_pointer.seek(self.offset)
         buffer = file_pointer.read(self.dtype.itemsize)
         text_header = self._decode(buffer)
         return self._wrap(text_header)
 
     def write(self, text_header: str, file_pointer: BufferedReader) -> None:
+        """Encode and write the textual header to a file."""
         text_header = self._unwrap(text_header)
         buffer = self._encode(text_header)
 

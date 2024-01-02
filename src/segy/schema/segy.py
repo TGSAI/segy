@@ -1,3 +1,6 @@
+"""Descriptor data model implementations for SEG-Y file(s)."""
+
+
 from enum import Enum
 from typing import Optional
 
@@ -10,6 +13,8 @@ from segy.schema.trace import TraceDescriptor
 
 
 class SegyStandard(Enum):
+    """Supported (to-be) SEG-Y standards."""
+
     REV0 = 0
     REV1 = 1
     REV2 = 2
@@ -18,6 +23,8 @@ class SegyStandard(Enum):
 
 
 class SegyDescriptor(CamelCaseModel):
+    """A descriptor class for a SEG-Y file."""
+
     segy_standard: Optional[SegyStandard] = Field(
         default=None, description="SEG-Y Revision"
     )

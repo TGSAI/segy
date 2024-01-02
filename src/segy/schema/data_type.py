@@ -47,7 +47,9 @@ class ScalarType(StrEnum):
 
 
 class DataTypeDescriptor(BaseTypeDescriptor):
-    format: ScalarType = Field(..., description="The data type of the field.")
+    """A descriptor class for a scalar data type with endianness support."""
+
+    format: ScalarType = Field(..., description="The data type of the field.")  # noqa: A003
     endianness: Endianness = Field(
         default=Endianness.BIG, description="The byte order of the field."
     )
