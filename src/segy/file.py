@@ -15,45 +15,8 @@ from segy.indexing import HeaderIndexer
 from segy.indexing import TraceIndexer
 from segy.schema import SegyDescriptor
 from segy.schema import SegyStandard
-from segy.standards.rev1 import SegyDescriptorRev1
-
-
-class SegySpecFactory:
-    """A SEG-Y spec factory with spec registry."""
-
-    _specs = {}
-
-    @classmethod
-    def register_spec(
-        cls: type["SegySpecFactory"],
-        spec_type: SegyStandard,
-        spec_cls: type[SegyDescriptor],
-    ) -> None:
-        """Register a new SEG-Y spec."""
-        if not issubclass(spec_cls, SegyDescriptor):
-            msg = "spec_cls must be a subclass of SegyDescriptor."
-            raise ValueError(msg)
-        cls._specs[spec_type] = spec_cls
-
-    @classmethod
-    def create_spec(
-        cls: type["SegySpecFactory"], spec_type: SegyStandard
-    ) -> SegyDescriptor:
-        """Create an instance of spec from known registry."""
-        spec_cls = cls._specs.get(spec_type)
-
-        if not spec_cls:
-            msg = (
-                f"Unknown or unsupported SEG-Y spec: {spec_type}. If you "
-                f"would like to use {spec_type}, please register it with "
-                f"the `SegySpecFactory` using its `register_spec` method."
-            )
-            raise NotImplementedError(msg)
-
-        return spec_cls()
-
-
-SegySpecFactory.register_spec(SegyStandard.REV1, SegyDescriptorRev1)
+from segy.standards.registry import get_spec
+from segy.standards.registry import register_spec
 
 
 class SegyFile:
@@ -74,7 +37,7 @@ class SegyFile:
         # Validate standard
         standard = SegyStandard(segy_standard)
 
-        self.spec = SegySpecFactory.create_spec(standard)
+        self.spec = get_spec(standard)
         self._postprocess_kwargs = {"pandas_headers": pandas_headers}
 
         self._info = self.fs.info(self.url)
@@ -90,7 +53,7 @@ class SegyFile:
         **kwargs: dict[str, Any],
     ) -> "SegyFile":
         """Open a SEG-Y file based on custom spec."""
-        SegySpecFactory.register_spec(SegyStandard.CUSTOM, spec)
+        register_spec(SegyStandard.CUSTOM, spec)
         return cls(url=url, segy_standard=SegyStandard.CUSTOM, **kwargs)
 
     @property
