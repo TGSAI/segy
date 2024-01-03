@@ -1,5 +1,30 @@
+[[_TOC_]]
+
 # SEG-Y
 This is an efficient and comprehensive SEG-Y parsing library.
+
+## Installation
+Clone the repo and install it using pip:
+
+```shell
+pip install .
+```
+
+## Basic Usage
+It's simple to operate the library:
+
+```python
+from segy import SegyFile
+
+sgy = SegyFile("gs://bucket/prefix")
+
+full_trace = sgy.trace[1000]
+just_data_header = sgy.header[1000]
+just_trace_data = sgy.data[1000]
+```
+
+See the
+[demo](https://dev.azure.com/TGSCloud/Datascience/_git/segy?path=/examples/demo.ipynb&version=GBmain&_a=preview).
 
 ## Features
 The library utilizes `numpy` and `fsspec`, includes the reading from various local 
@@ -38,27 +63,6 @@ You can build your own SEG-Y "standard" with composition of specs for:
 - Binary header
 - Traces (header + extended header + samples)
 
-## Basic Usage
-It's simple to operate the library:
 
-```python
-from segy import SegyFile
-
-sgy = SegyFile("gs://bucket/prefix")
-
-full_trace = sgy.trace[1000]
-just_data_header = sgy.header[1000]
-just_trace_data = sgy.data[1000]
-```
-
-See the
-[demo](https://dev.azure.com/TGSCloud/Datascience/_git/segy?path=/examples/demo.ipynb&version=GBmain&_a=preview).
-
-## Installation
-Clone the repo and install it using pip:
-
-```shell
-pip install .
-```
 
 Feel free to share the thoughts and raise the issues to improve the library.
