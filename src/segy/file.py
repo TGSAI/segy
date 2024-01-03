@@ -13,8 +13,8 @@ from segy.indexing import AbstractIndexer
 from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
 from segy.indexing import TraceIndexer
-from segy.schema.segy import SegyDescriptor
-from segy.schema.segy import SegyStandard
+from segy.schema import SegyDescriptor
+from segy.schema import SegyStandard
 from segy.standards.rev1 import REV1_SEGY
 
 STANDARD_MAPPING = {
@@ -46,7 +46,13 @@ class SegyFile:
         self._parse_binary_header()
 
     @classmethod
-    def from_spec(cls, url: str, spec: SegyDescriptor, **kwargs: dict[str, Any]):
+    def from_spec(
+        cls: type["SegyFile"],
+        url: str,
+        spec: SegyDescriptor,
+        **kwargs: dict[str, Any],
+    ) -> "SegyFile":
+        """Open a SEG-Y file based on custom spec."""
         STANDARD_MAPPING[SegyStandard.CUSTOM] = spec
         return cls(url=url, revision=SegyStandard.CUSTOM, **kwargs)
 

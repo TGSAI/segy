@@ -2,6 +2,7 @@
 
 
 from enum import StrEnum
+from typing import Optional
 
 import numpy as np
 from pydantic import Field
@@ -61,3 +62,42 @@ class DataTypeDescriptor(BaseTypeDescriptor):
         char = self.format.char
 
         return np.dtype(symbol + char)
+
+
+class StructuredFieldDescriptor(DataTypeDescriptor):
+    """A descriptor class for a structured data-type field."""
+
+    name: str = Field(..., description="The short name of the field.")
+    offset: int = Field(..., ge=0, description="Starting byte offset.")
+
+
+class StructuredDataTypeDescriptor(BaseTypeDescriptor):
+    """A descriptor class for a structured array data-type."""
+
+    fields: list[StructuredFieldDescriptor] = Field(
+        ..., description="Fields of the structured data type."
+    )
+    item_size: Optional[int] = Field(
+        default=None, description="Expected size of the struct."
+    )
+    offset: Optional[int] = Field(
+        default=None, ge=0, description="Starting byte offset."
+    )
+
+    @property
+    def dtype(self) -> np.dtype:
+        """Get numpy dtype."""
+        names = [field.name for field in self.fields]
+        offsets = [field.offset for field in self.fields]
+        formats = [field.dtype for field in self.fields]
+
+        dtype_conf = {
+            "names": names,
+            "formats": formats,
+            "offsets": offsets,
+        }
+
+        if self.item_size is not None:
+            dtype_conf["itemsize"] = self.item_size
+
+        return np.dtype(dtype_conf)

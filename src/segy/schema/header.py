@@ -1,7 +1,8 @@
 """Classes for managing headers and header groups."""
+
+
 import textwrap
 from enum import StrEnum
-from io import BufferedReader
 from typing import Optional
 from typing import TypeAlias
 
@@ -11,47 +12,13 @@ from pydantic import Field
 from segy.ebcdic import ASCII_TO_EBCDIC
 from segy.ebcdic import EBCDIC_TO_ASCII
 from segy.schema.base import BaseTypeDescriptor
-from segy.schema.data_type import DataTypeDescriptor
 from segy.schema.data_type import ScalarType
+from segy.schema.data_type import StructuredDataTypeDescriptor
+from segy.schema.data_type import StructuredFieldDescriptor
 
-
-class StructuredFieldDescriptor(DataTypeDescriptor):
-    """A descriptor class for a structured data-type field."""
-
-    name: str = Field(..., description="The short name of the field.")
-    offset: int = Field(..., ge=0, description="Starting byte offset.")
-
-
-class StructuredDataTypeDescriptor(BaseTypeDescriptor):
-    """A descriptor class for a structured array data-type."""
-
-    fields: list[StructuredFieldDescriptor] = Field(
-        ..., description="Fields of the structured data type."
-    )
-    item_size: Optional[int] = Field(
-        default=None, description="Expected size of the struct."
-    )
-    offset: Optional[int] = Field(
-        default=None, ge=0, description="Starting byte offset."
-    )
-
-    @property
-    def dtype(self) -> np.dtype:
-        """Get numpy dtype."""
-        names = [field.name for field in self.fields]
-        offsets = [field.offset for field in self.fields]
-        formats = [field.dtype for field in self.fields]
-
-        dtype_conf = {
-            "names": names,
-            "formats": formats,
-            "offsets": offsets,
-        }
-
-        if self.item_size is not None:
-            dtype_conf["itemsize"] = self.item_size
-
-        return np.dtype(dtype_conf)
+TraceHeaderDescriptor: TypeAlias = StructuredDataTypeDescriptor
+BinaryHeaderDescriptor: TypeAlias = StructuredDataTypeDescriptor
+HeaderFieldDescriptor: TypeAlias = StructuredFieldDescriptor
 
 
 class TextHeaderEncoding(StrEnum):
@@ -115,23 +82,3 @@ class TextHeaderDescriptor(BaseTypeDescriptor):
     def _unwrap(text_header: str) -> str:
         """Unwrap a multi-line string to a single line."""
         return text_header.replace("\n", "")
-
-    def read(self, file_pointer: BufferedReader) -> str:
-        """Read and decode textual header from a file."""
-        file_pointer.seek(self.offset)
-        buffer = file_pointer.read(self.dtype.itemsize)
-        text_header = self._decode(buffer)
-        return self._wrap(text_header)
-
-    def write(self, text_header: str, file_pointer: BufferedReader) -> None:
-        """Encode and write the textual header to a file."""
-        text_header = self._unwrap(text_header)
-        buffer = self._encode(text_header)
-
-        file_pointer.seek(self.offset)
-        file_pointer.write(buffer)
-
-
-TraceHeaderDescriptor: TypeAlias = StructuredDataTypeDescriptor
-BinaryHeaderDescriptor: TypeAlias = StructuredDataTypeDescriptor
-HeaderFieldDescriptor: TypeAlias = StructuredFieldDescriptor

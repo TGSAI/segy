@@ -13,9 +13,9 @@ from numpy.typing import NDArray
 from pandas import DataFrame
 
 from segy.ibm import ibm2ieee
-from segy.schema.data_type import ScalarType
-from segy.schema.header import StructuredDataTypeDescriptor
-from segy.schema.trace import TraceDescriptor
+from segy.schema import ScalarType
+from segy.schema import TraceDescriptor
+from segy.schema.data_type import StructuredDataTypeDescriptor
 
 
 def trace_ibm2ieee_inplace(trace: NDArray[Any]) -> NDArray[Any]:

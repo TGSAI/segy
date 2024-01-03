@@ -1,16 +1,16 @@
 """SEG-Y Revision 1 Specification."""
 
 
-from segy.schema.data_type import Endianness
-from segy.schema.data_type import ScalarType
-from segy.schema.header import BinaryHeaderDescriptor
-from segy.schema.header import HeaderFieldDescriptor
-from segy.schema.header import TextHeaderDescriptor
-from segy.schema.header import TextHeaderEncoding
-from segy.schema.header import TraceHeaderDescriptor
-from segy.schema.segy import SegyDescriptor
-from segy.schema.trace import TraceDataDescriptor
-from segy.schema.trace import TraceDescriptor
+from segy.schema import BinaryHeaderDescriptor
+from segy.schema import Endianness
+from segy.schema import HeaderFieldDescriptor
+from segy.schema import ScalarType
+from segy.schema import SegyDescriptor
+from segy.schema import TextHeaderDescriptor
+from segy.schema import TextHeaderEncoding
+from segy.schema import TraceDataDescriptor
+from segy.schema import TraceDescriptor
+from segy.schema import TraceHeaderDescriptor
 
 REV1_TEXTUAL_FILE_HEADER = TextHeaderDescriptor(
     offset=0,  # depends on how many extended headers
