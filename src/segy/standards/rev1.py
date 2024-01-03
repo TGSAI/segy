@@ -864,6 +864,7 @@ TRACE_HEADER_FIELDS_REV1 = [
 class TextualFileHeaderDescriptorRev1(TextHeaderDescriptor):
     """Textual file header spec with SEG-Y Rev1 defaults."""
 
+    description: str = "3200-byte textual file header with 40 lines of text."
     rows: int = 40
     cols: int = 80
     offset: int = 0
@@ -874,6 +875,7 @@ class TextualFileHeaderDescriptorRev1(TextHeaderDescriptor):
 class ExtendedTextualHeaderDescriptorRev1(TextHeaderDescriptor):
     """Extended text header spec with SEG-Y Rev1 defaults."""
 
+    description: str = "3200-byte extended textual header with 40 lines of text."
     rows: int = 40
     cols: int = 80
     offset: int = 3600
@@ -884,6 +886,7 @@ class ExtendedTextualHeaderDescriptorRev1(TextHeaderDescriptor):
 class BinaryHeaderDescriptorRev1(BinaryHeaderDescriptor):
     """Binary file header spec with SEG-Y Rev1 defaults."""
 
+    description: str = "400-byte binary file header with structured fields."
     fields: list[StructuredFieldDescriptor] = BINARY_FILE_HEADER_FIELDS_REV1
     item_size: int = 400
     offset: int = 3200
@@ -892,6 +895,7 @@ class BinaryHeaderDescriptorRev1(BinaryHeaderDescriptor):
 class TraceHeaderDescriptorRev1(TraceHeaderDescriptor):
     """Trace header spec with SEG-Y Rev1 defaults."""
 
+    description: str = "240-byte trace header with structured fields."
     fields: list[StructuredFieldDescriptor] = TRACE_HEADER_FIELDS_REV1
     item_size: int = 240
 
@@ -899,6 +903,7 @@ class TraceHeaderDescriptorRev1(TraceHeaderDescriptor):
 class TraceDataDescriptorRev1(TraceDataDescriptor):
     """Trace data spec with SEG-Y Rev1 defaults."""
 
+    description: str = "Trace data with given format and sample count."
     format: ScalarType = ScalarType.IBM32  # noqa: A003
     endianness: Endianness = Endianness.BIG
 
@@ -906,6 +911,7 @@ class TraceDataDescriptorRev1(TraceDataDescriptor):
 class TraceDescriptorRev1(TraceDescriptor):
     """Trace spec with SEG-Y Rev1 defaults."""
 
+    description: str = "Trace spec with header and data information."
     header_descriptor: TraceHeaderDescriptor = TraceHeaderDescriptorRev1()
     data_descriptor: TraceDataDescriptor = TraceDataDescriptorRev1()
 
