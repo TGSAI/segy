@@ -23,15 +23,11 @@ class CamelCaseModel(BaseModel):
 
     def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:  # noqa: ANN401
         """Dump the model into a dictionary by alias."""
-        return super().model_dump(
-            *args, **kwargs, by_alias=True, exclude_defaults=True, exclude_unset=True
-        )
+        return super().model_dump(*args, **kwargs, by_alias=True)
 
     def model_dump_json(self, *args: Any, **kwargs: Any) -> str:  # noqa: ANN401
         """Dump the model into a JSON string by alias."""
-        return super().model_dump_json(
-            *args, **kwargs, by_alias=True, exclude_defaults=True, exclude_unset=True
-        )
+        return super().model_dump_json(*args, **kwargs, by_alias=True)
 
 
 class BaseTypeDescriptor(CamelCaseModel):

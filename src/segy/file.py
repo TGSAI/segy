@@ -15,11 +15,45 @@ from segy.indexing import HeaderIndexer
 from segy.indexing import TraceIndexer
 from segy.schema import SegyDescriptor
 from segy.schema import SegyStandard
-from segy.standards.rev1 import REV1_SEGY
+from segy.standards.rev1 import SegyDescriptorRev1
 
-STANDARD_MAPPING = {
-    SegyStandard.REV1: REV1_SEGY,
-}
+
+class SegySpecFactory:
+    """A SEG-Y spec factory with spec registry."""
+
+    _specs = {}
+
+    @classmethod
+    def register_spec(
+        cls: type["SegySpecFactory"],
+        spec_type: SegyStandard,
+        spec_cls: type[SegyDescriptor],
+    ) -> None:
+        """Register a new SEG-Y spec."""
+        if not issubclass(spec_cls, SegyDescriptor):
+            msg = "spec_cls must be a subclass of SegyDescriptor."
+            raise ValueError(msg)
+        cls._specs[spec_type] = spec_cls
+
+    @classmethod
+    def create_spec(
+        cls: type["SegySpecFactory"], spec_type: SegyStandard
+    ) -> SegyDescriptor:
+        """Create an instance of spec from known registry."""
+        spec_cls = cls._specs.get(spec_type)
+
+        if not spec_cls:
+            msg = (
+                f"Unknown or unsupported SEG-Y spec: {spec_type}. If you "
+                f"would like to use {spec_type}, please register it with "
+                f"the `SegySpecFactory` using its `register_spec` method."
+            )
+            raise NotImplementedError(msg)
+
+        return spec_cls()
+
+
+SegySpecFactory.register_spec(SegyStandard.REV1, SegyDescriptorRev1)
 
 
 class SegyFile:
@@ -31,13 +65,16 @@ class SegyFile:
     def __init__(
         self,
         url: str,
-        revision: SegyStandard = SegyStandard.REV1,
+        segy_standard: SegyStandard = SegyStandard.REV1,
         pandas_headers: bool = True,
     ):
         """Parse some metadata and get file ready for manipulating."""
         self.fs, self.url = url_to_fs(url)
 
-        self.spec = STANDARD_MAPPING[revision]
+        # Validate standard
+        standard = SegyStandard(segy_standard)
+
+        self.spec = SegySpecFactory.create_spec(standard)
         self._postprocess_kwargs = {"pandas_headers": pandas_headers}
 
         self._info = self.fs.info(self.url)
@@ -49,12 +86,12 @@ class SegyFile:
     def from_spec(
         cls: type["SegyFile"],
         url: str,
-        spec: SegyDescriptor,
+        spec: type[SegyDescriptor],
         **kwargs: dict[str, Any],
     ) -> "SegyFile":
         """Open a SEG-Y file based on custom spec."""
-        STANDARD_MAPPING[SegyStandard.CUSTOM] = spec
-        return cls(url=url, revision=SegyStandard.CUSTOM, **kwargs)
+        SegySpecFactory.register_spec(SegyStandard.CUSTOM, spec)
+        return cls(url=url, segy_standard=SegyStandard.CUSTOM, **kwargs)
 
     @property
     def file_size(self) -> int:
@@ -65,7 +102,7 @@ class SegyFile:
     def num_traces(self) -> int:
         """Return number of traces in file based on size and spec."""
         # TODO(Altay): Not counting extended headers for now
-        trace_size = self.spec.traces.itemsize
+        trace_size = self.spec.trace.itemsize
         file_metadata_size = (
             self.spec.text_file_header.itemsize + self.spec.binary_file_header.item_size
         )
@@ -131,7 +168,7 @@ class SegyFile:
         """
         # Handle trace sample size
         samples_per_trace = self.binary_header[samples_per_trace_key]
-        self.spec.traces.data_descriptor.samples = int(samples_per_trace)
+        self.spec.trace.data_descriptor.samples = int(samples_per_trace)
 
         # TODO(Altay): Handle extended text headers (i.e. traces start offset)
         if extended_textual_headers_key:
@@ -140,7 +177,7 @@ class SegyFile:
         text_hdr_size = self.spec.text_file_header.itemsize
         bin_hdr_size = self.spec.binary_file_header.itemsize
         traces_offset = text_hdr_size + bin_hdr_size
-        self.spec.traces.offset = int(traces_offset)
+        self.spec.trace.offset = int(traces_offset)
 
     @property
     def data(self) -> AbstractIndexer:
@@ -148,7 +185,7 @@ class SegyFile:
         return DataIndexer(
             self.fs,
             self.url,
-            self.spec.traces,
+            self.spec.trace,
             self.num_traces,
             kind="data",
         )
@@ -159,7 +196,7 @@ class SegyFile:
         return HeaderIndexer(
             self.fs,
             self.url,
-            self.spec.traces,
+            self.spec.trace,
             self.num_traces,
             kind="header",
             postprocess_kwargs=self._postprocess_kwargs,
@@ -171,7 +208,7 @@ class SegyFile:
         return TraceIndexer(
             self.fs,
             self.url,
-            self.spec.traces,
+            self.spec.trace,
             self.num_traces,
             kind="trace",
             postprocess_kwargs=self._postprocess_kwargs,
