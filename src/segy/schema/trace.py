@@ -36,12 +36,18 @@ class TraceDataDescriptor(BaseTypeDescriptor):
 class TraceDescriptor(BaseTypeDescriptor):
     """A descriptor class for a Trace (Header + Data)."""
 
-    header_descriptor: TraceHeaderDescriptor = Field(...)
+    header_descriptor: TraceHeaderDescriptor = Field(
+        ..., description="Trace header descriptor."
+    )
     extended_header_descriptor: Optional[TraceHeaderDescriptor] = Field(
         default=None, description="Extended trace header descriptor."
     )
-    data_descriptor: TraceDataDescriptor = Field(...)
-    offset: Optional[int] = Field(default=None)
+    data_descriptor: TraceDataDescriptor = Field(
+        ..., description="Trace data descriptor."
+    )
+    offset: Optional[int] = Field(
+        default=None, description="Starting offset of the trace."
+    )
 
     @property
     def dtype(self) -> np.dtype:
