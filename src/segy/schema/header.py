@@ -16,7 +16,6 @@ from segy.schema.data_type import ScalarType
 from segy.schema.data_type import StructuredDataTypeDescriptor
 from segy.schema.data_type import StructuredFieldDescriptor
 
-TraceHeaderDescriptor: TypeAlias = StructuredDataTypeDescriptor
 BinaryHeaderDescriptor: TypeAlias = StructuredDataTypeDescriptor
 HeaderFieldDescriptor: TypeAlias = StructuredFieldDescriptor
 

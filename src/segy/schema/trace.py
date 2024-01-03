@@ -2,6 +2,7 @@
 
 
 from typing import Optional
+from typing import TypeAlias
 
 import numpy as np
 from pydantic import Field
@@ -9,7 +10,9 @@ from pydantic import Field
 from segy.schema.base import BaseTypeDescriptor
 from segy.schema.data_type import Endianness
 from segy.schema.data_type import ScalarType
-from segy.schema.header import TraceHeaderDescriptor
+from segy.schema.data_type import StructuredDataTypeDescriptor
+
+TraceHeaderDescriptor: TypeAlias = StructuredDataTypeDescriptor
 
 
 class TraceDataDescriptor(BaseTypeDescriptor):
