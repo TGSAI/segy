@@ -1,7 +1,6 @@
 """Classes for managing headers and header groups."""
 
 
-import textwrap
 from enum import StrEnum
 from typing import Optional
 from typing import TypeAlias
@@ -75,7 +74,13 @@ class TextHeaderDescriptor(BaseTypeDescriptor):
             msg = "rows x cols must be equal wrapped text length."
             raise ValueError(msg)
 
-        return textwrap.fill(string, width=80, drop_whitespace=False)
+        rows = []
+        for row_idx in range(self.rows):
+            start = row_idx * self.cols
+            stop = start + self.cols
+            rows.append(string[start:stop])
+
+        return "\n".join(rows)
 
     @staticmethod
     def _unwrap(text_header: str) -> str:
