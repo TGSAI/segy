@@ -15,8 +15,10 @@ from segy.schema.header import TraceHeaderDescriptor
 class TraceDataDescriptor(BaseTypeDescriptor):
     """A descriptor class for a Trace Data (samples)."""
 
-    format: ScalarType = Field(...)  # noqa: A003
-    endianness: Endianness = Field(default=Endianness.BIG)
+    format: ScalarType = Field(..., description="Format of trace samples.")  # noqa: A003
+    endianness: Endianness = Field(
+        default=Endianness.BIG, description="Endianness of trace samples."
+    )
     samples: Optional[int] = Field(
         default=None,
         description=(
