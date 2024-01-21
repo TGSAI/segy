@@ -129,18 +129,18 @@ class SegyFile:
                 textual headers in the binary header. Default is
                 "extended_textual_headers".
         """
-        # Handle trace sample size
+        # Extract number of samples and extended text headers.
         samples_per_trace = self.binary_header[samples_per_trace_key]
-        self.spec.trace.data_descriptor.samples = int(samples_per_trace)
+        num_ext_text = self.binary_header[extended_textual_headers_key]
 
-        # TODO(Altay): Handle extended text headers (i.e. traces start offset)
-        if extended_textual_headers_key:
-            pass
-
+        # Calculate sizes for dynamic file metadata
         text_hdr_size = self.spec.text_file_header.itemsize
         bin_hdr_size = self.spec.binary_file_header.itemsize
-        traces_offset = text_hdr_size + bin_hdr_size
-        self.spec.trace.offset = int(traces_offset)
+        ext_text_size = self.spec.extended_text_header.itemsize * int(num_ext_text)
+
+        # Update trace start offset and sample length
+        self.spec.trace.data_descriptor.samples = int(samples_per_trace)
+        self.spec.trace.offset = text_hdr_size + bin_hdr_size + ext_text_size
 
     @property
     def data(self) -> AbstractIndexer:
