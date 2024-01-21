@@ -15,7 +15,7 @@ from pandas import DataFrame
 from segy.ibm import ibm2ieee
 from segy.schema import ScalarType
 from segy.schema import TraceDescriptor
-from segy.schema.data_type import StructuredDataTypeDescriptor
+from segy.schema.base import BaseTypeDescriptor
 
 
 def trace_ibm2ieee_inplace(trace: NDArray[Any]) -> NDArray[Any]:
@@ -120,7 +120,7 @@ class AbstractIndexer(ABC):
     Args:
         fs: An instance of `fsspec` file-system.
         url: A string representing the URL of the file.
-        spec: An instance of StructuredDataTypeDescriptor.
+        spec: An instance of BaseTypeDescriptor.
         max_value: An integer representing the maximum value of the index.
         kind: A string representing the kind of index.
         postprocess_kwargs: Optional dictionary representing additional arguments
@@ -131,7 +131,7 @@ class AbstractIndexer(ABC):
         self,
         fs: AbstractFileSystem,
         url: str,
-        spec: StructuredDataTypeDescriptor,
+        spec: BaseTypeDescriptor,
         max_value: int,
         kind: str,
         postprocess_kwargs: Optional[dict[str, Any]] = None,
