@@ -4,19 +4,24 @@ from __future__ import annotations
 
 from abc import ABC
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 from typing import Any
-from typing import Optional
 
 import numpy as np
-from fsspec import AbstractFileSystem
 from fsspec.utils import merge_offset_ranges
-from numpy.typing import NDArray
 from pandas import DataFrame
 
 from segy.ibm import ibm2ieee
+from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.schema import TraceDescriptor
-from segy.schema.base import BaseTypeDescriptor
+
+if TYPE_CHECKING:
+    from fsspec import AbstractFileSystem
+    from numpy.typing import NDArray
+
+    from segy.config import SegyFileSettings
+    from segy.schema.base import BaseTypeDescriptor
 
 
 def trace_ibm2ieee_inplace(trace: NDArray[Any]) -> NDArray[Any]:
@@ -124,8 +129,7 @@ class AbstractIndexer(ABC):
         spec: An instance of BaseTypeDescriptor.
         max_value: An integer representing the maximum value of the index.
         kind: A string representing the kind of index.
-        postprocess_kwargs: Optional dictionary representing additional arguments
-            for post-processing.
+        settings: Optional parsing settings.
     """
 
     def __init__(  # noqa: PLR0913
@@ -135,7 +139,7 @@ class AbstractIndexer(ABC):
         spec: BaseTypeDescriptor,
         max_value: int,
         kind: str,
-        postprocess_kwargs: Optional[dict[str, Any]] = None,
+        settings: SegyFileSettings | None = None,
     ):
         """Initialize indexer for a FileSystem and a file with given spec."""
         self.fs = fs
@@ -143,7 +147,7 @@ class AbstractIndexer(ABC):
         self.spec = spec
         self.max_value = max_value
         self.kind = kind
-        self.postprocess_kwargs = postprocess_kwargs
+        self.settings = settings
 
     @abstractmethod
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
@@ -230,8 +234,8 @@ class TraceIndexer(AbstractIndexer):
         """Decode whole traces (header + data)."""
         data = np.frombuffer(buffer, dtype=self.spec.dtype)
 
-        # TODO(Altay): Handle little endian.
-        data = data.byteswap(inplace=True).newbyteorder()
+        if self.settings.ENDIAN == Endianness.BIG:
+            data = data.byteswap(inplace=True).newbyteorder()
 
         if self.spec.data_descriptor.format == ScalarType.IBM32:
             data = trace_ibm2ieee_inplace(data)
@@ -242,8 +246,7 @@ class TraceIndexer(AbstractIndexer):
         self, data: NDArray[Any]
     ) -> NDArray[Any] | dict[str, NDArray[Any] | DataFrame]:
         """Either return struct array or (Header) DataFrame + (Data) Array."""
-        using_pandas = self.postprocess_kwargs.get("pandas_headers", False)
-        if using_pandas:
+        if self.settings.USE_PANDAS:
             return {"header": DataFrame(data["header"]), "data": data["data"]}
 
         return data
@@ -275,16 +278,15 @@ class HeaderIndexer(AbstractIndexer):
         """Decode headers only."""
         data = np.frombuffer(buffer, dtype=self.spec.header_descriptor.dtype)
 
-        # TODO(Altay): Handle little endian.
         # TODO(Altay): Handle float/ibm32 etc headers.
-        data = data.byteswap(inplace=True).newbyteorder()
+        if self.settings.ENDIAN == Endianness.BIG:
+            data = data.byteswap(inplace=True).newbyteorder()
 
         return data  # noqa: RET504
 
     def post_process(self, data: NDArray[Any]) -> NDArray[Any] | DataFrame:
         """Either return header as struct array or DataFrame."""
-        using_pandas = self.postprocess_kwargs.get("pandas_headers", False)
-        if using_pandas:
+        if self.settings.USE_PANDAS:
             return DataFrame(data)
 
         return data
@@ -316,8 +318,8 @@ class DataIndexer(AbstractIndexer):
         """Decode trace data only."""
         data = np.frombuffer(buffer, dtype=self.spec.data_descriptor.dtype)
 
-        # TODO(Altay): Handle little endian.
-        data = data.byteswap(inplace=True).newbyteorder()
+        if self.settings.ENDIAN == Endianness.BIG:
+            data = data.byteswap(inplace=True).newbyteorder()
 
         if self.spec.data_descriptor.format == ScalarType.IBM32:
             data = ibm2ieee(data).view("float32")
