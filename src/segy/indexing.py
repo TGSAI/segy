@@ -1,5 +1,6 @@
 """Indexers for SEG-Y files."""
 
+from __future__ import annotations
 
 from abc import ABC
 from abc import abstractmethod

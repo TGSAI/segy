@@ -1,5 +1,5 @@
 """Classes for managing headers and header groups."""
-
+from __future__ import annotations
 
 from enum import StrEnum
 from typing import TypeAlias

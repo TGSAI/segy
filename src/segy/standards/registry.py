@@ -1,5 +1,5 @@
 """Implements a registry for various SEG-Y standards."""
-
+from __future__ import annotations
 
 from segy.schema.segy import SegyDescriptor
 from segy.schema.segy import SegyStandard
