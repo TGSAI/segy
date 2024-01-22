@@ -2,7 +2,6 @@
 
 
 from enum import StrEnum
-from typing import Optional
 from typing import TypeAlias
 
 import numpy as np
@@ -33,7 +32,7 @@ class TextHeaderDescriptor(BaseTypeDescriptor):
     cols: int = Field(..., description="Number of columns in text header.")
     encoding: TextHeaderEncoding = Field(..., description="String encoding.")
     format: ScalarType = Field(..., description="Type of string.")  # noqa: A003
-    offset: Optional[int] = Field(
+    offset: int | None = Field(
         default=None, ge=0, description="Starting byte offset."
     )
 
