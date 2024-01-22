@@ -43,13 +43,13 @@ class SegyDescriptor(CamelCaseModel):
 
     @classmethod
     def customize(  # noqa: PLR0913
-        cls: type["SegyDescriptor"],
+        cls: type[SegyDescriptor],
         text_header_spec: TextHeaderDescriptor = None,
         binary_header_fields: list[HeaderFieldDescriptor] = None,
         extended_text_spec: TextHeaderDescriptor = None,
         trace_header_fields: list[HeaderFieldDescriptor] = None,
         trace_data_spec: TraceDataDescriptor = None,
-    ) -> type["SegyDescriptor"]:
+    ) -> type[SegyDescriptor]:
         """Customize an existing SEG-Y descriptor."""
         old_fields = cls.model_fields
 
