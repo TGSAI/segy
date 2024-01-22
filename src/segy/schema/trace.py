@@ -1,7 +1,6 @@
 """Descriptor data model implementations for traces."""
 
 
-from typing import Optional
 from typing import TypeAlias
 
 import numpy as np
@@ -22,7 +21,7 @@ class TraceDataDescriptor(BaseTypeDescriptor):
     endianness: Endianness = Field(
         default=Endianness.BIG, description="Endianness of trace samples."
     )
-    samples: Optional[int] = Field(
+    samples: int | None = Field(
         default=None,
         description=(
             "Number of samples in trace. It can be variable, "
@@ -44,13 +43,13 @@ class TraceDescriptor(BaseTypeDescriptor):
     header_descriptor: TraceHeaderDescriptor = Field(
         ..., description="Trace header descriptor."
     )
-    extended_header_descriptor: Optional[TraceHeaderDescriptor] = Field(
+    extended_header_descriptor: TraceHeaderDescriptor | None = Field(
         default=None, description="Extended trace header descriptor."
     )
     data_descriptor: TraceDataDescriptor = Field(
         ..., description="Trace data descriptor."
     )
-    offset: Optional[int] = Field(
+    offset: int | None = Field(
         default=None, description="Starting offset of the trace."
     )
 
