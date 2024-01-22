@@ -69,7 +69,7 @@ class SegyFile:
     def num_traces(self) -> int:
         """Return number of traces in file based on size and spec."""
         file_textual_hdr_size = self.spec.text_file_header.itemsize
-        file_bin_hdr_size = self.spec.text_file_header.itemsize
+        file_bin_hdr_size = self.spec.binary_file_header.itemsize
         trace_size = self.spec.trace.itemsize
 
         rev0_file = self.spec.segy_standard == SegyStandard.REV0
