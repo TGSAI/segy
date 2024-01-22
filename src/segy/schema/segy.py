@@ -2,16 +2,18 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from pydantic import Field
-from pydantic import create_model
 
 from segy.schema.base import CamelCaseModel
 from segy.schema.header import BinaryHeaderDescriptor
 from segy.schema.header import HeaderFieldDescriptor
 from segy.schema.header import TextHeaderDescriptor
-from segy.schema.trace import TraceDataDescriptor
-from segy.schema.trace import TraceDescriptor
+
+if TYPE_CHECKING:
+    from segy.schema.trace import TraceDataDescriptor
+    from segy.schema.trace import TraceDescriptor
 
 
 class SegyStandard(Enum):
@@ -41,52 +43,35 @@ class SegyDescriptor(CamelCaseModel):
     )
     trace: TraceDescriptor = Field(..., description="Trace header + data descriptor.")
 
-    @classmethod
     def customize(  # noqa: PLR0913
-        cls: type[SegyDescriptor],
+        self: SegyDescriptor,
         text_header_spec: TextHeaderDescriptor = None,
         binary_header_fields: list[HeaderFieldDescriptor] = None,
         extended_text_spec: TextHeaderDescriptor = None,
         trace_header_fields: list[HeaderFieldDescriptor] = None,
         trace_data_spec: TraceDataDescriptor = None,
-    ) -> type[SegyDescriptor]:
+    ) -> SegyDescriptor:
         """Customize an existing SEG-Y descriptor."""
-        old_fields = cls.model_fields
-
-        new_fields = {"segy_standard": (SegyStandard, SegyStandard.CUSTOM)}
+        new_descr = self.model_copy(deep=True)
+        new_descr.segy_standard = SegyStandard.CUSTOM
 
         if text_header_spec:
-            new_fields["text_file_header"] = (TextHeaderDescriptor, text_header_spec)
+            new_descr.text_file_header = (TextHeaderDescriptor, text_header_spec)
 
+        # Update binary header fields if specified; else will revert to default.
         if binary_header_fields:
-            # Update binary header fields if specified; else will revert to default.
-            bin_hdr_spec = old_fields["binary_file_header"].default.model_copy()
-            bin_hdr_spec.fields = binary_header_fields
-            new_fields["binary_file_header"] = (BinaryHeaderDescriptor, bin_hdr_spec)
+            new_descr.binary_file_header.fields = binary_header_fields
 
+        # Update extended text spec if its specified; else will revert to default.
         if extended_text_spec:
-            # Update extended text spec if its specified; else will revert to default.
-            new_fields["extended_text_header"] = (
-                TextHeaderDescriptor | None,
-                extended_text_spec,
-            )
+            new_descr.extended_text_header = extended_text_spec
 
-        # Handling trace spec.
-        trc_spec = old_fields["trace"].default.model_copy()
-
+        # Update trace header spec if its specified; else will revert to default.
         if trace_header_fields:
-            # Update trace header spec if its specified; else will revert to default.
-            trc_spec.header_descriptor.fields = trace_header_fields
-            new_fields["trace"] = (TraceDescriptor, trc_spec)
+            new_descr.trace.header_descriptor.fields = trace_header_fields
 
+        # Update trace data spec if its specified; else will revert to default.
         if trace_data_spec:
-            # Update trace data spec if its specified; else will revert to default.
-            trc_spec.data_descriptor = trace_data_spec
-            new_fields["trace"] = (TraceDescriptor, trc_spec)
+            new_descr.trace.data_descriptor = trace_data_spec
 
-        return create_model(
-            "CustomSegySpec",
-            **new_fields,
-            __doc__=f"Custom SEG-Y descriptor derived from {cls.__name__}",
-            __base__=cls,
-        )
+        return new_descr
