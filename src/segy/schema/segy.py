@@ -1,6 +1,5 @@
 """Descriptor data model implementations for SEG-Y file(s)."""
 from enum import Enum
-from typing import Optional
 
 from pydantic import Field
 from pydantic import create_model
@@ -35,7 +34,7 @@ class SegyDescriptor(CamelCaseModel):
     binary_file_header: BinaryHeaderDescriptor = Field(
         ..., description="Binary file header descriptor."
     )
-    extended_text_header: Optional[TextHeaderDescriptor] = Field(
+    extended_text_header: TextHeaderDescriptor | None = Field(
         default=None, description="Extended textual header descriptor."
     )
     trace: TraceDescriptor = Field(..., description="Trace header + data descriptor.")
@@ -66,7 +65,7 @@ class SegyDescriptor(CamelCaseModel):
         if extended_text_spec:
             # Update extended text spec if its specified; else will revert to default.
             new_fields["extended_text_header"] = (
-                Optional[TextHeaderDescriptor],
+                TextHeaderDescriptor | None,
                 extended_text_spec,
             )
 
