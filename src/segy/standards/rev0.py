@@ -204,6 +204,7 @@ BINARY_FILE_HEADER_FIELDS_REV0 = [
     ),
 ]
 
+
 TRACE_HEADER_FIELDS_REV0 = [
     HeaderFieldDescriptor(
         name="trace_seq_line",
@@ -712,6 +713,7 @@ rev0_textual_file_header = TextHeaderDescriptor(
     encoding=TextHeaderEncoding.EBCDIC,
     format=ScalarType.UINT8,  # noqa: A003
 )
+
 
 rev0_binary_file_header = BinaryHeaderDescriptor(
     fields=BINARY_FILE_HEADER_FIELDS_REV0,
