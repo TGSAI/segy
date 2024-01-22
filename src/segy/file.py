@@ -66,14 +66,17 @@ class SegyFile:
     @property
     def num_traces(self) -> int:
         """Return number of traces in file based on size and spec."""
-        rev = self.spec.segy_standard
         file_textual_hdr_size = self.spec.text_file_header.itemsize
         file_bin_hdr_size = self.spec.text_file_header.itemsize
         trace_size = self.spec.trace.itemsize
 
-        if self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE is None and rev.value > 0:
+        rev0_file = self.spec.segy_standard == SegyStandard.REV0
+        if self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE is None and not rev0_file:
             header_key = self.settings.BINARY.EXTENDED_TEXT_HEADER.KEY
-            num_ext_text = self.binary_header[header_key]
+
+            num_ext_text = 0
+            if header_key in self.binary_header:
+                num_ext_text = self.binary_header[header_key]
         else:
             num_ext_text = self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE
 
@@ -137,8 +140,6 @@ class SegyFile:
     def _parse_binary_header(self) -> None:
         """Parse the binary header and apply some rules."""
         # Extract number of samples and extended text headers.
-        rev = self.spec.segy_standard
-
         if self.settings.BINARY.SAMPLES_PER_TRACE.VALUE is None:
             header_key = self.settings.BINARY.SAMPLES_PER_TRACE.KEY
             samples_per_trace = self.binary_header[header_key]
@@ -153,9 +154,13 @@ class SegyFile:
         self.spec.trace.data_descriptor.samples = int(samples_per_trace)
         self.spec.trace.offset = text_hdr_size + bin_hdr_size
 
-        if self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE is None and rev.value > 0:
+        rev0_file = self.spec.segy_standard == SegyStandard.REV0
+        if self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE is None and not rev0_file:
             header_key = self.settings.BINARY.EXTENDED_TEXT_HEADER.KEY
-            num_ext_text = self.binary_header[header_key]
+
+            num_ext_text = 0
+            if header_key in self.binary_header:
+                num_ext_text = self.binary_header[header_key]
         else:
             num_ext_text = self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE
 
