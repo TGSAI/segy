@@ -176,66 +176,53 @@ TRACE_HEADER_FIELDS_REV1 = TRACE_HEADER_FIELDS_REV0 + [
 ]
 
 
-class TextualFileHeaderDescriptorRev1(TextHeaderDescriptor):
-    """Textual file header spec with SEG-Y Rev1 defaults."""
-
-    description: str = "3200-byte textual file header with 40 lines of text."
-    rows: int = 40
-    cols: int = 80
-    offset: int = 0
-    encoding: TextHeaderEncoding = TextHeaderEncoding.EBCDIC
-    format: ScalarType = ScalarType.UINT8  # noqa: A003
+rev1_textual_file_header = TextHeaderDescriptor(
+    rows=40,
+    cols=80,
+    offset=0,
+    encoding=TextHeaderEncoding.EBCDIC,
+    format=ScalarType.UINT8,  # noqa: A003
+)
 
 
-class ExtendedTextualHeaderDescriptorRev1(TextHeaderDescriptor):
-    """Extended text header spec with SEG-Y Rev1 defaults."""
-
-    description: str = "3200-byte extended textual header with 40 lines of text."
-    rows: int = 40
-    cols: int = 80
-    offset: int = 3600
-    encoding: TextHeaderEncoding = TextHeaderEncoding.EBCDIC
-    format: ScalarType = ScalarType.UINT8  # noqa: A003
+rev1_binary_file_header = BinaryHeaderDescriptor(
+    fields=BINARY_FILE_HEADER_FIELDS_REV1,
+    item_size=400,
+    offset=3200,
+)
 
 
-class BinaryHeaderDescriptorRev1(BinaryHeaderDescriptor):
-    """Binary file header spec with SEG-Y Rev1 defaults."""
-
-    description: str = "400-byte binary file header with structured fields."
-    fields: list[HeaderFieldDescriptor] = BINARY_FILE_HEADER_FIELDS_REV1
-    item_size: int = 400
-    offset: int = 3200
-
-
-class TraceHeaderDescriptorRev1(TraceHeaderDescriptor):
-    """Trace header spec with SEG-Y Rev1 defaults."""
-
-    description: str = "240-byte trace header with structured fields."
-    fields: list[HeaderFieldDescriptor] = TRACE_HEADER_FIELDS_REV1
-    item_size: int = 240
+rev1_extended_text_header = TextHeaderDescriptor(
+    rows=40,
+    cols=80,
+    offset=3600,
+    encoding=TextHeaderEncoding.EBCDIC,
+    format=ScalarType.UINT8,  # noqa: A003
+)
 
 
-class TraceDataDescriptorRev1(TraceDataDescriptor):
-    """Trace data spec with SEG-Y Rev1 defaults."""
-
-    description: str = "Trace data with given format and sample count."
-    format: ScalarType = ScalarType.IBM32  # noqa: A003
-    endianness: Endianness = Endianness.BIG
+rev1_trace_header = TraceHeaderDescriptor(
+    fields=TRACE_HEADER_FIELDS_REV1,
+    item_size=240,
+)
 
 
-class TraceDescriptorRev1(TraceDescriptor):
-    """Trace spec with SEG-Y Rev1 defaults."""
-
-    description: str = "Trace spec with header and data information."
-    header_descriptor: TraceHeaderDescriptor = TraceHeaderDescriptorRev1()
-    data_descriptor: TraceDataDescriptor = TraceDataDescriptorRev1()
+rev1_trace_data = TraceDataDescriptor(
+    format=ScalarType.IBM32,  # noqa: A003
+    endianness=Endianness.BIG,
+)
 
 
-class SegyDescriptorRev1(SegyDescriptor):
-    """SEG-Y file spec with SEG-Y Rev1 defaults."""
+rev1_trace = TraceDescriptor(
+    header_descriptor=rev1_trace_header,
+    data_descriptor=rev1_trace_data,
+)
 
-    segy_standard: SegyStandard = SegyStandard.REV1
-    text_file_header: TextHeaderDescriptor = TextualFileHeaderDescriptorRev1()
-    binary_file_header: BinaryHeaderDescriptor = BinaryHeaderDescriptorRev1()
-    extended_text_header: TextHeaderDescriptor = ExtendedTextualHeaderDescriptorRev1()
-    trace: TraceDescriptor = TraceDescriptorRev1()
+
+rev1 = SegyDescriptor(
+    segy_standard=SegyStandard.REV1,
+    text_file_header=rev1_textual_file_header,
+    binary_file_header=rev1_binary_file_header,
+    extended_text_header=rev1_extended_text_header,
+    trace=rev1_trace,
+)
