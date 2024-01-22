@@ -2,7 +2,6 @@
 
 
 from enum import StrEnum
-from typing import Optional
 
 import numpy as np
 from pydantic import Field
@@ -77,10 +76,10 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
     fields: list[StructuredFieldDescriptor] = Field(
         ..., description="Fields of the structured data type."
     )
-    item_size: Optional[int] = Field(
+    item_size: int | None = Field(
         default=None, description="Expected size of the struct."
     )
-    offset: Optional[int] = Field(
+    offset: int | None = Field(
         default=None, ge=0, description="Starting byte offset."
     )
 

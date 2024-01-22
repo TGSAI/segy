@@ -33,7 +33,7 @@ class CamelCaseModel(BaseModel):
 class BaseTypeDescriptor(CamelCaseModel):
     """A base model for all SEG-Y Ninja types."""
 
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None, description="Description of the field."
     )
 
