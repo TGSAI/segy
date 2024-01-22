@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 from typing import Any
 
-import numpy as np
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
 from pydantic.alias_generators import to_camel
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class CamelCaseModel(BaseModel):
