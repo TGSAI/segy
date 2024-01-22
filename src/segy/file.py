@@ -35,7 +35,7 @@ class SegyFile:
     def __init__(
         self,
         url: str,
-        spec: type[SegyDescriptor] | None = None,
+        spec: SegyDescriptor | None = None,
         settings: SegyFileSettings | None = None,
     ):
         """Parse some metadata and get file ready for manipulating."""
@@ -53,11 +53,10 @@ class SegyFile:
     def from_spec(
         cls: type[SegyFile],
         url: str,
-        spec: type[SegyDescriptor],
+        spec: SegyDescriptor,
         **kwargs: dict[str, Any],
     ) -> SegyFile:
         """Open a SEG-Y file based on custom spec."""
-        register_spec(SegyStandard.CUSTOM, spec)
         return cls(url=url, spec=spec, **kwargs)
 
     @property
