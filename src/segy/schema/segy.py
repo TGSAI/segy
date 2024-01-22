@@ -56,7 +56,7 @@ class SegyDescriptor(CamelCaseModel):
         new_descr.segy_standard = SegyStandard.CUSTOM
 
         if text_header_spec:
-            new_descr.text_file_header = (TextHeaderDescriptor, text_header_spec)
+            new_descr.text_file_header = text_header_spec
 
         # Update binary header fields if specified; else will revert to default.
         if binary_header_fields:
