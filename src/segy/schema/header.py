@@ -32,9 +32,7 @@ class TextHeaderDescriptor(BaseTypeDescriptor):
     cols: int = Field(..., description="Number of columns in text header.")
     encoding: TextHeaderEncoding = Field(..., description="String encoding.")
     format: ScalarType = Field(..., description="Type of string.")  # noqa: A003
-    offset: int | None = Field(
-        default=None, ge=0, description="Starting byte offset."
-    )
+    offset: int | None = Field(default=None, ge=0, description="Starting byte offset.")
 
     def __len__(self) -> int:
         """Get length of the textual header (number of characters)."""
