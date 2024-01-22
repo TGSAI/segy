@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from typing import TypeAlias
 
 import numpy as np
 from pydantic import Field
@@ -12,7 +11,10 @@ from segy.schema.data_type import Endianness
 from segy.schema.data_type import StructuredDataTypeDescriptor
 
 if TYPE_CHECKING:
+    from typing import TypeAlias
+
     from segy.schema.data_type import ScalarType
+
 
 TraceHeaderDescriptor: TypeAlias = StructuredDataTypeDescriptor
 
