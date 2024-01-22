@@ -740,7 +740,7 @@ rev0_trace = TraceDescriptor(
 )
 
 
-rev0 = SegyDescriptor(
+rev0_segy = SegyDescriptor(
     segy_standard=SegyStandard.REV0,
     text_file_header=rev0_textual_file_header,
     binary_file_header=rev0_binary_file_header,

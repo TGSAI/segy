@@ -3,11 +3,11 @@
 
 from segy.schema import SegyStandard
 from segy.standards.registry import register_spec
-from segy.standards.rev0 import SegyDescriptorRev0
-from segy.standards.rev1 import SegyDescriptorRev1
+from segy.standards.rev0 import rev0_segy
+from segy.standards.rev1 import rev1_segy
 
-register_spec(SegyStandard.REV0, SegyDescriptorRev0)
-register_spec(SegyStandard.REV1, SegyDescriptorRev1)
+register_spec(SegyStandard.REV0, rev0_segy)
+register_spec(SegyStandard.REV1, rev1_segy)
 
 
-__all__ = ["SegyDescriptorRev0", "SegyDescriptorRev1"]
+__all__ = ["rev0_segy", "rev1_segy"]
