@@ -3,26 +3,28 @@ from __future__ import annotations
 
 from functools import cached_property
 from typing import TYPE_CHECKING
-from typing import Any
 
 import numpy as np
 from fsspec.core import url_to_fs
 from pandas import DataFrame
 
 from segy.config import SegyFileSettings
-from segy.indexing import AbstractIndexer
 from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
 from segy.indexing import TraceIndexer
 from segy.schema import Endianness
-from segy.schema import SegyDescriptor
 from segy.schema import SegyStandard
 from segy.standards.registry import get_spec
 from segy.standards.rev1 import rev1_binary_file_header
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from fsspec import AbstractFileSystem
     from numpy.typing import NDArray
+
+    from segy.indexing import AbstractIndexer
+    from segy.schema import SegyDescriptor
 
 
 class SegyFile:
