@@ -60,8 +60,6 @@ class SegyFileSettings(SegyBaseSettings):
     USE_PANDAS: bool = Field(default=True)
 
     model_config = SettingsConfigDict(
-        extra="ignore",
         env_prefix="SEGY__",
-        case_sensitive=True,
         env_nested_delimiter="__",
     )
