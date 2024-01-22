@@ -1,7 +1,6 @@
 """Core functionality for SEG-Y ninja templates."""
 from abc import abstractmethod
 from typing import Any
-from typing import Optional
 
 import numpy as np
 from pydantic import BaseModel
