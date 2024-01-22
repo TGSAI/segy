@@ -1,5 +1,5 @@
 """Data models representing data types."""
-from __future__ import annotations
+
 
 from enum import StrEnum
 
