@@ -18,7 +18,6 @@ from segy.schema import Endianness
 from segy.schema import SegyDescriptor
 from segy.schema import SegyStandard
 from segy.standards.registry import get_spec
-from segy.standards.registry import register_spec
 from segy.standards.rev1 import rev1_binary_file_header
 
 if TYPE_CHECKING:
