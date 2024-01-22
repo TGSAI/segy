@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING
 from pydantic import Field
 
 from segy.schema.base import CamelCaseModel
-from segy.schema.header import BinaryHeaderDescriptor
-from segy.schema.header import HeaderFieldDescriptor
-from segy.schema.header import TextHeaderDescriptor
 
 if TYPE_CHECKING:
+    from segy.schema.header import BinaryHeaderDescriptor
+    from segy.schema.header import HeaderFieldDescriptor
+    from segy.schema.header import TextHeaderDescriptor
     from segy.schema.trace import TraceDataDescriptor
     from segy.schema.trace import TraceDescriptor
 
