@@ -19,7 +19,7 @@ from segy.schema import SegyDescriptor
 from segy.schema import SegyStandard
 from segy.standards.registry import get_spec
 from segy.standards.registry import register_spec
-from segy.standards.rev1 import BinaryHeaderDescriptorRev1
+from segy.standards.rev1 import rev1_binary_file_header
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
@@ -102,11 +102,10 @@ class SegyFile:
 
     def _infer_standard(self) -> SegyDescriptor:
         if self.settings.REVISION is None:
-            rev1_bin_spec = BinaryHeaderDescriptorRev1()
             buffer = self.fs.read_block(
                 fn=self.url,
-                offset=rev1_bin_spec.offset,
-                length=rev1_bin_spec.item_size,
+                offset=rev1_binary_file_header.offset,
+                length=rev1_binary_file_header.item_size,
             )
             revision = np.frombuffer(buffer, offset=300, dtype=">i2", count=1).item()
 
