@@ -1,6 +1,7 @@
 """Descriptor data model implementations for traces."""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from typing import TypeAlias
 
 import numpy as np
@@ -8,8 +9,10 @@ from pydantic import Field
 
 from segy.schema.base import BaseTypeDescriptor
 from segy.schema.data_type import Endianness
-from segy.schema.data_type import ScalarType
 from segy.schema.data_type import StructuredDataTypeDescriptor
+
+if TYPE_CHECKING:
+    from segy.schema.data_type import ScalarType
 
 TraceHeaderDescriptor: TypeAlias = StructuredDataTypeDescriptor
 
