@@ -7,12 +7,12 @@ from segy.schema.segy import SegyStandard
 registry = {}
 
 
-def register_spec(spec_type: SegyStandard, spec_cls: type[SegyDescriptor]) -> None:
+def register_spec(spec_type: SegyStandard, spec: SegyDescriptor) -> None:
     """Register a SEG-Y standard with its descriptor."""
-    if not issubclass(spec_cls, SegyDescriptor):
+    if not isinstance(spec, SegyDescriptor):
         msg = "spec_cls must be a subclass of SegyDescriptor."
         raise ValueError(msg)
-    registry[spec_type] = spec_cls
+    registry[spec_type] = spec
 
 
 def get_spec(spec_type: SegyStandard) -> SegyDescriptor:
@@ -26,4 +26,4 @@ def get_spec(spec_type: SegyStandard) -> SegyDescriptor:
             f"the `SegySpecFactory` using its `register_spec` method."
         )
         raise NotImplementedError(msg)
-    return spec()
+    return spec
