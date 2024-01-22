@@ -79,9 +79,7 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
     item_size: int | None = Field(
         default=None, description="Expected size of the struct."
     )
-    offset: int | None = Field(
-        default=None, ge=0, description="Starting byte offset."
-    )
+    offset: int | None = Field(default=None, ge=0, description="Starting byte offset.")
 
     @property
     def dtype(self) -> np.dtype:
