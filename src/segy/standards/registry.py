@@ -1,8 +1,12 @@
 """Implements a registry for various SEG-Y standards."""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from segy.schema.segy import SegyDescriptor
-from segy.schema.segy import SegyStandard
+
+if TYPE_CHECKING:
+    from segy.schema.segy import SegyStandard
 
 registry = {}
 
