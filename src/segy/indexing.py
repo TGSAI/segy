@@ -5,7 +5,6 @@ from __future__ import annotations
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
-from typing import Any
 
 import numpy as np
 from fsspec.utils import merge_offset_ranges
@@ -14,13 +13,15 @@ from pandas import DataFrame
 from segy.ibm import ibm2ieee
 from segy.schema import Endianness
 from segy.schema import ScalarType
-from segy.schema import TraceDescriptor
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from fsspec import AbstractFileSystem
     from numpy.typing import NDArray
 
     from segy.config import SegyFileSettings
+    from segy.schema import TraceDescriptor
     from segy.schema.base import BaseTypeDescriptor
 
 
