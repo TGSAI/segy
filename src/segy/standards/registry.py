@@ -30,4 +30,4 @@ def get_spec(spec_type: SegyStandard) -> SegyDescriptor:
             f"the `SegySpecFactory` using its `register_spec` method."
         )
         raise NotImplementedError(msg)
-    return spec
+    return spec.model_copy(deep=True)
