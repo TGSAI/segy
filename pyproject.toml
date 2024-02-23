@@ -6,6 +6,7 @@ authors = ["Altay Sansal <altay.sansal@tgs.com>"]
 readme = "README.md"
 packages = [
     { include = "segy", from = "src" },
+    { include = "tests"}
 ]
 
 [tool.poetry.dependencies]
@@ -19,7 +20,6 @@ s3fs = {version = "^2023.12.2", optional = true}
 adlfs = {version = "^2023.12.0", optional = true}
 pandas = {version = "^2.2.0", optional = true}
 pydantic-settings = "^2.1.0"
-
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.1.14"
