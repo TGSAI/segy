@@ -130,20 +130,8 @@ def trace_data_descriptors(
     )
 
 
-@pytest.fixture()
-def trace_descriptors(
-    trace_header_descriptors: pytest.FixtureRequest,
-    trace_data_descriptors: pytest.FixtureRequest,
-) -> TraceDescriptor:
-    """Fixture that creates TraceDescriptors from TraceHeader and TraceData descriptors."""
-    return TraceDescriptor(
-        header_descriptor=trace_header_descriptors,
-        data_descriptor=trace_data_descriptors,
-    )
-
-
 sample_text = """
-Here's some sample text. It should have numbers, 
+Here's some sample text. It should have numbers,
 letters, punctuation and newlines,
 ~~ , 123, -456, 0.1234, 123145.01234.
 Finally make sure these are in order: abcdeABCDE
