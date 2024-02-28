@@ -6,34 +6,38 @@ authors = ["Altay Sansal <altay.sansal@tgs.com>"]
 readme = "README.md"
 packages = [
     { include = "segy", from = "src" },
-    { include = "tests"}
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
-fsspec = "^2023.12.2"
-numpy = "^1.26.3"
-pydantic = "^2.5.3"
-numba = "0.59.0rc1"
-gcsfs = {version = "^2023.12.2.post1", optional = true}
-s3fs = {version = "^2023.12.2", optional = true}
-adlfs = {version = "^2023.12.0", optional = true}
-pandas = {version = "^2.2.0", optional = true}
+python = ">=3.9, <3.13"
+fsspec = ">=2024.2.0"
+numpy = "^1.26.4"
+pydantic = "^2.6.2"
 pydantic-settings = "^2.1.0"
+numba = "^0.59.0"
+gcsfs = {version = ">=2024.2.0", optional = true}
+s3fs = {version = ">=2024.2.0", optional = true}
+adlfs = {version = ">=2024.2.0", optional = true}
+pandas = {version = "^2.2.0", optional = true}
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.1.14"
+ruff = "^0.2.2"
+pytest = "^8.0.2"
+pytest-cov = "^4.1.0"
 
 [tool.poetry.extras]
 cloud = ["s3fs", "gcsfs", "adlfs"]
 pandas = ["pandas"]
 
+[tool.poetry.group.interactive]
+optional = true
+
 [tool.poetry.group.interactive.dependencies]
-notebook = "^7.0.7"
-matplotlib = "^3.8.2"
+notebook = "^7.1.1"
+matplotlib = "^3.8.3"
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py39"
 src = ["src"]
 select = [
     "E",  # pycodestyle
@@ -83,6 +87,12 @@ force-single-line = true
 [tool.ruff.lint.pycodestyle]
 max-line-length = 100
 ignore-overlong-task-comments = true
+
+[tool.coverage.report]
+exclude_also = [
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
 
 [build-system]
 requires = ["poetry-core"]

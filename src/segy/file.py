@@ -79,7 +79,7 @@ class SegyFile:
             num_ext_text = 0
             if header_key in self.binary_header:
                 # Use df.at method to get a single value and not return a series
-                num_ext_text = self.binary_header.at[0,header_key]
+                num_ext_text = self.binary_header.at[0, header_key]
         else:
             num_ext_text = self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE
 
@@ -146,7 +146,7 @@ class SegyFile:
         if self.settings.BINARY.SAMPLES_PER_TRACE.VALUE is None:
             header_key = self.settings.BINARY.SAMPLES_PER_TRACE.KEY
             # Use df.at method to get a single value and not return a series
-            samples_per_trace = self.binary_header.at[0,header_key]
+            samples_per_trace = self.binary_header.at[0, header_key]
         else:
             samples_per_trace = self.settings.BINARY.SAMPLES_PER_TRACE.VALUE
 
@@ -165,7 +165,7 @@ class SegyFile:
             num_ext_text = 0
             if header_key in self.binary_header:
                 # Use df.at method to get a single value and not return a series
-                num_ext_text = self.binary_header.at[0,header_key]
+                num_ext_text = self.binary_header.at[0, header_key]
         else:
             num_ext_text = self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE
 

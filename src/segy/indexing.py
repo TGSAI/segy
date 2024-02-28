@@ -15,6 +15,7 @@ from segy.schema import Endianness
 from segy.schema import ScalarType
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from typing import Any
 
     from fsspec import AbstractFileSystem
@@ -53,7 +54,7 @@ def trace_ibm2ieee_inplace(trace: NDArray[Any]) -> NDArray[Any]:
 
 def merge_cat_file(
     fs: AbstractFileSystem,
-    url: str,
+    url: str | Path,
     starts: list[int],
     ends: list[int],
     block_size: int = 8_388_608,

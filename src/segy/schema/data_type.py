@@ -1,12 +1,11 @@
 """Data models representing data types."""
 
 
-from enum import StrEnum
-
 import numpy as np
 from pydantic import Field
 
 from segy.schema.base import BaseTypeDescriptor
+from segy.schema.compat import StrEnum
 
 
 class Endianness(StrEnum):

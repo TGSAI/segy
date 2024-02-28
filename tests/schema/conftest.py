@@ -1,13 +1,13 @@
 """Tests for the compontent classes in the schema directory."""
 
 import itertools
+import string
+from collections.abc import Callable
 
 import numpy as np
 import pytest
-from tests.helpers.helper_tools import TestHelpers
 
 from segy.schema import BinaryHeaderDescriptor
-from segy.schema import HeaderFieldDescriptor
 from segy.schema import ScalarType
 from segy.schema import TraceDataDescriptor
 from segy.schema import TraceDescriptor
@@ -38,29 +38,26 @@ TRACE_HEADER_TEST_DTYPE_STRINGS = [
 
 @pytest.fixture(
     params=[
-        (dt_string, dt_endian)
+        (dt_string, None, dt_endian)
         for dt_string in BINARY_HEADER_TEST_DTYPE_STRINGS
         for dt_endian in DTYPE_ENDIANNESS
     ]
 )
-def binary_header_descriptors(request):
-    """Fixture to create BinaryHeaderDescriptor objects."""
-    names = TestHelpers.generate_unique_names(request.param[0].count(",") + 1)
-    temp_dt = np.dtype(request.param[0])
-    item_size = temp_dt.itemsize
-    dt_offsets = [field[-1] for field in temp_dt.fields.values()]
-    header_fields = [
-        HeaderFieldDescriptor(
-            name=n,
-            format=ScalarType(np.dtype(dstr).name),
-            offset=offs,
-            endianness=request.param[1],
-        )
-        for n, dstr, offs in zip(
-            names, request.param[0].split(","), dt_offsets, strict=False
-        )
-    ]
-    return BinaryHeaderDescriptor(fields=header_fields, item_size=item_size, offset=0)
+def binary_header_descriptors(
+    request: pytest.FixtureRequest, make_binary_header_descriptor: Callable
+) -> BinaryHeaderDescriptor:
+    """Generates BinaryHeaderDescriptor objects from parameters.
+
+    Args:
+        request (pytest.FixtureRequest): params for creating BinaryHeaderDescriptor.
+        make_binary_header_descriptor (Callable): helper function for creating object.
+
+    Returns:
+        BinaryHeaderDescriptor: Descriptor object of BinaryHeaderDescriptor
+    """
+    return make_binary_header_descriptor(
+        dt_string=request.param[0], names=request.param[1], endianness=request.param[2]
+    )
 
 
 @pytest.fixture(
@@ -70,24 +67,34 @@ def binary_header_descriptors(request):
         for dt_endian in DTYPE_ENDIANNESS
     ]
 )
-def trace_header_descriptors(request):
-    """Fixture that generates a TraceHeaderDescriptor for testing."""
-    names = TestHelpers.generate_unique_names(request.param[0].count(",") + 1)
-    temp_dt = np.dtype(request.param[0])
-    item_size = temp_dt.itemsize
-    dt_offsets = [field[-1] for field in temp_dt.fields.values()]
-    header_fields = [
-        HeaderFieldDescriptor(
-            name=n,
-            format=ScalarType(np.dtype(dstr).name),
-            offset=offs,
-            endianness=request.param[1],
-        )
-        for n, dstr, offs in zip(
-            names, request.param[0].split(","), dt_offsets, strict=False
-        )
-    ]
-    return TraceHeaderDescriptor(fields=header_fields, item_size=item_size, offset=0)
+def trace_header_descriptors(
+    request: pytest.FixtureRequest, make_trace_header_descriptor: Callable
+) -> TraceHeaderDescriptor:
+    """Generates TraceHeaderDescriptor objects from parameters.
+
+    Args:
+        request (pytest.FixtureRequest): params for creating TraceHeaderDescriptor.
+        make_trace_header_descriptor (Callable): helper function for creating object
+
+    Returns:
+        TraceHeaderDescriptor: Descriptor object of TraceHeaderDescriptor
+
+    """
+    return make_trace_header_descriptor(
+        dt_string=request.param[0], endianness=request.param[1]
+    )
+
+
+def generate_unique_names(count: int) -> list[str]:
+    """Helper function to create random unique names as placeholders during testing."""
+    names: set = set()
+    rng = np.random.default_rng()
+    while len(names) < count:
+        name_length = rng.integers(5, 10)  # noqa: S311
+        letters = rng.choice(list(string.ascii_uppercase), size=name_length)  # noqa: S311
+        name = "".join(letters)
+        names.add(name)
+    return list(names)
 
 
 @pytest.fixture(
@@ -96,7 +103,7 @@ def trace_header_descriptors(request):
         for p1, p2 in zip(DTYPE_FORMATS, itertools.cycle(DTYPE_ENDIANNESS))
     ]
 )
-def data_types(request):
+def data_types(request: pytest.FixtureRequest) -> DataTypeDescriptor:
     """Fixture to create all combinations of data types defined in ScalarType."""
     return DataTypeDescriptor(
         format=request.param[0],
@@ -107,22 +114,27 @@ def data_types(request):
 
 @pytest.fixture(
     params=[
-        (p1, p2, DTYPE_DESCRIPTIONS[1])
+        (p1, p2, DTYPE_DESCRIPTIONS[1], 100)
         for p1, p2 in zip(DTYPE_FORMATS, itertools.cycle(DTYPE_ENDIANNESS))
     ]
 )
-def trace_data_descriptors(request):
+def trace_data_descriptors(
+    request: pytest.FixtureRequest, make_trace_data_descriptor: Callable
+) -> TraceDataDescriptor:
     """Fixture that creates TraceDataDescriptors of different data types and endianness."""
-    return TraceDataDescriptor(
+    return make_trace_data_descriptor(
         format=request.param[0],
         endianness=request.param[1],
         description=request.param[2],
-        samples=100,
+        samples=request.param[3],
     )
 
 
 @pytest.fixture()
-def trace_descriptors(trace_header_descriptors, trace_data_descriptors):
+def trace_descriptors(
+    trace_header_descriptors: pytest.FixtureRequest,
+    trace_data_descriptors: pytest.FixtureRequest,
+) -> TraceDescriptor:
     """Fixture that creates TraceDescriptors from TraceHeader and TraceData descriptors."""
     return TraceDescriptor(
         header_descriptor=trace_header_descriptors,
@@ -181,22 +193,8 @@ C40
 
 
 @pytest.fixture(params=[sample_text, sample_real_header_text])
-def text_header_samples(request):
+def text_header_samples(
+    request: pytest.FixtureRequest, format_str_to_text_header: Callable
+) -> str:
     """Fixture that generates fixed size text header test data from strings."""
-    return TestHelpers.format_str_to_text_header(request.param)
-
-
-@pytest.fixture(
-    params=[
-        {"a": 1234, "b": 1, "c": 0, "d": -59029, "e": 45.45254, "f": -4893.001},
-        {"a": 12, "b": 34, "c": 54, "d": 1.00058, "f": -0},
-    ]
-)
-def values_to_np_dtype(request):
-    """Creates a numpy dtype from a dictionary of values
-    that can be used for comparison with SegyFile parsings.
-    """
-    names = list(request.param.keys())
-    values = list(request.param.values())
-    dtype_string = TestHelpers.values_to_dtype_strings(values)
-    return names, values, dtype_string
+    return format_str_to_text_header(request.param)

@@ -23,11 +23,12 @@ def get_spec(spec_type: SegyStandard) -> SegyDescriptor:
     """Get a registered SEG-Y standard's descriptor."""
     spec = registry.get(spec_type)
 
-    if not spec:
+    if spec is None:
         msg = (
             f"Unknown or unsupported SEG-Y spec: {spec_type}. If you "
             f"would like to use {spec_type}, please register it with "
             f"the `SegySpecFactory` using its `register_spec` method."
         )
         raise NotImplementedError(msg)
+
     return spec.model_copy(deep=True)

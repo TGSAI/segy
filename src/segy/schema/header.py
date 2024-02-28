@@ -1,7 +1,6 @@
 """Classes for managing headers and header groups."""
 from __future__ import annotations
 
-from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -10,6 +9,7 @@ from pydantic import Field
 from segy.ebcdic import ASCII_TO_EBCDIC
 from segy.ebcdic import EBCDIC_TO_ASCII
 from segy.schema.base import BaseTypeDescriptor
+from segy.schema.compat import StrEnum
 from segy.schema.data_type import StructuredDataTypeDescriptor
 from segy.schema.data_type import StructuredFieldDescriptor
 

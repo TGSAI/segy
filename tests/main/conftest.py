@@ -1,9 +1,9 @@
 """conftest for main tests."""
-import tempfile
+from collections.abc import Callable
+from pathlib import Path
 
 import numpy as np
 import pytest
-from tests.helpers.helper_tools import TestHelpers
 
 from segy import SegyFile
 from segy import ibm as convert_floats
@@ -14,14 +14,17 @@ text_header_default_content = "This is a sample text header. "
 
 
 def create_mock_segy_rev0(
-    tmp_fname: str, num_samples: int, num_traces: int
+    tmp_file: Path,
+    num_samples: int,
+    num_traces: int,
+    format_str_to_text_header: Callable,
 ) -> SegyFile:
     """Create a temporary file that mocks a segy Rev0 file structure."""
     rev0_spec = registry.get_spec(SegyStandard.REV0)
     rev0_spec.trace.data_descriptor.samples = num_samples
 
     text_header_content = text_header_default_content
-    sample_text_header = TestHelpers.format_str_to_text_header(text_header_content)
+    sample_text_header = format_str_to_text_header(text_header_content)
     binary_header_vals = np.zeros((), dtype=rev0_spec.binary_file_header.dtype)
     binary_header_vals["samples_per_trace"] = num_samples
 
@@ -39,36 +42,42 @@ def create_mock_segy_rev0(
         buffer_out += trace_data_vals.copy(order="K").tobytes()
         trace_header_vals["trace_seq_line"] += 1
 
-    with open(tmp_fname, "wb") as fh:
+    with tmp_file.open(mode="wb") as fh:
         fh.write(buffer_out)
 
-    return SegyFile(tmp_fname, spec=rev0_spec)
+    return SegyFile(str(tmp_file), spec=rev0_spec)
 
 
-@pytest.fixture()
-def mock_segy_rev0(request) -> SegyFile:
-    """Returns a temporary file that is used for testing
-    a SegyFile object, with a Rev0 specification.
-    """
+@pytest.fixture(scope="session")
+def mock_segy_rev0(
+    request: list[int], tmp_path: Path, format_str_to_text_header: Callable
+) -> SegyFile:
+    """Returns a temp file that for rev0 SegyFile object."""
     req_params = getattr(request, "param", [10, 10])
     num_samples, num_traces = req_params[0], req_params[1]
-    with tempfile.NamedTemporaryFile() as fh:
-        yield create_mock_segy_rev0(fh.name, num_samples, num_traces)
+
+    temp_rev0 = tmp_path / "rev0_test.segy"
+
+    return create_mock_segy_rev0(
+        temp_rev0, num_samples, num_traces, format_str_to_text_header
+    )
 
 
 def create_mock_segy_rev1(
-    tmp_fname: str, num_samples: int, num_traces: int, num_extended_headers: int
+    tmp_file: Path,
+    num_samples: int,
+    num_traces: int,
+    num_extended_headers: int,
+    format_str_to_text_header: Callable,
 ) -> SegyFile:
     """Create a temporary file that mocks a segy Rev1 file structure."""
     rev1_spec = registry.get_spec(SegyStandard.REV1)
     rev1_spec.trace.data_descriptor.samples = num_samples
 
     text_header_content = text_header_default_content
-    sample_text_header = TestHelpers.format_str_to_text_header(text_header_content)
+    sample_text_header = format_str_to_text_header(text_header_content)
     extended_text_headers = [
-        TestHelpers.format_str_to_text_header(
-            f"This is extended text header number {i}"
-        )
+        format_str_to_text_header(f"This is extended text header number {i}")
         for i in range(1, num_extended_headers + 1)
     ]
 
@@ -94,21 +103,30 @@ def create_mock_segy_rev1(
         buffer_out += trace_data_vals.copy(order="K").tobytes()
         trace_header_vals["trace_seq_line"] += 1
 
-    with open(tmp_fname, "wb") as fh:
+    with tmp_file.open(mode="wb") as fh:
         fh.write(buffer_out)
-    return SegyFile(tmp_fname, spec=rev1_spec)
+
+    return SegyFile(str(tmp_file), spec=rev1_spec)
 
 
-@pytest.fixture()
-def mock_segy_rev1(request) -> SegyFile:
-    """Returns a SegyFile with Rev1 specification object that wraps a temporary file."""
+@pytest.fixture(scope="session")
+def mock_segy_rev1(
+    request: list[int], tmp_path: Path, format_str_to_text_header: Callable
+) -> SegyFile:
+    """Returns a temp file that for rev1 SegyFile object."""
     req_params = getattr(request, "param", [10, 10, 2])
     num_samples, num_traces, num_extended_headers = (
         req_params[0],
         req_params[1],
         req_params[2],
     )
-    with tempfile.NamedTemporaryFile() as fh:
-        yield create_mock_segy_rev1(
-            fh.name, num_samples, num_traces, num_extended_headers
-        )
+
+    temp_rev1 = tmp_path / "rev1_test.segy"
+
+    return create_mock_segy_rev1(
+        temp_rev1,
+        num_samples,
+        num_traces,
+        num_extended_headers,
+        format_str_to_text_header,
+    )
