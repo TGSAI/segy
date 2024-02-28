@@ -50,7 +50,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
-junit/
 
 # Translations
 *.mo
@@ -71,6 +70,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/jupyter_execute/
 
 # PyBuilder
 .pybuilder/
@@ -113,6 +113,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+venv*/
 
 # Spyder project settings
 .spyderproject
@@ -122,7 +123,7 @@ venv.bak/
 .ropeproject
 
 # mkdocs documentation
-site/
+/site
 
 # mypy
 .mypy_cache/
@@ -144,3 +145,7 @@ cython_debug/
 # IDE settings
 .vscode/
 .idea/
+
+# tests
+pytest-of-*
+tmp/
