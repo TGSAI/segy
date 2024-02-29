@@ -30,6 +30,8 @@
 
 This is an efficient and comprehensive SEG-Y parsing library.
 
+See the [documentation][read the docs] for more information.
+
 ## Installation
 
 Clone the repo and install it using pip:
@@ -51,9 +53,6 @@ full_trace = sgy.trace[1000]
 just_data_header = sgy.header[1000]
 just_trace_data = sgy.data[1000]
 ```
-
-See the
-[demo](https://dev.azure.com/TGSCloud/Datascience/_git/segy?path=/examples/demo.ipynb&version=GBmain&_a=preview).
 
 ## Features
 
