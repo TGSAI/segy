@@ -112,6 +112,10 @@ class SegyFile:
             )
             revision = np.frombuffer(buffer, offset=300, dtype=">i2", count=1).item()
 
+            # Per SEG-Y standard, there is a Q-point between the bytes. Dividing
+            # by 2^8 to get the floating-point value of the revision.
+            revision = revision / 256.0
+
         else:
             revision = self.settings.REVISION
 
