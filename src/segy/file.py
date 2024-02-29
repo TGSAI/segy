@@ -39,7 +39,6 @@ class SegyFile:
         spec: SegyDescriptor | None = None,
         settings: SegyFileSettings | None = None,
     ):
-        """Parse some metadata and get file ready for manipulating."""
         if settings is None:
             self.settings = SegyFileSettings()
 
