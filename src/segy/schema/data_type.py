@@ -1,6 +1,8 @@
 """Data models representing data types."""
 
 
+from __future__ import annotations
+
 import numpy as np
 from pydantic import Field
 
@@ -40,9 +42,9 @@ class ScalarType(StrEnum):
     def char(self) -> str:
         """Returns the numpy character code for a given data type string."""
         if self.value == "ibm32":
-            return np.sctype2char("uint32")
+            return np.sctype2char("uint32")  # noqa: NPY201
 
-        return np.sctype2char(str(self.value))
+        return np.sctype2char(str(self.value))  # noqa: NPY201
 
 
 class DataTypeDescriptor(BaseTypeDescriptor):
