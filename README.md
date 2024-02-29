@@ -22,7 +22,7 @@
 [tests]: https://github.com/TGSAI/segy/actions?workflow=Tests
 [codecov]: https://app.codecov.io/gh/TGSAI/segy
 [pre-commit]: https://github.com/pre-commit/pre-commit
-[ruff]: (https://github.com/astral-sh/ruff)
+[ruff]: https://github.com/astral-sh/ruff
 [install_pip]: https://segy.readthedocs.io/en/latest/installation.html#using-pip-and-virtualenv
 [install_conda]: https://segy.readthedocs.io/en/latest/installation.html#using-conda
 
