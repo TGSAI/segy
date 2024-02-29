@@ -19,7 +19,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinxcontrib.autodoc_pydantic",
     "sphinx.ext.autosectionlabel",
-    "sphinx_click",
+    "sphinxcontrib.typer",
     "sphinx_copybutton",
     "myst_nb",
     "sphinx_design",

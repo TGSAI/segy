@@ -198,7 +198,7 @@ def docs_build(session: Session) -> None:
     session.install(
         "sphinx",
         "sphinx-design",
-        "sphinx-click",
+        "sphinxcontrib-typer",
         "sphinx-copybutton",
         "furo",
         "myst-nb",
@@ -222,7 +222,7 @@ def docs(session: Session) -> None:
         "sphinx",
         "sphinx-design",
         "sphinx-autobuild",
-        "sphinx-click",
+        "sphinxcontrib-typer",
         "sphinx-copybutton",
         "furo",
         "myst-nb",
