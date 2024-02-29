@@ -2,8 +2,12 @@
 
 This is very janky, we need to find a better way to do this.
 """
+
+
+from __future__ import annotations
+
 import string
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -15,6 +19,9 @@ from segy.schema import ScalarType
 from segy.schema import TraceDataDescriptor
 from segy.schema import TraceDescriptor
 from segy.schema import TraceHeaderDescriptor
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 @pytest.fixture(scope="session")
@@ -43,10 +50,10 @@ def make_header_field_descriptor() -> Callable:
         """Convenience function for creating parameters needed for descriptors.
 
         Args:
-            dt_string (str, optional): numpy dtype string. Defaults to "i2".
-            names (list[str] | None, optional): list of field names. Defaults to None.
-            offsets (list[int] | None, optional): list of field offsets. Defaults to None.
-            endianness (str, optional): flag for field endianness. Defaults to "big".
+            dt_string: numpy dtype string. Defaults to "i2".
+            names: list of field names. Defaults to None.
+            offsets: list of field offsets. Defaults to None.
+            endianness: flag for field endianness. Defaults to "big".
 
         Returns:
             dict: parameters for creating other descriptors
@@ -70,9 +77,7 @@ def make_header_field_descriptor() -> Callable:
                 offset=offs,
                 endianness=endianness,
             )
-            for n, dstr, offs in zip(
-                names, dt_string.split(","), dt_offsets, strict=False
-            )
+            for n, dstr, offs in zip(names, dt_string.split(","), dt_offsets)
         ]
         return {"fields": header_fields, "item_size": item_size, "offset": 0}
 
@@ -92,10 +97,10 @@ def make_trace_header_descriptor(make_header_field_descriptor: Callable) -> Call
         """Convenience function for creating TraceHeaderDescriptors.
 
         Args:
-            dt_string (str, optional): numpy dtype string. Defaults to "i2".
-            names (list[str] | None, optional): list of field names. Defaults to None.
-            offsets (list[int] | None, optional): list of field offsets. Defaults to None.
-            endianness (str, optional): flag for field endianness. Defaults to "big".
+            dt_string: numpy dtype string. Defaults to "i2".
+            names: list of field names. Defaults to None.
+            offsets: list of field offsets. Defaults to None.
+            endianness: flag for field endianness. Defaults to "big".
 
         Returns:
             TraceHeaderDescriptor: Descriptor object for TraceHeaderDescriptors
@@ -125,10 +130,10 @@ def make_trace_data_descriptor() -> Callable:
         """Convenience function for creating TraceDataDescriptors.
 
         Args:
-            format (ScalarType, optional): ScalarType of data. Defaults to ScalarType.IBM32.
-            endianness (Endianness, optional): flag for field byteorder. Defaults to Endianness.BIG.
-            description (str, optional): descriptive text attached to field. Defaults to None.
-            samples (int, optional): integer defining the shape of the dtype. Defaults to 10.
+            format: ScalarType of data. Defaults to ScalarType.IBM32.
+            endianness: flag for field byteorder. Defaults to Endianness.BIG.
+            description: descriptive text attached to field. Defaults to None.
+            samples: integer defining the shape of the dtype. Defaults to 10.
 
         Returns:
             TraceDataDescriptor: Descriptor object for TraceDataDescriptor
@@ -153,8 +158,8 @@ def make_trace_descriptor(
         """Convenience function for creating TraceDescriptor object.
 
         Args:
-            head_params (dict): dictionary containing params for TraceHeaderDescriptor
-            data_params (dict): dictionary containing params for TraceDataDescriptor
+            head_params: dictionary containing params for TraceHeaderDescriptor
+            data_params: dictionary containing params for TraceDataDescriptor
 
 
         Returns:
@@ -181,10 +186,10 @@ def make_binary_header_descriptor(make_header_field_descriptor: Callable) -> Cal
         """Helper function for creating BinaryHeaderDescriptor objects.
 
         Args:
-            dt_string (str, optional): numpy dtype string. Defaults to "i2".
-            names (list[str] | None, optional): list of field names. Defaults to None.
-            offsets (list[int] | None, optional): list of field offsets. Defaults to None.
-            endianness (str, optional): flag for field endianness. Defaults to "big".
+            dt_string: numpy dtype string. Defaults to "i2".
+            names: list of field names. Defaults to None.
+            offsets: list of field offsets. Defaults to None.
+            endianness: flag for field endianness. Defaults to "big".
 
         Returns:
             BinaryHeaderDescriptor: Descriptor object for BinaryHeaderDescriptor
