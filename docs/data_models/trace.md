@@ -6,7 +6,7 @@
 
 ```
 
-# SEG-Y Traces
+# Traces
 
 ```{article-info}
 :author: Altay Sansal

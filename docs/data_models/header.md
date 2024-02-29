@@ -6,7 +6,7 @@
 
 ```
 
-# SEG-Y File Headers
+# File Headers
 
 ```{article-info}
 :author: Altay Sansal
