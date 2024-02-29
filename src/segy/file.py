@@ -38,11 +38,15 @@ class SegyFile:
         url: str,
         spec: SegyDescriptor | None = None,
         settings: SegyFileSettings | None = None,
+        storage_options: dict[str, Any] = None,
     ):
         if settings is None:
             self.settings = SegyFileSettings()
 
-        self.fs, self.url = url_to_fs(url)
+        if storage_options is None:
+            storage_options = {}
+
+        self.fs, self.url = url_to_fs(url, **storage_options)
 
         self.spec = self._infer_standard() if spec is None else spec
 
