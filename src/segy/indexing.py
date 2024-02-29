@@ -10,6 +10,7 @@ import numpy as np
 from fsspec.utils import merge_offset_ranges
 from pandas import DataFrame
 
+from segy.config import SegyFileSettings
 from segy.ibm import ibm2ieee
 from segy.schema import Endianness
 from segy.schema import ScalarType
@@ -21,7 +22,6 @@ if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
     from numpy.typing import NDArray
 
-    from segy.config import SegyFileSettings
     from segy.schema import TraceDescriptor
     from segy.schema.base import BaseTypeDescriptor
 
@@ -148,7 +148,7 @@ class AbstractIndexer(ABC):
         self.spec = spec
         self.max_value = max_value
         self.kind = kind
-        self.settings = settings
+        self.settings = SegyFileSettings() if settings is None else settings
 
     @abstractmethod
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
@@ -160,6 +160,8 @@ class AbstractIndexer(ABC):
 
     def __getitem__(self, item: int | list[int] | slice) -> Any:  # noqa: ANN401
         """Operator for integers, lists, and slices with bounds checking."""
+        indices = None
+
         if isinstance(item, int):
             indices = [item]
             bounds_check(indices, self.max_value, self.kind)
@@ -179,9 +181,9 @@ class AbstractIndexer(ABC):
             bounds_check([start, stop - 1], self.max_value, self.kind)
             indices = list(range(*item.indices(self.max_value)))
 
-        else:
-            msg = f"Invalid index type {type(item)}"
-            raise TypeError(msg)
+        if len(indices) == 0:
+            msg = "Couldn't parse request. Please ensure it is a valid index."
+            raise IndexError(msg)
 
         data = self.fetch(indices)
         return self.post_process(data)
@@ -223,6 +225,10 @@ class TraceIndexer(AbstractIndexer):
 
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
         """Convert trace indices to byte ranges."""
+        if self.spec.offset is None:
+            msg = "Descriptor offset must be specified."
+            raise ValueError(msg)
+
         start_offset = self.spec.offset
         trace_itemsize = self.spec.dtype.itemsize
 
@@ -268,6 +274,10 @@ class HeaderIndexer(AbstractIndexer):
         trace_itemsize = self.spec.dtype.itemsize
         header_itemsize = self.spec.header_descriptor.itemsize
 
+        if self.spec.offset is None:
+            msg = "Descriptor offset must be specified."
+            raise ValueError(msg)
+
         start_offset = self.spec.offset
 
         starts = [start_offset + i * trace_itemsize for i in indices]
@@ -308,6 +318,10 @@ class DataIndexer(AbstractIndexer):
         trace_itemsize = self.spec.dtype.itemsize
         data_itemsize = self.spec.data_descriptor.dtype.itemsize
         header_itemsize = self.spec.header_descriptor.dtype.itemsize
+
+        if self.spec.offset is None:
+            msg = "Descriptor offset must be specified."
+            raise ValueError(msg)
 
         start_offset = self.spec.offset + header_itemsize
 
