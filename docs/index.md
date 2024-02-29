@@ -50,5 +50,5 @@ Code of Conduct <codeofconduct>
 :caption: Additional Resources
 
 License <license>
-Changelog <https://github.com/TGSAI/mdio-python/releases>
+Changelog <https://github.com/TGSAI/segy/releases>
 ```
