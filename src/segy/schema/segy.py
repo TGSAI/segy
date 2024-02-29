@@ -19,9 +19,9 @@ if TYPE_CHECKING:
 class SegyStandard(Enum):
     """Allowed values for SegyStandard in SegyDescriptor."""
 
-    REV0 = 0
-    REV1 = 1
-    REV2 = 2
+    REV0 = 0.0
+    REV1 = 1.0
+    REV2 = 2.0
     REV21 = 2.1
     CUSTOM = "custom"
 
