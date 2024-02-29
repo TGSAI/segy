@@ -75,3 +75,23 @@ class SegyDescriptor(CamelCaseModel):
             new_descr.trace.data_descriptor = trace_data_spec
 
         return new_descr
+
+
+class SegyInfo(CamelCaseModel):
+    """Concise and useful information about SEG-Y files."""
+
+    uri: str = Field(..., description="URI of the SEG-Y file.")
+
+    segy_standard: SegyStandard = Field(
+        ..., description="SEG-Y Revision / Standard. Can also be custom."
+    )
+
+    num_traces: int = Field(..., description="Number of traces.")
+
+    samples_per_trace: int = Field(
+        ..., description="Trace length in number of samples."
+    )
+
+    sample_interval: int = Field(..., description="Sampling rate from binary header.")
+
+    file_size: float = Field(..., description="File size in GB.")
