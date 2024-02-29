@@ -19,7 +19,7 @@ ListOfIntegersOption: TypeAlias = Annotated[
 ]
 
 ListOfFieldNamesOption: TypeAlias = Annotated[
-    Optional[list[str]], typer.Option(default_factory=list, help="List of field names.")
+    list[str], typer.Option(default_factory=list, help="List of field names.")
 ]
 
 JsonFileOutOption: TypeAlias = Annotated[
