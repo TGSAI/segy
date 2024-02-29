@@ -45,11 +45,11 @@ class SegyDescriptor(CamelCaseModel):
 
     def customize(  # noqa: PLR0913
         self: SegyDescriptor,
-        text_header_spec: TextHeaderDescriptor = None,
-        binary_header_fields: list[HeaderFieldDescriptor] = None,
-        extended_text_spec: TextHeaderDescriptor = None,
-        trace_header_fields: list[HeaderFieldDescriptor] = None,
-        trace_data_spec: TraceDataDescriptor = None,
+        text_header_spec: TextHeaderDescriptor | None = None,
+        binary_header_fields: list[HeaderFieldDescriptor] | None = None,
+        extended_text_spec: TextHeaderDescriptor | None = None,
+        trace_header_fields: list[HeaderFieldDescriptor] | None = None,
+        trace_data_spec: TraceDataDescriptor | None = None,
     ) -> SegyDescriptor:
         """Customize an existing SEG-Y descriptor."""
         new_descr = self.model_copy(deep=True)
