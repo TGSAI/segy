@@ -1,5 +1,9 @@
 """Tests for components that define fields and data types of a SEGY Schema."""
 
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from typing import Any
 
 import numpy as np
@@ -11,7 +15,9 @@ from segy.schema.data_type import Endianness
 from segy.schema.data_type import ScalarType
 from segy.schema.data_type import StructuredDataTypeDescriptor
 from segy.schema.data_type import StructuredFieldDescriptor
-from segy.schema.trace import TraceDataDescriptor
+
+if TYPE_CHECKING:
+    from segy.schema.trace import TraceDataDescriptor
 
 
 @pytest.mark.parametrize(

@@ -14,12 +14,7 @@ from segy.standards.registry import register_spec
     [(SegyStandard.REV0, rev0_segy), (SegyStandard.REV1, rev1_segy)],
 )
 def test_get_spec(standard_enum: SegyStandard, base_spec: SegyDescriptor) -> None:
-    """Test retrieving SegyStandard from registry.
-
-    Args:
-        standard_enum (SegyStandard): the SegyStandard to get
-        base_spec (SegyDescriptor): the SegyDescriptor for comparison
-    """
+    """Test retrieving SegyStandard from registry."""
     spec_copy = get_spec(SegyStandard(standard_enum))
     assert spec_copy == base_spec
     assert id(spec_copy) != id(base_spec)

@@ -1,8 +1,9 @@
 """Tests for functions in indexing."""
 
 
-from collections.abc import Callable
-from pathlib import Path
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from typing import Any
 
 import fsspec
@@ -13,6 +14,10 @@ from segy.ibm import ieee2ibm
 from segy.indexing import bounds_check
 from segy.indexing import merge_cat_file
 from segy.indexing import trace_ibm2ieee_inplace
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
 
 err_msg_format = "indices {0} are out of bounds."
 

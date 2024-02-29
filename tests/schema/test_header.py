@@ -1,14 +1,20 @@
 """Tests for the Text Headers, Binary Headers, and Trace Headers for different SEGY revisions."""
 
+
+from __future__ import annotations
+
 import operator
+from typing import TYPE_CHECKING
 from typing import Any
 
 import numpy as np
 import pytest
 
-from segy.schema import TraceHeaderDescriptor
 from segy.schema.header import BinaryHeaderDescriptor
 from segy.schema.header import TextHeaderDescriptor
+
+if TYPE_CHECKING:
+    from segy.schema import TraceHeaderDescriptor
 
 
 @pytest.mark.parametrize(
@@ -104,7 +110,7 @@ def get_dt_info(
             "shape",
             "names",
         ]
-    dt_info = dict(zip(atrnames, operator.attrgetter(*atrnames)(dt), strict=False))
+    dt_info = dict(zip(atrnames, operator.attrgetter(*atrnames)(dt)))
     dt_info["offsets"] = [f[-1] for f in dt_info["fields"].values()]
     dt_info["combo_str"] = ",".join([f[1] for f in dt_info["descr"]])
     return dt_info
