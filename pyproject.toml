@@ -39,6 +39,8 @@ matplotlib = "^3.8.3"
 [tool.ruff]
 target-version = "py39"
 src = ["src"]
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle
     "F",   # pyflakes
@@ -68,25 +70,41 @@ select = [
     "FLY", # flynt
     "NPY",  # numpy
 ]
+
 ignore = [
     "ANN101",  # Missing type annotation for `self`
+    "D107",  # Missing docstring in __init__ ; should be in class docstring
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
 
-[tool.ruff.flake8-annotations]
+[tool.ruff.lint.flake8-annotations]
 mypy-init-return = true
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 force-single-line = true
 
 [tool.ruff.lint.pycodestyle]
 max-line-length = 100
 ignore-overlong-task-comments = true
+
+[tool.pydoclint]
+style = "google"
+arg-type-hints-in-docstring = false
+check-return-types = false
+check-yield-types = false
+
+[tool.coverage.paths]
+source = ["src", "*/site-packages"]
+tests = ["tests", "*/tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["segy", "tests"]
 
 [tool.coverage.report]
 exclude_also = [

@@ -143,7 +143,6 @@ class AbstractIndexer(ABC):
         kind: str,
         settings: SegyFileSettings | None = None,
     ):
-        """Initialize indexer for a FileSystem and a file with given spec."""
         self.fs = fs
         self.url = url
         self.spec = spec
@@ -281,6 +280,7 @@ class HeaderIndexer(AbstractIndexer):
         data = np.frombuffer(buffer, dtype=self.spec.header_descriptor.dtype)
 
         # TODO(Altay): Handle float/ibm32 etc headers.
+        # https://github.com/TGSAI/segy/issues/5
         if self.settings.ENDIAN == Endianness.BIG:
             data = data.byteswap(inplace=True).newbyteorder()
 
