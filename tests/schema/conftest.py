@@ -10,7 +10,6 @@ import pytest
 from segy.schema import BinaryHeaderDescriptor
 from segy.schema import ScalarType
 from segy.schema import TraceDataDescriptor
-from segy.schema import TraceDescriptor
 from segy.schema import TraceHeaderDescriptor
 from segy.schema.data_type import DataTypeDescriptor
 
@@ -49,8 +48,8 @@ def binary_header_descriptors(
     """Generates BinaryHeaderDescriptor objects from parameters.
 
     Args:
-        request (pytest.FixtureRequest): params for creating BinaryHeaderDescriptor.
-        make_binary_header_descriptor (Callable): helper function for creating object.
+        request: params for creating BinaryHeaderDescriptor.
+        make_binary_header_descriptor: helper function for creating object.
 
     Returns:
         BinaryHeaderDescriptor: Descriptor object of BinaryHeaderDescriptor
@@ -73,8 +72,8 @@ def trace_header_descriptors(
     """Generates TraceHeaderDescriptor objects from parameters.
 
     Args:
-        request (pytest.FixtureRequest): params for creating TraceHeaderDescriptor.
-        make_trace_header_descriptor (Callable): helper function for creating object
+        request: params for creating TraceHeaderDescriptor.
+        make_trace_header_descriptor: helper function for creating object
 
     Returns:
         TraceHeaderDescriptor: Descriptor object of TraceHeaderDescriptor
