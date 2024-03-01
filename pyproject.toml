@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "segy"
-version = "0.0.4"
-description = "Cloud-native, scalable, and user-friendly multi dimensional energy data!"
+version = "0.0.5"
+description = "The Ultimate Python SEG-Y I/O with Cloud Support and Schemas"
 authors = ["TGS <sys-opensource@tgs.com>"]
 maintainers = [
     "Altay Sansal <altay.sansal@tgs.com>",
