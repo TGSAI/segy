@@ -74,5 +74,6 @@ jobs:
         with:
           publish: ${{ steps.check-version.outputs.tag != '' }}
           tag: ${{ steps.check-version.outputs.tag }}
+          config-name: release-drafter.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
