@@ -32,6 +32,8 @@ This is an efficient and comprehensive SEG-Y parsing library.
 
 See the [documentation][read the docs] for more information.
 
+This is not an official TGS product.
+
 ## Installation
 
 Clone the repo and install it using pip:
