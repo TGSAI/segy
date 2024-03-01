@@ -142,7 +142,7 @@ plugins = ["pydantic.mypy", "numpy.typing.mypy_plugin"]
 disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
-module = ["fsspec.*"]
+module = ["fsspec.*", "numba.*"]
 ignore_missing_imports = true
 
 [tool.pydantic-mypy]
