@@ -12,8 +12,7 @@ from segy.schema.data_type import Endianness
 from segy.schema.data_type import StructuredDataTypeDescriptor
 
 if TYPE_CHECKING:
-    from typing import TypeAlias
-
+    from segy.compat import TypeAlias
     from segy.schema.data_type import ScalarType
 
 

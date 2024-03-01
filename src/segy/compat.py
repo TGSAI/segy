@@ -11,11 +11,16 @@ else:
     class StrEnum(str, Enum):
         """Fallback StrEnum implementation for Python <= 3.10."""
 
-        def __new__(cls, value: str) -> str:
+        def __new__(cls, value: str) -> str:  # type: ignore
             """Ensures that enum members are instances of str."""
             member = str.__new__(cls, value)
             member._value_ = value
             return member
 
 
-__all__ = ["StrEnum"]
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias
+else:
+    TypeAlias = type
+
+__all__ = ["StrEnum", "TypeAlias"]

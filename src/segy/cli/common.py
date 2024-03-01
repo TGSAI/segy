@@ -4,11 +4,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import Annotated
 from typing import Optional
-from typing import TypeAlias
 
 import typer
+
+if TYPE_CHECKING:
+    from segy.compat import TypeAlias
 
 UriArgument: TypeAlias = Annotated[
     str, typer.Argument(help="Valid URI for loading the SEG-Y file.")

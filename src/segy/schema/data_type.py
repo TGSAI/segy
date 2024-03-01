@@ -8,8 +8,8 @@ from typing import Any
 import numpy as np
 from pydantic import Field
 
+from segy.compat import StrEnum
 from segy.schema.base import BaseTypeDescriptor
-from segy.schema.compat import StrEnum
 
 
 class Endianness(StrEnum):
