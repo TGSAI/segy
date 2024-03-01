@@ -44,7 +44,8 @@ TRACE_HEADER_TEST_DTYPE_STRINGS = [
     ]
 )
 def binary_header_descriptors(
-    request: pytest.FixtureRequest, make_binary_header_descriptor: Callable
+    request: pytest.FixtureRequest,
+    make_binary_header_descriptor: Callable[..., BinaryHeaderDescriptor],
 ) -> BinaryHeaderDescriptor:
     """Generates BinaryHeaderDescriptor objects from parameters.
 
@@ -68,7 +69,8 @@ def binary_header_descriptors(
     ]
 )
 def trace_header_descriptors(
-    request: pytest.FixtureRequest, make_trace_header_descriptor: Callable
+    request: pytest.FixtureRequest,
+    make_trace_header_descriptor: Callable[..., TraceHeaderDescriptor],
 ) -> TraceHeaderDescriptor:
     """Generates TraceHeaderDescriptor objects from parameters.
 
@@ -119,7 +121,8 @@ def data_types(request: pytest.FixtureRequest) -> DataTypeDescriptor:
     ]
 )
 def trace_data_descriptors(
-    request: pytest.FixtureRequest, make_trace_data_descriptor: Callable
+    request: pytest.FixtureRequest,
+    make_trace_data_descriptor: Callable[..., TraceDataDescriptor],
 ) -> TraceDataDescriptor:
     """Fixture that creates TraceDataDescriptors of different data types and endianness."""
     return make_trace_data_descriptor(
@@ -182,7 +185,7 @@ C40
 
 @pytest.fixture(params=[sample_text, sample_real_header_text])
 def text_header_samples(
-    request: pytest.FixtureRequest, format_str_to_text_header: Callable
+    request: pytest.FixtureRequest, format_str_to_text_header: Callable[[str], str]
 ) -> str:
     """Fixture that generates fixed size text header test data from strings."""
     return format_str_to_text_header(request.param)

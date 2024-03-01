@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import string
 from typing import TYPE_CHECKING
+from typing import Any
 
 import numpy as np
 import pytest
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(scope="session")
-def format_str_to_text_header() -> Callable:
+def format_str_to_text_header() -> Callable[[str], str]:
     """Fixture wrapper around helper function to format text headers."""
 
     def _format_str_to_text_header(text: str) -> str:
@@ -38,7 +39,12 @@ def format_str_to_text_header() -> Callable:
 
 
 @pytest.fixture(scope="module")
-def make_header_field_descriptor() -> Callable:
+def make_header_field_descriptor() -> (
+    Callable[
+        [str, list[str] | None, list[int] | None, Endianness],
+        dict[str, list[HeaderFieldDescriptor] | int],
+    ]
+):
     """Fixture wrapper around helper function to generate params for descriptors."""
 
     def _make_header_field_descriptor(
@@ -65,10 +71,12 @@ def make_header_field_descriptor() -> Callable:
         )
         temp_dt = np.dtype(dt_string)
         item_size = temp_dt.itemsize
+        # becuase mypy doesn't like MappingProxy
+        temp_dt_field_values: list[tuple[Any, ...]] = list(temp_dt.fields.values())  # type: ignore[union-attr]
         dt_offsets = (
             offsets
             if offsets is not None
-            else [field[-1] for field in temp_dt.fields.values()]
+            else [field[-1] for field in temp_dt_field_values]
         )
         header_fields = [
             HeaderFieldDescriptor(
@@ -85,14 +93,19 @@ def make_header_field_descriptor() -> Callable:
 
 
 @pytest.fixture(scope="module")
-def make_trace_header_descriptor(make_header_field_descriptor: Callable) -> Callable:
+def make_trace_header_descriptor(
+    make_header_field_descriptor: Callable[
+        [str, list[str] | None, list[int] | None, str | Endianness],
+        dict[str, list[HeaderFieldDescriptor] | int],
+    ],
+) -> Callable[..., TraceHeaderDescriptor]:
     """Fixture wrapper for helper function to create TraceHeaderDescriptors."""
 
     def _make_trace_header_descriptor(
         dt_string: str = "i2",
         names: list[str] | None = None,
         offsets: list[int] | None = None,
-        endianness: str = Endianness.BIG,
+        endianness: str | Endianness = Endianness.BIG,
     ) -> TraceHeaderDescriptor:
         """Convenience function for creating TraceHeaderDescriptors.
 
@@ -105,9 +118,10 @@ def make_trace_header_descriptor(make_header_field_descriptor: Callable) -> Call
         Returns:
             TraceHeaderDescriptor: Descriptor object for TraceHeaderDescriptors
         """
-        head_field_desc = make_header_field_descriptor(
-            dt_string=dt_string, names=names, offsets=offsets, endianness=endianness
+        head_field_desc: dict[str, Any] = make_header_field_descriptor(
+            dt_string, names, offsets, endianness
         )
+
         return TraceHeaderDescriptor(
             fields=head_field_desc["fields"],
             item_size=head_field_desc["item_size"],
@@ -118,7 +132,7 @@ def make_trace_header_descriptor(make_header_field_descriptor: Callable) -> Call
 
 
 @pytest.fixture(scope="module")
-def make_trace_data_descriptor() -> Callable:
+def make_trace_data_descriptor() -> Callable[..., TraceDataDescriptor]:
     """Fixture wrapper for helper function to create TraceDataDescriptor."""
 
     def _make_trace_data_descriptor(
@@ -150,8 +164,9 @@ def make_trace_data_descriptor() -> Callable:
 
 @pytest.fixture(scope="module")
 def make_trace_descriptor(
-    make_trace_header_descriptor: Callable, make_trace_data_descriptor: Callable
-) -> Callable:
+    make_trace_header_descriptor: Callable[..., TraceHeaderDescriptor],
+    make_trace_data_descriptor: Callable[..., TraceDataDescriptor],
+) -> Callable[..., TraceDescriptor]:
     """Fixture wrapper for helper function to create TraceDescriptors."""
 
     def _make_trace_descriptor(
@@ -177,7 +192,12 @@ def make_trace_descriptor(
 
 
 @pytest.fixture(scope="module")
-def make_binary_header_descriptor(make_header_field_descriptor: Callable) -> Callable:
+def make_binary_header_descriptor(
+    make_header_field_descriptor: Callable[
+        [str, list[str] | None, list[int] | None, Endianness | str],
+        dict[str, list[HeaderFieldDescriptor] | int],
+    ],
+) -> Callable[..., BinaryHeaderDescriptor]:
     """Fixture wrapper around helper function for creating BinaryHeaderDescriptor."""
 
     def _make_binary_header_descriptor(
@@ -197,8 +217,8 @@ def make_binary_header_descriptor(make_header_field_descriptor: Callable) -> Cal
         Returns:
             BinaryHeaderDescriptor: Descriptor object for BinaryHeaderDescriptor
         """
-        head_field_desc = make_header_field_descriptor(
-            dt_string=dt_string, names=names, offsets=offsets, endianness=endianness
+        head_field_desc: dict[str, Any] = make_header_field_descriptor(
+            dt_string, names, offsets, endianness
         )
         return BinaryHeaderDescriptor(
             fields=head_field_desc["fields"],
@@ -211,7 +231,7 @@ def make_binary_header_descriptor(make_header_field_descriptor: Callable) -> Cal
 
 def generate_unique_names(count: int) -> list[str]:
     """Helper function to create random unique names as placeholders during testing."""
-    names: set = set()
+    names: set[str] = set()
     rng = np.random.default_rng()
     while len(names) < count:
         name_length = rng.integers(5, 10)  # noqa: S311

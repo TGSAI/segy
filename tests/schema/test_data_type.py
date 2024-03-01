@@ -128,7 +128,7 @@ def test_structured_data_type_descriptor(
 ) -> None:
     """This tests for creatin a StructuredDataTypeDescriptor for different component data types."""
     new_sdtd = StructuredDataTypeDescriptor(
-        fields=fields, item_size=item_size, offset=offset
+        fields=list(fields), item_size=item_size, offset=offset
     )
     assert new_sdtd.dtype.names == tuple([f.name for f in fields])
     assert new_sdtd.item_size == new_sdtd.dtype.itemsize

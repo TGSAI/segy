@@ -17,7 +17,7 @@ def create_mock_segy_rev0(
     tmp_file: Path,
     num_samples: int,
     num_traces: int,
-    format_str_to_text_header: Callable,
+    format_str_to_text_header: Callable[[str], str],
 ) -> SegyFile:
     """Create a temporary file that mocks a segy Rev0 file structure."""
     rev0_spec = registry.get_spec(SegyStandard.REV0)
@@ -50,7 +50,7 @@ def create_mock_segy_rev0(
 
 @pytest.fixture(scope="session")
 def mock_segy_rev0(
-    request: list[int], tmp_path: Path, format_str_to_text_header: Callable
+    request: list[int], tmp_path: Path, format_str_to_text_header: Callable[[str], str]
 ) -> SegyFile:
     """Returns a temp file that for rev0 SegyFile object."""
     req_params = getattr(request, "param", [10, 10])
@@ -68,7 +68,7 @@ def create_mock_segy_rev1(
     num_samples: int,
     num_traces: int,
     num_extended_headers: int,
-    format_str_to_text_header: Callable,
+    format_str_to_text_header: Callable[[str], str],
 ) -> SegyFile:
     """Create a temporary file that mocks a segy Rev1 file structure."""
     rev1_spec = registry.get_spec(SegyStandard.REV1)
@@ -111,7 +111,7 @@ def create_mock_segy_rev1(
 
 @pytest.fixture(scope="session")
 def mock_segy_rev1(
-    request: list[int], tmp_path: Path, format_str_to_text_header: Callable
+    request: list[int], tmp_path: Path, format_str_to_text_header: Callable[[str], str]
 ) -> SegyFile:
     """Returns a temp file that for rev1 SegyFile object."""
     req_params = getattr(request, "param", [10, 10, 2])

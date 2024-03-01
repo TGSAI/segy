@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 
 from segy.schema.header import BinaryHeaderDescriptor
@@ -83,7 +84,7 @@ def test_trace_header_descriptors(
     )
 
 
-def void_buffer(buff_size: int) -> np.ndarray:
+def void_buffer(buff_size: int) -> npt.NDArray[np.void]:
     """Creates a new buffer of requested number of bytes with void(number_bytes) datatype.
 
     Prefills with random bytes.
@@ -98,7 +99,7 @@ def void_buffer(buff_size: int) -> np.ndarray:
 def get_dt_info(
     dt: np.dtype[Any],
     atrnames: list[str] | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Helper function to get info about a numpy dtype."""
     if atrnames is None:
         atrnames = [

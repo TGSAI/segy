@@ -15,6 +15,7 @@ from segy.indexing import bounds_check
 from segy.indexing import merge_cat_file
 from segy.indexing import trace_ibm2ieee_inplace
 from segy.schema import Endianness
+from segy.schema import TraceDescriptor
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -100,7 +101,7 @@ def test_trace_ibm2ieee_inplace(
     header_params: dict[str, Any],
     data_params: dict[str, Any],
     float_vals: list[float],
-    make_trace_descriptor: Callable,
+    make_trace_descriptor: Callable[..., TraceDescriptor],
 ) -> None:
     """Test changing dtype of IBM32 values inplace."""
     trace_descr = make_trace_descriptor(header_params, data_params)
