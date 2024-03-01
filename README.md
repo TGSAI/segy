@@ -126,4 +126,6 @@ with more modern tooling applied elsewhere!.
 
 [apache 2.0 license]: https://github.com/TGSAI/segy/blob/main/LICENSE
 [contributor guide]: https://github.com/TGSAI/segy/blob/main/CONTRIBUTING.md
+[command-line usage]: https://segy.readthedocs.io/en/latest/usage.html
+[api reference]: https://segy.readthedocs.io/en/latest/reference.html
 [installation instructions]: https://segy.readthedocs.io/en/latest/installation.html
