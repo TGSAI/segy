@@ -301,7 +301,11 @@ class HeaderIndexer(AbstractIndexer):
         if self.settings.USE_PANDAS:
             return DataFrame(data)
 
-        return data
+        # The numpy array breaks downstream logic so for now
+        # turning it off and raising a not implemented error.
+        msg = "Not using pandas for headers not implemented yet."
+        raise NotImplementedError(msg)
+        # return bin_hdr.squeeze()
 
 
 class DataIndexer(AbstractIndexer):

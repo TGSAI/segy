@@ -13,9 +13,12 @@ registry = {}
 
 def register_spec(spec_type: SegyStandard, spec: SegyDescriptor) -> None:
     """Register a SEG-Y standard with its descriptor."""
-    if not isinstance(spec, SegyDescriptor):
+    is_segy_descriptor = isinstance(spec, SegyDescriptor)
+
+    if not is_segy_descriptor:
         msg = "spec_cls must be a subclass of SegyDescriptor."
         raise ValueError(msg)
+
     registry[spec_type] = spec
 
 

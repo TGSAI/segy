@@ -113,7 +113,7 @@ def trace_header(
     segy = SegyFile(uri)
     headers = segy.header[index]
 
-    headers.index = index
+    headers.index[:] = index
     headers.index.name = "trace_index"
 
     if len(field) > 0:
