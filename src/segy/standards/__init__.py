@@ -10,4 +10,4 @@ register_spec(SegyStandard.REV0, rev0_segy)
 register_spec(SegyStandard.REV1, rev1_segy)
 
 
-__all__ = ["rev0_segy", "rev1_segy"]
+__all__ = ["rev0_segy", "rev1_segy", "SegyStandard"]

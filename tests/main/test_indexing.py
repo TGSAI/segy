@@ -14,6 +14,7 @@ from segy.ibm import ieee2ibm
 from segy.indexing import bounds_check
 from segy.indexing import merge_cat_file
 from segy.indexing import trace_ibm2ieee_inplace
+from segy.schema import Endianness
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -80,13 +81,17 @@ def test_merge_cat_file(
     ("header_params", "data_params", "float_vals"),
     [
         (
-            {"dt_string": "i2,i4", "names": ["a", "b"], "endianness": "little"},
-            {"format": "uint32", "endianness": "little", "samples": 3},
+            {
+                "dt_string": "i2,i4",
+                "names": ["a", "b"],
+                "endianness": Endianness.LITTLE,
+            },
+            {"format": "uint32", "endianness": Endianness.LITTLE, "samples": 3},
             [0.0, 0.1, 3.141593],
         ),
         (
-            {"dt_string": "i2,i4", "names": ["a", "b"], "endianness": "big"},
-            {"format": "uint32", "endianness": "big", "samples": 3},
+            {"dt_string": "i2,i4", "names": ["a", "b"], "endianness": Endianness.BIG},
+            {"format": "uint32", "endianness": Endianness.BIG, "samples": 3},
             [1.01, -2.01, 33.11],
         ),
     ],
@@ -102,7 +107,7 @@ def test_trace_ibm2ieee_inplace(
     samp_trace = np.zeros(1, dtype=trace_descr.dtype)
     ieee_floats = np.array(float_vals, dtype="<f4")
     ibm_floats = ieee2ibm(ieee_floats)
-    if trace_descr.data_descriptor.endianness == "big":
+    if trace_descr.data_descriptor.endianness == Endianness.BIG:
         # emulating how trace indexer swaps byte order
         # of big endian data types
         samp_trace = samp_trace.byteswap(inplace=True).newbyteorder()

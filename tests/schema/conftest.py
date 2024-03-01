@@ -12,11 +12,12 @@ from segy.schema import ScalarType
 from segy.schema import TraceDataDescriptor
 from segy.schema import TraceHeaderDescriptor
 from segy.schema.data_type import DataTypeDescriptor
+from segy.schema.data_type import Endianness
 
 # Constants defined for ScalarType
 DTYPE_FORMATS = [s.value for s in ScalarType]
 
-DTYPE_ENDIANNESS = ["little", "big"]
+DTYPE_ENDIANNESS = [Endianness.LITTLE, Endianness.BIG]
 
 # For cases where a description is supplied or not
 DTYPE_DESCRIPTIONS = [None, "this is a data type description"]
@@ -86,7 +87,7 @@ def trace_header_descriptors(
 
 def generate_unique_names(count: int) -> list[str]:
     """Helper function to create random unique names as placeholders during testing."""
-    names: set = set()
+    names: set[str] = set()
     rng = np.random.default_rng()
     while len(names) < count:
         name_length = rng.integers(5, 10)  # noqa: S311

@@ -78,7 +78,7 @@ class TestSingleIbmIeee:
 
 
 @pytest.mark.parametrize("shape", [(1,), (10,), (20, 20), (150, 150)])
-def test_ieee_to_ibm_roundtrip(shape: tuple) -> None:
+def test_ieee_to_ibm_roundtrip(shape: tuple[int, ...]) -> None:
     """Convert values from IEEE to IBM and back to IEEE."""
     rng = np.random.default_rng()
     expected_ieee = rng.normal(size=shape).astype("float32")

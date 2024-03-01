@@ -45,8 +45,8 @@ def make_header_field_descriptor() -> Callable:
         dt_string: str = "i2",
         names: list[str] | None = None,
         offsets: list[int] | None = None,
-        endianness: str = "big",
-    ) -> dict:
+        endianness: Endianness = Endianness.BIG,
+    ) -> dict[str, list[HeaderFieldDescriptor] | int]:
         """Convenience function for creating parameters needed for descriptors.
 
         Args:
@@ -92,7 +92,7 @@ def make_trace_header_descriptor(make_header_field_descriptor: Callable) -> Call
         dt_string: str = "i2",
         names: list[str] | None = None,
         offsets: list[int] | None = None,
-        endianness: str = "big",
+        endianness: str = Endianness.BIG,
     ) -> TraceHeaderDescriptor:
         """Convenience function for creating TraceHeaderDescriptors.
 
@@ -124,7 +124,7 @@ def make_trace_data_descriptor() -> Callable:
     def _make_trace_data_descriptor(
         format: ScalarType = ScalarType.IBM32,  # noqa: A002
         endianness: Endianness = Endianness.BIG,
-        description: str = None,
+        description: str | None = None,
         samples: int = 10,
     ) -> TraceDataDescriptor:
         """Convenience function for creating TraceDataDescriptors.
@@ -154,7 +154,10 @@ def make_trace_descriptor(
 ) -> Callable:
     """Fixture wrapper for helper function to create TraceDescriptors."""
 
-    def _make_trace_descriptor(head_params: dict, data_params: dict) -> TraceDescriptor:
+    def _make_trace_descriptor(
+        head_params: dict[str, str | list[str] | Endianness],
+        data_params: dict[str, str | int | Endianness],
+    ) -> TraceDescriptor:
         """Convenience function for creating TraceDescriptor object.
 
         Args:
@@ -181,7 +184,7 @@ def make_binary_header_descriptor(make_header_field_descriptor: Callable) -> Cal
         dt_string: str = "i2",
         names: list[str] | None = None,
         offsets: list[int] | None = None,
-        endianness: str = "big",
+        endianness: str = Endianness.BIG,
     ) -> BinaryHeaderDescriptor:
         """Helper function for creating BinaryHeaderDescriptor objects.
 

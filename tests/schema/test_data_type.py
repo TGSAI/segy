@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from typing import Any
 
 import numpy as np
 import pytest
@@ -37,7 +36,7 @@ if TYPE_CHECKING:
         ("float16", "f2"),
     ],
 )
-@pytest.mark.parametrize("endianness", ["big", "little"])
+@pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
 @pytest.mark.parametrize("description", [None, "this is a data type description"])
 def test_data_type_descriptor(
     format_: tuple[str, str], endianness: str, description: str | None
@@ -95,9 +94,11 @@ def build_sfd_helper(
     )
 
 
-def build_sdt_fields(*params: dict[str, Any]) -> list[StructuredFieldDescriptor]:
+def build_sdt_fields(
+    *params: tuple[str, str, str, int],
+) -> tuple[StructuredFieldDescriptor, ...]:
     """Convenience for creating a list of StructuredFieldDescriptors."""
-    return [build_sfd_helper(*p) for p in params]
+    return tuple(build_sfd_helper(*p) for p in params)
 
 
 @pytest.mark.parametrize(
@@ -105,16 +106,17 @@ def build_sdt_fields(*params: dict[str, Any]) -> list[StructuredFieldDescriptor]
     [
         (
             build_sdt_fields(
-                ("int32", "little", "varA", 2),
-                ("int16", "little", "varB", 0),
-                ("int32", "little", "varC", 6),
+                ("int32", Endianness.LITTLE, "varA", 2),
+                ("int16", Endianness.LITTLE, "varB", 0),
+                ("int32", Endianness.LITTLE, "varC", 6),
             ),
             10,
             0,
         ),
         (
             build_sdt_fields(
-                ("float32", "big", "varA", 0), ("float32", "big", "varB", 4)
+                ("float32", Endianness.BIG, "varA", 0),
+                ("float32", Endianness.BIG, "varB", 4),
             ),
             8,
             12,
@@ -122,7 +124,7 @@ def build_sdt_fields(*params: dict[str, Any]) -> list[StructuredFieldDescriptor]
     ],
 )
 def test_structured_data_type_descriptor(
-    fields: list[StructuredFieldDescriptor], item_size: int, offset: int
+    fields: tuple[StructuredFieldDescriptor, ...], item_size: int, offset: int
 ) -> None:
     """This tests for creatin a StructuredDataTypeDescriptor for different component data types."""
     new_sdtd = StructuredDataTypeDescriptor(

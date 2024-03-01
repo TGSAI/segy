@@ -23,7 +23,7 @@ def test_get_spec(standard_enum: SegyStandard, base_spec: SegyDescriptor) -> Non
 def test_get_nonexistent_spec_error() -> None:
     """Test missing / non-existent SegyStandard from registry."""
     with pytest.raises(NotImplementedError):
-        get_spec("non_existent")
+        get_spec("non_existent")  # type: ignore
 
 
 def test_register_custom_descriptor() -> None:
@@ -37,4 +37,4 @@ def test_register_nondescriptor_error() -> None:
     """Test if not providing a descriptor to registration."""
     msg = "spec_cls must be a subclass of SegyDescriptor."
     with pytest.raises(ValueError, match=msg):
-        register_spec(SegyStandard.CUSTOM, "not_a_descriptor")
+        register_spec(SegyStandard.CUSTOM, "not_a_descriptor")  # type: ignore

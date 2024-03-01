@@ -96,7 +96,7 @@ def void_buffer(buff_size: int) -> np.ndarray:
 
 
 def get_dt_info(
-    dt: np.dtype,
+    dt: np.dtype[Any],
     atrnames: list[str] | None = None,
 ) -> dict:
     """Helper function to get info about a numpy dtype."""
