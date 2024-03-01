@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "segy"
-version = "0.0.1"
+version = "0.0.2"
 description = ""
 authors = ["Altay Sansal <altay.sansal@tgs.com>"]
 readme = "README.md"
