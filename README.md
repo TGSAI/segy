@@ -53,7 +53,7 @@ $ pip install segy
 For details, please see the [installation instructions]
 in the documentation.
 
-## Using MDIO
+## Using `segy`
 
 Please see the [Command-line Usage] for details.
 
@@ -95,7 +95,7 @@ You can build your own SEG-Y "standard" with composition of specs for:
 - Binary header
 - Traces (header + extended header + samples)
 
-## Contributing to MDIO
+## Contributing to `segy`
 
 Contributions are very welcome.
 To learn more, see the [Contributor Guide].
@@ -126,4 +126,6 @@ with more modern tooling applied elsewhere!.
 
 [apache 2.0 license]: https://github.com/TGSAI/segy/blob/main/LICENSE
 [contributor guide]: https://github.com/TGSAI/segy/blob/main/CONTRIBUTING.md
+[command-line usage]: https://segy.readthedocs.io/en/latest/usage.html
+[api reference]: https://segy.readthedocs.io/en/latest/reference.html
 [installation instructions]: https://segy.readthedocs.io/en/latest/installation.html
