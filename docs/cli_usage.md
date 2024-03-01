@@ -5,8 +5,6 @@
 `segy` comes with a useful CLI tool to interrogate SEG-Y files either on disk
 or any remote store.
 
-In the [cli reference] section, you can see all the options.
-
 ## Command Line Usage
 
 SEG-Y provides a convenient command-line-interface (CLI) to do

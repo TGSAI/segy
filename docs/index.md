@@ -5,6 +5,8 @@ end-before: <!-- github-only -->
 ```
 
 [apache 2.0 license]: license
+[contributor guide]: contributing
+[installation instructions]: installation
 
 ```{toctree}
 :hidden:

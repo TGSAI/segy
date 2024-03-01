@@ -34,38 +34,30 @@ See the [documentation][read the docs] for more information.
 
 This is not an official TGS product.
 
-## Installation
-
-Clone the repo and install it using pip:
-
-```shell
-pip install .
-```
-
-## Basic Usage
-
-It's simple to operate the library:
-
-```python
-from segy import SegyFile
-
-sgy = SegyFile("gs://bucket/prefix")
-
-full_trace = sgy.trace[1000]
-just_data_header = sgy.header[1000]
-just_trace_data = sgy.data[1000]
-```
-
 ## Features
 
 The library utilizes `numpy` and `fsspec`, includes the reading from various local
 and remote resources at a high speed. It also allows the users to build their own
 SEG-Y specifications.
 
-### Compatibility
+## Installing `segy`
 
-The library provides full `numpy` compatibility with `ndarray`s of scalar or
-structured types.
+Clone the repo and install it using pip:
+
+Simplest way to install `segy` is via [pip] from [PyPI]:
+
+```shell
+$ pip install segy
+```
+
+For details, please see the [installation instructions]
+in the documentation.
+
+## Using MDIO
+
+Please see the [Command-line Usage] for details.
+
+For Python API please see the [API Reference] for details.
 
 ### Reading Capabilities
 
@@ -103,8 +95,35 @@ You can build your own SEG-Y "standard" with composition of specs for:
 - Binary header
 - Traces (header + extended header + samples)
 
-Feel free to share the thoughts and raise the issues to improve the library.
+## Contributing to MDIO
+
+Contributions are very welcome.
+To learn more, see the [Contributor Guide].
+
+## Licensing
+
+Distributed under the terms of the [Apache 2.0 license].
+`segy` is free and open source software.
+
+## Issues
+
+If you encounter any problems,
+please [file an issue] along with a detailed description.
+
+## Credits
+
+This project was established at [TGS](https://www.tgs.com/). Current
+maintainer is [Altay Sansal](https://github.com/tasansal) with the support
+of many more great colleagues.
+
+The CI/CD tooling is loosely based on [@cjolowicz]'s [Hypermodern Python Cookiecutter]
+with more modern tooling applied elsewhere!.
+
+[hypermodern python cookiecutter]: https://github.com/cjolowicz/cookiecutter-hypermodern-python
+[file an issue]: https://github.com/TGSAI/segy/issues
 
 <!-- github-only -->
 
 [apache 2.0 license]: https://github.com/TGSAI/segy/blob/main/LICENSE
+[contributor guide]: https://github.com/TGSAI/segy/blob/main/CONTRIBUTING.md
+[installation instructions]: https://segy.readthedocs.io/en/latest/installation.html
