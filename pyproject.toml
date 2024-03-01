@@ -1,12 +1,21 @@
 [tool.poetry]
 name = "segy"
-version = "0.0.3"
-description = ""
-authors = ["Altay Sansal <altay.sansal@tgs.com>"]
+version = "0.0.4"
+description = "Cloud-native, scalable, and user-friendly multi dimensional energy data!"
+authors = ["TGS <sys-opensource@tgs.com>"]
+maintainers = [
+    "Altay Sansal <altay.sansal@tgs.com>",
+]
 readme = "README.md"
+repository = "https://github.com/TGSAI/segy"
+documentation = "https://segy.readthedocs.io"
+classifiers = [
+    "Development Status :: 4 - Beta",
+]
 packages = [
     { include = "segy", from = "src" },
 ]
+keywords = ["segy", "seismic", "data", "geophysics"]
 
 [tool.poetry.dependencies]
 python = ">=3.9, <3.13"
