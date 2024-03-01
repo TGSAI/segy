@@ -1,8 +1,16 @@
 """Low-level floating point conversion operations."""
+
+
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numba as nb
 import numpy as np
+
+if TYPE_CHECKING:
+    from segy.typing import NDArrayFloat32
+    from segy.typing import NDArrayUint32
 
 # IEEE to IBM MASKS ETC
 IEEE32_SIGN = np.uint32(0x80000000)
@@ -15,7 +23,7 @@ IBM32_EXPONENT = np.uint32(0x7F000000)
 IBM32_FRACTION = np.uint32(0xFFFFFF)
 
 
-@nb.njit(
+@nb.njit(  # type: ignore
     "uint32(float32)",
     cache=True,
     locals={
@@ -48,11 +56,11 @@ def ieee2ibm_single(ieee: np.float32) -> np.uint32:
     ieee = np.float32(ieee).view(np.uint32)
 
     if ieee in [0, 2147483648]:  # 0.0 or np.float32(-0.0).view('uint32')
-        return 0
+        return np.uint32(0)
 
     # Get IEEE's sign and exponent
-    sign = ieee & IEEE32_SIGN
-    exponent = ((ieee & IEEE32_EXPONENT) >> 23) - 127
+    sign = ieee & IEEE32_SIGN  # type: ignore
+    exponent = ((ieee & IEEE32_EXPONENT) >> 23) - 127  # type: ignore
     # The IBM 7-bit exponent is to the base 16 and the mantissa is presumed to
     # be entirely to the right of the radix point. In contrast, the IEEE
     # exponent is to the base 2 and there is an assumed 1-bit to the left of
@@ -73,12 +81,12 @@ def ieee2ibm_single(ieee: np.float32) -> np.uint32:
     # Add the implicit initial 1-bit to the 23-bit IEEE mantissa to get the
     # 24-bit IBM mantissa. Downshift it by the remainder from the exponent's
     # division by 4. It is allowed to have up to 3 leading 0s.
-    ibm_mantissa = ((ieee & IEEE32_FRACTION) | 0x800000) >> downshift
+    ibm_mantissa = ((ieee & IEEE32_FRACTION) | 0x800000) >> downshift  # type: ignore
 
-    return sign | exponent | ibm_mantissa
+    return sign | exponent | ibm_mantissa  # type: ignore
 
 
-@nb.njit(
+@nb.njit(  # type: ignore
     "float32(uint32)",
     cache=True,
     locals={
@@ -104,7 +112,7 @@ def ibm2ieee_single(ibm: np.uint32) -> np.float32:
         Value parsed to 32-bit IEEE Float in Little-Endian Format.
     """
     if ibm & IBM32_FRACTION == 0:
-        return 0.0
+        return np.float32(0)
 
     sign_bit = ibm >> 31
 
@@ -117,16 +125,18 @@ def ibm2ieee_single(ibm: np.uint32) -> np.float32:
     # This 16.0 (instead of just 16) is super important.
     # If the base is not a float, it won't work for negative
     # exponents, and fail silently and return zero.
-    return sign * mantissa * 16.0 ** (exponent - 64)
+    return sign * mantissa * 16.0 ** (exponent - 64)  # type: ignore
 
 
-@nb.vectorize("uint32(float32)", cache=True)
-def ieee2ibm(ieee_array: np.float32) -> np.uint32:  # pragma: no cover
+@nb.vectorize("uint32(float32)", cache=True)  # type: ignore
+def ieee2ibm(ieee_array: NDArrayFloat32) -> NDArrayUint32:  # pragma: no cover
     """Wrapper for vectorizing IEEE to IBM conversion to arrays."""
-    return ieee2ibm_single(ieee_array)
+    ibm: NDArrayUint32 = ieee2ibm_single(ieee_array)
+    return ibm
 
 
-@nb.vectorize("float32(uint32)", cache=True)
-def ibm2ieee(ibm_array: np.uint32) -> np.float32:  # pragma: no cover
+@nb.vectorize("float32(uint32)", cache=True)  # type: ignore
+def ibm2ieee(ibm_array: NDArrayUint32) -> NDArrayFloat32:  # pragma: no cover
     """Wrapper for vectorizing IBM to IEEE conversion to arrays."""
-    return ibm2ieee_single(ibm_array)
+    ieee: NDArrayFloat32 = ibm2ieee_single(ibm_array)
+    return ieee

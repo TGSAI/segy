@@ -16,12 +16,12 @@ from segy.schema import Endianness
 from segy.schema import SegyStandard
 from segy.standards.registry import get_spec
 from segy.standards.rev1 import rev1_binary_file_header
+from segy.standards.rev1 import rev1_extended_text_header
 
 if TYPE_CHECKING:
     from typing import Any
 
     from fsspec import AbstractFileSystem
-    from numpy.typing import NDArray
 
     from segy.indexing import AbstractIndexer
     from segy.schema import SegyDescriptor
@@ -38,10 +38,9 @@ class SegyFile:
         url: str,
         spec: SegyDescriptor | None = None,
         settings: SegyFileSettings | None = None,
-        storage_options: dict[str, Any] = None,
+        storage_options: dict[str, Any] | None = None,
     ):
-        if settings is None:
-            self.settings = SegyFileSettings()
+        self.settings = SegyFileSettings() if settings is None else settings
 
         if storage_options is None:
             storage_options = {}
@@ -58,15 +57,16 @@ class SegyFile:
         cls: type[SegyFile],
         url: str,
         spec: SegyDescriptor,
-        **kwargs: dict[str, Any],
+        storage_options: dict[str, Any] | None = None,
     ) -> SegyFile:
         """Open a SEG-Y file based on custom spec."""
-        return cls(url=url, spec=spec, **kwargs)
+        return cls(url=url, spec=spec, storage_options=storage_options)
 
     @property
     def file_size(self) -> int:
         """Return file size in bytes."""
-        return self._info["size"]
+        size: int = self._info["size"]
+        return size
 
     @property
     def num_traces(self) -> int:
@@ -75,21 +75,27 @@ class SegyFile:
         file_bin_hdr_size = self.spec.binary_file_header.itemsize
         trace_size = self.spec.trace.itemsize
 
-        rev0_file = self.spec.segy_standard == SegyStandard.REV0
-        if self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE is None and not rev0_file:
+        num_ext_text = 0
+        # All but Rev0 can have extended text headers
+        if self.spec.segy_standard != SegyStandard.REV0:
             header_key = self.settings.BINARY.EXTENDED_TEXT_HEADER.KEY
 
             num_ext_text = 0
             if header_key in self.binary_header:
                 # Use df.at method to get a single value and not return a series
                 num_ext_text = self.binary_header.at[0, header_key]
-        else:
+
+        # Overriding from settings
+        elif self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE is not None:
             num_ext_text = self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE
 
         file_metadata_size = file_textual_hdr_size + file_bin_hdr_size
 
-        if num_ext_text is not None:
-            file_metadata_size += num_ext_text * self.spec.extended_text_header.itemsize
+        if num_ext_text > 0:
+            self.spec.extended_text_header = rev1_extended_text_header
+
+            ext_text_size = self.spec.extended_text_header.itemsize * int(num_ext_text)
+            file_metadata_size = file_metadata_size + ext_text_size
 
         return (self.file_size - file_metadata_size) // trace_size
 
@@ -127,7 +133,7 @@ class SegyFile:
         return get_spec(standard)
 
     @cached_property
-    def binary_header(self) -> NDArray[Any] | DataFrame:
+    def binary_header(self) -> DataFrame:
         """Read binary header from store, based on spec."""
         buffer = bytearray(
             self.fs.read_block(
@@ -145,7 +151,11 @@ class SegyFile:
         if self.settings.USE_PANDAS:
             return DataFrame(bin_hdr.reshape(1))
 
-        return bin_hdr.squeeze()
+        # The numpy array breaks downstream logic so for now
+        # turning it off and raising a not implemented error.
+        msg = "Not using pandas for headers not implemented yet."
+        raise NotImplementedError(msg)
+        # return bin_hdr.squeeze()
 
     def _parse_binary_header(self) -> None:
         """Parse the binary header and apply some rules."""
@@ -165,18 +175,23 @@ class SegyFile:
         self.spec.trace.data_descriptor.samples = int(samples_per_trace)
         self.spec.trace.offset = text_hdr_size + bin_hdr_size
 
-        rev0_file = self.spec.segy_standard == SegyStandard.REV0
-        if self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE is None and not rev0_file:
+        num_ext_text = 0
+        # All but Rev0 can have extended text headers
+        if self.spec.segy_standard != SegyStandard.REV0:
             header_key = self.settings.BINARY.EXTENDED_TEXT_HEADER.KEY
 
             num_ext_text = 0
             if header_key in self.binary_header:
                 # Use df.at method to get a single value and not return a series
                 num_ext_text = self.binary_header.at[0, header_key]
-        else:
+
+        # Overriding from settings
+        elif self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE is not None:
             num_ext_text = self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE
 
-        if num_ext_text is not None:
+        if num_ext_text > 0:
+            self.spec.extended_text_header = rev1_extended_text_header
+
             ext_text_size = self.spec.extended_text_header.itemsize * int(num_ext_text)
             self.spec.trace.offset = self.spec.trace.offset + ext_text_size
 
