@@ -1,11 +1,12 @@
 [tool.poetry]
 name = "segy"
-version = "0.0.5"
+version = "0.0.6"
 description = "The Ultimate Python SEG-Y I/O with Cloud Support and Schemas"
 authors = ["TGS <sys-opensource@tgs.com>"]
 maintainers = [
     "Altay Sansal <altay.sansal@tgs.com>",
 ]
+license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/TGSAI/segy"
 documentation = "https://segy.readthedocs.io"
