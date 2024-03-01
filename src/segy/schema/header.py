@@ -15,12 +15,11 @@ from segy.schema.data_type import StructuredDataTypeDescriptor
 from segy.schema.data_type import StructuredFieldDescriptor
 
 if TYPE_CHECKING:
-    from segy.compat import TypeAlias
     from segy.schema.data_type import ScalarType
 
 
-BinaryHeaderDescriptor: TypeAlias = StructuredDataTypeDescriptor
-HeaderFieldDescriptor: TypeAlias = StructuredFieldDescriptor
+BinaryHeaderDescriptor = StructuredDataTypeDescriptor
+HeaderFieldDescriptor = StructuredFieldDescriptor
 
 
 class TextHeaderEncoding(StrEnum):

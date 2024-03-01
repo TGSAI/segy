@@ -18,9 +18,4 @@ else:
             return member
 
 
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias
-else:
-    TypeAlias = type
-
-__all__ = ["StrEnum", "TypeAlias"]
+__all__ = ["StrEnum"]
