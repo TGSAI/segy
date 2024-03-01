@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import Any
 
 import numpy as np
 from pydantic import Field
@@ -35,7 +36,7 @@ class TraceDataDescriptor(BaseTypeDescriptor):
     )
 
     @property
-    def dtype(self) -> np.dtype:
+    def dtype(self) -> np.dtype[Any]:
         """Get numpy dtype."""
         format_char = self.format.char
         dtype_str = "".join([self.endianness.symbol, str(self.samples), format_char])
@@ -59,7 +60,7 @@ class TraceDescriptor(BaseTypeDescriptor):
     )
 
     @property
-    def dtype(self) -> np.dtype:
+    def dtype(self) -> np.dtype[Any]:
         """Get numpy dtype."""
         header_dtype = self.header_descriptor.dtype
         data_dtype = self.data_descriptor.dtype

@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 from pydantic import Field
 
@@ -56,7 +58,7 @@ class DataTypeDescriptor(BaseTypeDescriptor):
     )
 
     @property
-    def dtype(self) -> np.dtype:
+    def dtype(self) -> np.dtype[Any]:
         """Converts the byte order and data type of the object into a NumPy dtype."""
         symbol = self.endianness.symbol
         char = self.format.char
@@ -83,7 +85,7 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
     offset: int | None = Field(default=None, ge=0, description="Starting byte offset.")
 
     @property
-    def dtype(self) -> np.dtype:
+    def dtype(self) -> np.dtype[Any]:
         """Get numpy dtype."""
         names = [field.name for field in self.fields]
         offsets = [field.offset for field in self.fields]
@@ -98,4 +100,4 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
         if self.item_size is not None:
             dtype_conf["itemsize"] = self.item_size
 
-        return np.dtype(dtype_conf)
+        return np.dtype(dtype_conf)  # type: ignore

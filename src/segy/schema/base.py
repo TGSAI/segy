@@ -44,8 +44,8 @@ class BaseTypeDescriptor(CamelCaseModel):
 
     @property
     @abstractmethod
-    def dtype(self) -> np.dtype:
-        """A conversion routine to numpy data type."""
+    def dtype(self) -> np.dtype[Any]:
+        """Abstract property for subclasses to return the numpy dtype."""
 
     @property
     def itemsize(self) -> int:

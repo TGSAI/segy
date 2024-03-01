@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import Any
 
 import numpy as np
 from pydantic import Field
@@ -44,15 +45,15 @@ class TextHeaderDescriptor(BaseTypeDescriptor):
         return self.rows * self.cols
 
     @property
-    def dtype(self) -> np.dtype:
+    def dtype(self) -> np.dtype[Any]:
         """Get numpy dtype."""
         return np.dtype((self.format, len(self)))
 
     def _decode(self, buffer: bytes) -> str:
         """Decode EBCDIC or ASCII bytes into string."""
         if self.encoding == TextHeaderEncoding.EBCDIC:
-            buffer = np.frombuffer(buffer, dtype=self.dtype)
-            buffer = EBCDIC_TO_ASCII[buffer].tobytes()
+            buffer_int = np.frombuffer(buffer, dtype=self.dtype)
+            buffer = EBCDIC_TO_ASCII[buffer_int].tobytes()
 
         return buffer.decode("ascii")
 
@@ -65,8 +66,8 @@ class TextHeaderDescriptor(BaseTypeDescriptor):
         buffer = text_header.encode("ascii")
 
         if self.encoding == TextHeaderEncoding.EBCDIC:
-            buffer = np.frombuffer(buffer, dtype=self.dtype)
-            buffer = ASCII_TO_EBCDIC[buffer].tobytes()
+            buffer_int = np.frombuffer(buffer, dtype=self.dtype)
+            buffer = ASCII_TO_EBCDIC[buffer_int].tobytes()
 
         return buffer
 
