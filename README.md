@@ -30,7 +30,7 @@
 
 > 🚧👷🏻 This project is under active development, expect breaking changes
 > the to API 👷🏻🚧  
-> *\- March, 2024*
+> _\- March, 2024_
 
 This is an efficient and comprehensive SEG-Y parsing library.
 
