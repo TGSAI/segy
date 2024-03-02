@@ -27,24 +27,20 @@ To check if installation was successful see [checking installation](#checking-in
 You can also install some optional dependencies (extras) like this:
 
 ```shell
-$ pip install multidimio[distributed]
-$ pip install multidimio[cloud]
-$ pip install multidimio[lossy]
+$ pip install segy[cloud]
 ```
 
-`distributed` installs [Dask][dask] for parallel, distributed processing.\
 `cloud` installs [fsspec][fsspec] backed I/O libraries for [AWS' S3][s3fs],
 [Google's GCS][gcsfs], and [Azure ABS][adlfs].\
-`lossy` will install the [ZFPY][zfp] library for lossy chunk compression.
 
-[dask]: https://www.dask.org/
 [fsspec]: https://filesystem-spec.readthedocs.io/en/latest/
 [s3fs]: https://s3fs.readthedocs.io/
 [gcsfs]: https://gcsfs.readthedocs.io/
 [adlfs]: https://github.com/fsspec/adlfs
-[zfp]: https://computing.llnl.gov/projects/zfp
 
 ## Using `conda`
+
+> 🚧👷🏻 Conda packaging is not available yet, but in progress 🚧👷🏻
 
 `segy` can also be installed in a `conda` environment.
 
