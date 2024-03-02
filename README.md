@@ -28,6 +28,10 @@
 
 # SEG-Y
 
+> 🚧👷🏻 This project is under active development, expect breaking changes
+> the to API 👷🏻🚧  
+> *\- March, 2024*
+
 This is an efficient and comprehensive SEG-Y parsing library.
 
 See the [documentation][read the docs] for more information.
