@@ -6,7 +6,7 @@
 
 [![Tests](https://github.com/TGSAI/segy/workflows/Tests/badge.svg)][tests]
 [![Codecov](https://codecov.io/gh/TGSAI/segy/branch/main/graph/badge.svg)][codecov]
-[![Read the documentation at https://segy.readthedocs.io/](https://img.shields.io/readthedocs/segy/latest.svg?label=Read%20the%20Docs)][read the docs]
+[![Read the documentation at https://segy.readthedocs.io/](https://img.shields.io/readthedocs/segy/stable.svg?label=Read%20the%20Docs)][read the docs]
 
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)][pre-commit]
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)][ruff]
@@ -23,10 +23,14 @@
 [codecov]: https://app.codecov.io/gh/TGSAI/segy
 [pre-commit]: https://github.com/pre-commit/pre-commit
 [ruff]: https://github.com/astral-sh/ruff
-[install_pip]: https://segy.readthedocs.io/en/latest/installation.html#using-pip-and-virtualenv
-[install_conda]: https://segy.readthedocs.io/en/latest/installation.html#using-conda
+[install_pip]: https://segy.readthedocs.io/en/stable/installation.html#using-pip-and-virtualenv
+[install_conda]: https://segy.readthedocs.io/en/stable/installation.html#using-conda
 
 # SEG-Y
+
+> 🚧👷🏻 This project is under active development, expect breaking changes
+> the to API 👷🏻🚧  
+> _\- March, 2024_
 
 This is an efficient and comprehensive SEG-Y parsing library.
 
@@ -126,6 +130,6 @@ with more modern tooling applied elsewhere!.
 
 [apache 2.0 license]: https://github.com/TGSAI/segy/blob/main/LICENSE
 [contributor guide]: https://github.com/TGSAI/segy/blob/main/CONTRIBUTING.md
-[command-line usage]: https://segy.readthedocs.io/en/latest/usage.html
-[api reference]: https://segy.readthedocs.io/en/latest/reference.html
-[installation instructions]: https://segy.readthedocs.io/en/latest/installation.html
+[command-line usage]: https://segy.readthedocs.io/en/stable/usage.html
+[api reference]: https://segy.readthedocs.io/en/stable/reference.html
+[installation instructions]: https://segy.readthedocs.io/en/stable/installation.html
