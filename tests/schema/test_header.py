@@ -11,11 +11,10 @@ import numpy as np
 import numpy.typing as npt
 import pytest
 
-from segy.schema.header import BinaryHeaderDescriptor
 from segy.schema.header import TextHeaderDescriptor
 
 if TYPE_CHECKING:
-    from segy.schema import TraceHeaderDescriptor
+    from segy.schema.data_type import StructuredDataTypeDescriptor
 
 
 @pytest.mark.parametrize(
@@ -49,7 +48,7 @@ def test_full_text_headers(
 
 
 def test_binary_header_descriptors(
-    binary_header_descriptors: BinaryHeaderDescriptor,
+    binary_header_descriptors: StructuredDataTypeDescriptor,
 ) -> None:
     """Test for reading binary headers.
 
@@ -68,7 +67,7 @@ def test_binary_header_descriptors(
 
 
 def test_trace_header_descriptors(
-    trace_header_descriptors: TraceHeaderDescriptor,
+    trace_header_descriptors: StructuredDataTypeDescriptor,
 ) -> None:
     """Test for reading trace headers.
 

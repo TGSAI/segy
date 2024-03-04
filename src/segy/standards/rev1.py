@@ -1,8 +1,6 @@
 """SEG-Y Revision 1 Specification."""
 
-from segy.schema import BinaryHeaderDescriptor
 from segy.schema import Endianness
-from segy.schema import HeaderFieldDescriptor
 from segy.schema import ScalarType
 from segy.schema import SegyDescriptor
 from segy.schema import SegyStandard
@@ -10,33 +8,34 @@ from segy.schema import TextHeaderDescriptor
 from segy.schema import TextHeaderEncoding
 from segy.schema import TraceDataDescriptor
 from segy.schema import TraceDescriptor
-from segy.schema import TraceHeaderDescriptor
+from segy.schema.data_type import StructuredDataTypeDescriptor
+from segy.schema.data_type import StructuredFieldDescriptor
 from segy.standards.rev0 import BINARY_FILE_HEADER_FIELDS_REV0
 from segy.standards.rev0 import TRACE_HEADER_FIELDS_REV0
 
 BINARY_FILE_HEADER_FIELDS_REV1 = BINARY_FILE_HEADER_FIELDS_REV0 + [
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="seg_y_revision",
         offset=300,
         format=ScalarType.INT16,
         endianness=Endianness.BIG,
         description="SEG Y Format Revision Number",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="fixed_length_trace_flag",
         offset=302,
         format=ScalarType.INT16,
         endianness=Endianness.BIG,
         description="Fixed Length Trace Flag",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="extended_textual_headers",
         offset=304,
         format=ScalarType.INT16,
         endianness=Endianness.BIG,
         description="Number of 3200-byte, Extended Textual File Header Records Following the Binary Header",  # noqa: E501
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="additional_trace_headers",
         offset=306,
         format=ScalarType.INT16,
@@ -47,126 +46,126 @@ BINARY_FILE_HEADER_FIELDS_REV1 = BINARY_FILE_HEADER_FIELDS_REV0 + [
 
 
 TRACE_HEADER_FIELDS_REV1 = TRACE_HEADER_FIELDS_REV0 + [
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="x_coordinate",
         offset=180,
         format=ScalarType.INT32,
         endianness=Endianness.BIG,
         description="X coordinate of ensemble (CDP) position",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="y_coordinate",
         offset=184,
         format=ScalarType.INT32,
         endianness=Endianness.BIG,
         description="Y coordinate of ensemble (CDP) position",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="inline_no",
         offset=188,
         format=ScalarType.INT32,
         endianness=Endianness.BIG,
         description="Inline number",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="crossline_no",
         offset=192,
         format=ScalarType.INT32,
         endianness=Endianness.BIG,
         description="Crossline number",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="shotpoint_no",
         offset=196,
         format=ScalarType.INT32,
         endianness=Endianness.BIG,
         description="Shotpoint number",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="scalar_apply_shotpoint",
         offset=200,
         format=ScalarType.INT16,
         endianness=Endianness.BIG,
         description="Scalar to be applied to the shotpoint number",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="trace_value_measurement_unit",
         offset=202,
         format=ScalarType.INT16,
         endianness=Endianness.BIG,
         description="Trace value measurement unit",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="transduction_constant_mantissa",
         offset=204,
         format=ScalarType.INT32,
         endianness=Endianness.BIG,
         description="Transduction Constant Mantissa",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="transduction_constant_exponent",
         offset=208,
         format=ScalarType.INT16,
         endianness=Endianness.BIG,
         description="Transduction Constant Exponent",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="transduction_units",
         offset=210,
         format=ScalarType.INT16,
         endianness=Endianness.BIG,
         description="Transduction Units",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="device_trace_id",
         offset=212,
         format=ScalarType.INT16,
         endianness=Endianness.BIG,
         description="Device/Trace Identifier",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="times_scalar",
         offset=214,
         format=ScalarType.INT16,
         endianness=Endianness.BIG,
         description="Scalar to be applied to times",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="source_type_orientation",
         offset=216,
         format=ScalarType.INT16,
         endianness=Endianness.BIG,
         description="Source Type/Orientation",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="source_energy_direction_mantissa",
         offset=218,
         format=ScalarType.INT32,
         endianness=Endianness.BIG,
         description="Source Energy Direction with respect to vertical [Mantissa]",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="source_energy_direction_exponent",
         offset=222,
         format=ScalarType.INT16,
         endianness=Endianness.BIG,
         description="Source Energy Direction with respect to vertical [Exponent]",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="source_measurement_mantissa",
         offset=224,
         format=ScalarType.INT32,
         endianness=Endianness.BIG,
         description="Source Measurement Mantissa",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="source_measurement_exponent",
         offset=228,
         format=ScalarType.INT16,
         endianness=Endianness.BIG,
         description="Source Measurement Exponent",
     ),
-    HeaderFieldDescriptor(
+    StructuredFieldDescriptor(
         name="source_measurement_unit",
         offset=230,
         format=ScalarType.INT16,
@@ -185,7 +184,7 @@ rev1_textual_file_header = TextHeaderDescriptor(
 )
 
 
-rev1_binary_file_header = BinaryHeaderDescriptor(
+rev1_binary_file_header = StructuredDataTypeDescriptor(
     fields=BINARY_FILE_HEADER_FIELDS_REV1,
     item_size=400,
     offset=3200,
@@ -201,7 +200,7 @@ rev1_extended_text_header = TextHeaderDescriptor(
 )
 
 
-rev1_trace_header = TraceHeaderDescriptor(
+rev1_trace_header = StructuredDataTypeDescriptor(
     fields=TRACE_HEADER_FIELDS_REV1,
     item_size=240,
 )

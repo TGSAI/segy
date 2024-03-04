@@ -11,15 +11,9 @@ from segy.compat import StrEnum
 from segy.ebcdic import ASCII_TO_EBCDIC
 from segy.ebcdic import EBCDIC_TO_ASCII
 from segy.schema.base import BaseTypeDescriptor
-from segy.schema.data_type import StructuredDataTypeDescriptor
-from segy.schema.data_type import StructuredFieldDescriptor
 
 if TYPE_CHECKING:
     from segy.schema.data_type import ScalarType
-
-
-BinaryHeaderDescriptor = StructuredDataTypeDescriptor
-HeaderFieldDescriptor = StructuredFieldDescriptor
 
 
 class TextHeaderEncoding(StrEnum):

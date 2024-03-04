@@ -13,13 +13,12 @@ from typing import Any
 import numpy as np
 import pytest
 
-from segy.schema import BinaryHeaderDescriptor
 from segy.schema import Endianness
-from segy.schema import HeaderFieldDescriptor
 from segy.schema import ScalarType
 from segy.schema import TraceDataDescriptor
 from segy.schema import TraceDescriptor
-from segy.schema import TraceHeaderDescriptor
+from segy.schema.data_type import StructuredDataTypeDescriptor
+from segy.schema.data_type import StructuredFieldDescriptor
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -42,7 +41,7 @@ def format_str_to_text_header() -> Callable[[str], str]:
 def make_header_field_descriptor() -> (
     Callable[
         [str, list[str] | None, list[int] | None, Endianness],
-        dict[str, list[HeaderFieldDescriptor] | int],
+        dict[str, list[StructuredFieldDescriptor] | int],
     ]
 ):
     """Fixture wrapper around helper function to generate params for descriptors."""
@@ -52,7 +51,7 @@ def make_header_field_descriptor() -> (
         names: list[str] | None = None,
         offsets: list[int] | None = None,
         endianness: Endianness = Endianness.BIG,
-    ) -> dict[str, list[HeaderFieldDescriptor] | int]:
+    ) -> dict[str, list[StructuredFieldDescriptor] | int]:
         """Convenience function for creating parameters needed for descriptors.
 
         Args:
@@ -79,7 +78,7 @@ def make_header_field_descriptor() -> (
             else [field[-1] for field in temp_dt_field_values]
         )
         header_fields = [
-            HeaderFieldDescriptor(
+            StructuredFieldDescriptor(
                 name=n,
                 format=ScalarType(np.dtype(dstr).name),
                 offset=offs,
@@ -96,18 +95,18 @@ def make_header_field_descriptor() -> (
 def make_trace_header_descriptor(
     make_header_field_descriptor: Callable[
         [str, list[str] | None, list[int] | None, str | Endianness],
-        dict[str, list[HeaderFieldDescriptor] | int],
+        dict[str, list[StructuredFieldDescriptor] | int],
     ],
-) -> Callable[..., TraceHeaderDescriptor]:
-    """Fixture wrapper for helper function to create TraceHeaderDescriptors."""
+) -> Callable[..., StructuredDataTypeDescriptor]:
+    """Fixture wrapper for helper function to create trace header descriptors."""
 
     def _make_trace_header_descriptor(
         dt_string: str = "i2",
         names: list[str] | None = None,
         offsets: list[int] | None = None,
         endianness: str | Endianness = Endianness.BIG,
-    ) -> TraceHeaderDescriptor:
-        """Convenience function for creating TraceHeaderDescriptors.
+    ) -> StructuredDataTypeDescriptor:
+        """Convenience function for creating trace header descriptors.
 
         Args:
             dt_string: numpy dtype string. Defaults to "i2".
@@ -116,13 +115,13 @@ def make_trace_header_descriptor(
             endianness: flag for field endianness. Defaults to "big".
 
         Returns:
-            TraceHeaderDescriptor: Descriptor object for TraceHeaderDescriptors
+            Descriptor object for trace headers.
         """
         head_field_desc: dict[str, Any] = make_header_field_descriptor(
             dt_string, names, offsets, endianness
         )
 
-        return TraceHeaderDescriptor(
+        return StructuredDataTypeDescriptor(
             fields=head_field_desc["fields"],
             item_size=head_field_desc["item_size"],
             offset=head_field_desc["offset"],
@@ -164,10 +163,10 @@ def make_trace_data_descriptor() -> Callable[..., TraceDataDescriptor]:
 
 @pytest.fixture(scope="module")
 def make_trace_descriptor(
-    make_trace_header_descriptor: Callable[..., TraceHeaderDescriptor],
+    make_trace_header_descriptor: Callable[..., StructuredDataTypeDescriptor],
     make_trace_data_descriptor: Callable[..., TraceDataDescriptor],
 ) -> Callable[..., TraceDescriptor]:
-    """Fixture wrapper for helper function to create TraceDescriptors."""
+    """Fixture wrapper for helper function to create trace descriptors."""
 
     def _make_trace_descriptor(
         head_params: dict[str, str | list[str] | Endianness],
@@ -176,8 +175,8 @@ def make_trace_descriptor(
         """Convenience function for creating TraceDescriptor object.
 
         Args:
-            head_params: dictionary containing params for TraceHeaderDescriptor
-            data_params: dictionary containing params for TraceDataDescriptor
+            head_params: dictionary containing params for trace header descriptor
+            data_params: dictionary containing params for trace data descriptor
 
 
         Returns:
@@ -195,18 +194,18 @@ def make_trace_descriptor(
 def make_binary_header_descriptor(
     make_header_field_descriptor: Callable[
         [str, list[str] | None, list[int] | None, Endianness | str],
-        dict[str, list[HeaderFieldDescriptor] | int],
+        dict[str, list[StructuredFieldDescriptor] | int],
     ],
-) -> Callable[..., BinaryHeaderDescriptor]:
-    """Fixture wrapper around helper function for creating BinaryHeaderDescriptor."""
+) -> Callable[..., StructuredDataTypeDescriptor]:
+    """Fixture wrapper around helper function for creating binary header."""
 
     def _make_binary_header_descriptor(
         dt_string: str = "i2",
         names: list[str] | None = None,
         offsets: list[int] | None = None,
         endianness: str = Endianness.BIG,
-    ) -> BinaryHeaderDescriptor:
-        """Helper function for creating BinaryHeaderDescriptor objects.
+    ) -> StructuredDataTypeDescriptor:
+        """Helper function for creating binary header descriptor objects.
 
         Args:
             dt_string: numpy dtype string. Defaults to "i2".
@@ -215,12 +214,12 @@ def make_binary_header_descriptor(
             endianness: flag for field endianness. Defaults to "big".
 
         Returns:
-            BinaryHeaderDescriptor: Descriptor object for BinaryHeaderDescriptor
+            Structured data type descriptor object for binary header
         """
         head_field_desc: dict[str, Any] = make_header_field_descriptor(
             dt_string, names, offsets, endianness
         )
-        return BinaryHeaderDescriptor(
+        return StructuredDataTypeDescriptor(
             fields=head_field_desc["fields"],
             item_size=head_field_desc["item_size"],
             offset=head_field_desc["offset"],

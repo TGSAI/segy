@@ -9,8 +9,8 @@ from pydantic import Field
 from segy.schema.base import CamelCaseModel
 
 if TYPE_CHECKING:
-    from segy.schema.header import BinaryHeaderDescriptor
-    from segy.schema.header import HeaderFieldDescriptor
+    from segy.schema.data_type import StructuredDataTypeDescriptor
+    from segy.schema.data_type import StructuredFieldDescriptor
     from segy.schema.header import TextHeaderDescriptor
     from segy.schema.trace import TraceDataDescriptor
     from segy.schema.trace import TraceDescriptor
@@ -35,7 +35,7 @@ class SegyDescriptor(CamelCaseModel):
     text_file_header: TextHeaderDescriptor = Field(
         ..., description="Textual file header descriptor."
     )
-    binary_file_header: BinaryHeaderDescriptor = Field(
+    binary_file_header: StructuredDataTypeDescriptor = Field(
         ..., description="Binary file header descriptor."
     )
     extended_text_header: TextHeaderDescriptor | None = Field(
@@ -46,9 +46,9 @@ class SegyDescriptor(CamelCaseModel):
     def customize(  # noqa: PLR0913
         self: SegyDescriptor,
         text_header_spec: TextHeaderDescriptor | None = None,
-        binary_header_fields: list[HeaderFieldDescriptor] | None = None,
+        binary_header_fields: list[StructuredFieldDescriptor] | None = None,
         extended_text_spec: TextHeaderDescriptor | None = None,
-        trace_header_fields: list[HeaderFieldDescriptor] | None = None,
+        trace_header_fields: list[StructuredFieldDescriptor] | None = None,
         trace_data_spec: TraceDataDescriptor | None = None,
     ) -> SegyDescriptor:
         """Customize an existing SEG-Y descriptor."""

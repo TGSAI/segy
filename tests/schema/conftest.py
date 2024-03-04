@@ -7,12 +7,11 @@ from collections.abc import Callable
 import numpy as np
 import pytest
 
-from segy.schema import BinaryHeaderDescriptor
 from segy.schema import ScalarType
 from segy.schema import TraceDataDescriptor
-from segy.schema import TraceHeaderDescriptor
 from segy.schema.data_type import DataTypeDescriptor
 from segy.schema.data_type import Endianness
+from segy.schema.data_type import StructuredDataTypeDescriptor
 
 # Constants defined for ScalarType
 DTYPE_FORMATS = [s.value for s in ScalarType]
@@ -45,16 +44,16 @@ TRACE_HEADER_TEST_DTYPE_STRINGS = [
 )
 def binary_header_descriptors(
     request: pytest.FixtureRequest,
-    make_binary_header_descriptor: Callable[..., BinaryHeaderDescriptor],
-) -> BinaryHeaderDescriptor:
-    """Generates BinaryHeaderDescriptor objects from parameters.
+    make_binary_header_descriptor: Callable[..., StructuredDataTypeDescriptor],
+) -> StructuredDataTypeDescriptor:
+    """Generates binary header descriptors from parameters.
 
     Args:
-        request: params for creating BinaryHeaderDescriptor.
+        request: params for creating binary header descriptor.
         make_binary_header_descriptor: helper function for creating object.
 
     Returns:
-        BinaryHeaderDescriptor: Descriptor object of BinaryHeaderDescriptor
+        Structured data type descriptor object for binary header
     """
     return make_binary_header_descriptor(
         dt_string=request.param[0], names=request.param[1], endianness=request.param[2]
@@ -70,16 +69,16 @@ def binary_header_descriptors(
 )
 def trace_header_descriptors(
     request: pytest.FixtureRequest,
-    make_trace_header_descriptor: Callable[..., TraceHeaderDescriptor],
-) -> TraceHeaderDescriptor:
-    """Generates TraceHeaderDescriptor objects from parameters.
+    make_trace_header_descriptor: Callable[..., StructuredDataTypeDescriptor],
+) -> StructuredDataTypeDescriptor:
+    """Generates trace header descriptor instance from parameters.
 
     Args:
-        request: params for creating TraceHeaderDescriptor.
+        request: params for creating trace header descriptor.
         make_trace_header_descriptor: helper function for creating object
 
     Returns:
-        TraceHeaderDescriptor: Descriptor object of TraceHeaderDescriptor
+        Descriptor object of trace headers.
 
     """
     return make_trace_header_descriptor(
