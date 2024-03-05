@@ -56,7 +56,6 @@ settings = SegyFileSettings(
 )
 ```
 
-[]()
 Then this can be passed to [SegyFile] directly.
 
 ```python
