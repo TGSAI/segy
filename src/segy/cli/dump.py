@@ -14,9 +14,6 @@ from segy.cli.common import UriArgument
 from segy.cli.common import modify_path
 from segy.schema.segy import SegyInfo
 
-BYTE_TO_MB = 1024**2
-
-
 app = typer.Typer(
     name="dump",
     no_args_is_help=True,
@@ -36,7 +33,7 @@ def info(uri: UriArgument, output: JsonFileOutOption = None) -> None:
         num_traces=segy.num_traces,
         samples_per_trace=segy.binary_header["samples_per_trace"].iloc[0],
         sample_interval=segy.binary_header["sample_interval"].iloc[0],
-        file_size=segy.file_size / BYTE_TO_MB,
+        file_size=segy.file_size,
     )
 
     info_json = info.model_dump_json(indent=2)
