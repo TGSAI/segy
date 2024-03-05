@@ -219,7 +219,8 @@ def docs(session: Session) -> None:
     ignore = [
         'docs/jupyter_execute/tutorials/quickstart.ipynb'
     ]
-    args = session.posargs or ["--open-browser", "docs", "docs/_build", "--ignore", *ignore]
+    args = ["--open-browser", "docs", "docs/_build", "--ignore", *ignore]
+    args = session.posargs or args
     session.install(".")
     session.install(
         "sphinx",
