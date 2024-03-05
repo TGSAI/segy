@@ -15,9 +15,6 @@ if TYPE_CHECKING:
     from segy.schema.data_type import ScalarType
 
 
-TraceHeaderDescriptor = StructuredDataTypeDescriptor
-
-
 class TraceDataDescriptor(BaseTypeDescriptor):
     """A descriptor class for a Trace Data (samples)."""
 
@@ -44,10 +41,10 @@ class TraceDataDescriptor(BaseTypeDescriptor):
 class TraceDescriptor(BaseTypeDescriptor):
     """A descriptor class for a Trace (Header + Data)."""
 
-    header_descriptor: TraceHeaderDescriptor = Field(
+    header_descriptor: StructuredDataTypeDescriptor = Field(
         ..., description="Trace header descriptor."
     )
-    extended_header_descriptor: TraceHeaderDescriptor | None = Field(
+    extended_header_descriptor: StructuredDataTypeDescriptor | None = Field(
         default=None, description="Extended trace header descriptor."
     )
     data_descriptor: TraceDataDescriptor = Field(

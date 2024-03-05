@@ -13,7 +13,7 @@ from segy.schema.base import BaseTypeDescriptor
 
 
 class Endianness(StrEnum):
-    """Enum class representing endianness."""
+    """Enumeration class with two possible endianness values."""
 
     BIG = "big"
     LITTLE = "little"
@@ -25,7 +25,13 @@ class Endianness(StrEnum):
 
 
 class ScalarType(StrEnum):
-    """A class representing different data types used for data formatting."""
+    """A class representing scalar data types.
+
+    Examples:
+        >>> endian = Endianness.BIG
+        >>> print(endian.symbol)
+        >
+    """
 
     IBM32 = "ibm32"
     INT64 = "int64"
@@ -50,7 +56,21 @@ class ScalarType(StrEnum):
 
 
 class DataTypeDescriptor(BaseTypeDescriptor):
-    """A descriptor class for a scalar data type with endianness support."""
+    """A class representing a descriptor for a data type.
+
+    Examples:
+        A big endian float:
+
+        >>> data_type = DataTypeDescriptor(format="float32", endianness="big")
+        >>> data_type.dtype
+        dtype('>f4')
+
+        A little endian (native in x86/arm64) 16-bit unsigned integer:
+
+        >>> data_type = DataTypeDescriptor(format="uint16", endianness="little")
+        >>> data_type.dtype
+        dtype('uint16')
+    """
 
     format: ScalarType = Field(..., description="The data type of the field.")  # noqa: A003
     endianness: Endianness = Field(
@@ -67,17 +87,106 @@ class DataTypeDescriptor(BaseTypeDescriptor):
 
 
 class StructuredFieldDescriptor(DataTypeDescriptor):
-    """A descriptor class for a structured data-type field."""
+    """A class representing a descriptor for a structured data-type field.
+
+    Examples:
+        A named little endian float at offset 8-bytes:
+
+        >>> data_type = StructuredFieldDescriptor(
+        >>>     name="my_var",
+        >>>     format="float32",
+        >>>     endianness="little",
+        >>>     offset=8,
+        >>> )
+
+        The name and offset fields will only be used if the structured
+        field is used within the context of a :class:`StructuredDataTypeDescriptor`.
+
+        >>> data_type.name
+        my_var
+        >>> data_type.offset
+        8
+
+        The `dtype` property is inherited from :class:`DataTypeDescriptor`.
+
+        >>> data_type.dtype
+        dtype('float32')
+    """
 
     name: str = Field(..., description="The short name of the field.")
     offset: int = Field(..., ge=0, description="Starting byte offset.")
 
 
 class StructuredDataTypeDescriptor(BaseTypeDescriptor):
-    """A descriptor class for a structured array data-type."""
+    """A class representing a descriptor for a structured data-type.
+
+    Examples:
+        Let's build a structured data type from scratch!
+
+        We will define three fields with different names, data-types, and
+        starting offsets.
+
+        >>> field1 = StructuredFieldDescriptor(
+        >>>     name="foo",
+        >>>     format="int32",
+        >>>     endianness="big",
+        >>>     offset=0,
+        >>> )
+        >>> field2 = StructuredFieldDescriptor(
+        >>>     name="bar",
+        >>>     format="int16",
+        >>>     endianness="big",
+        >>>     offset=4,
+        >>> )
+        >>> field3 = StructuredFieldDescriptor(
+        >>>     name="fizz",
+        >>>     format="int32",
+        >>>     endianness="big",
+        >>>     offset=16,
+        >>> )
+
+        Note that the fields span the following byte ranges:
+
+        * `field1` between bytes `[0, 4)`
+        * `field2` between bytes `[4, 6)`
+        * `field3` between bytes `[16, 20)`
+
+        The gap between `field2` and `field3` will be padded with `void`. In
+        this case we expect to see an item size of 20-bytes (total length of
+        the struct).
+
+        >>> struct_dtype = StructuredDataTypeDescriptor(
+        >>>     fields=[field1, field2, field3],
+        >>> )
+
+        Now let's look at its data type:
+
+        >>> struct_dtype.dtype
+        dtype({'names': ['foo', 'bar', 'fizz'], 'formats': ['>i4', '>i2', '>i4'], 'offsets': [0, 4, 16], 'itemsize': 20})
+
+        If we wanted to pad the end of the struct (to fit a specific byte range),
+        we would provide the item_size in the descriptor. If we set it to 30,
+        this means that we padded the struct by 10 bytes at the end.
+
+        >>> struct_dtype = StructuredDataTypeDescriptor(
+        >>>     fields=[field1, field2, field3],
+        >>>     item_size=30,
+        >>> )
+
+        Now let's look at its data type:
+
+        >>> struct_dtype.dtype
+        dtype({'names': ['foo', 'bar', 'fizz'], 'formats': ['>i4', '>i2', '>i4'], 'offsets': [0, 4, 16], 'itemsize': 30})
+
+        To see what's going under the hood, we can look at a lower level numpy
+        description of the `dtype`. Here we observe all the gaps (void types).
+
+        >>> struct_dtype.dtype.descr
+        [('foo', '>i4'), ('bar', '>i2'), ('', '|V10'), ('fizz', '>i4'), ('', '|V10')]
+    """  # noqa: E501
 
     fields: list[StructuredFieldDescriptor] = Field(
-        ..., description="Fields of the structured data type."
+        ..., description="A list of descriptors for a structured data-type."
     )
     item_size: int | None = Field(
         default=None, description="Expected size of the struct."
@@ -86,7 +195,7 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
 
     @property
     def dtype(self) -> np.dtype[Any]:
-        """Get numpy dtype."""
+        """Converts the names, data types, and offsets of the object into a NumPy dtype."""
         names = [field.name for field in self.fields]
         offsets = [field.offset for field in self.fields]
         formats = [field.dtype for field in self.fields]
