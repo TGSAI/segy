@@ -31,7 +31,9 @@ It is composed of various sub-settings isolated by SEG-Y components and various 
 - **REVISION**: This setting is used to specify the SEG-Y revision number. If left as
   None, the system will automatically use the revision mentioned in the SEG-Y file.
 - **USE_PANDAS**: This setting is a boolean that decides whether to use pandas for
-  headers or not.
+  headers or not. Does not apply to trace data. The trace data is always returned
+  as Numpy arrays. The option to use Numpy for headers is currently disabled and will
+  be available at a later release (as of March 2024).
 
 ## Usage
 
