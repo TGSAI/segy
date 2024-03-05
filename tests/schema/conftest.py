@@ -1,12 +1,10 @@
 """Tests for the compontent classes in the schema directory."""
 
 import itertools
-import string
 from collections.abc import Callable
 from collections.abc import Generator
 from typing import Any
 
-import numpy as np
 import pytest
 
 from segy.schema import ScalarType
@@ -103,18 +101,6 @@ def trace_header_descriptors(
     )
 
 
-def generate_unique_names(count: int) -> list[str]:
-    """Helper function to create random unique names as placeholders during testing."""
-    names: set[str] = set()
-    rng = np.random.default_rng()
-    while len(names) < count:
-        name_length = rng.integers(5, 10)  # noqa: S311
-        letters = rng.choice(list(string.ascii_uppercase), size=name_length)  # noqa: S311
-        name = "".join(letters)
-        names.add(name)
-    return list(names)
-
-
 @pytest.fixture(
     params=[
         (p1, p2, DTYPE_DESCRIPTIONS[1])
@@ -200,21 +186,6 @@ def text_header_samples(
 ) -> str:
     """Fixture that generates fixed size text header test data from strings."""
     return format_str_to_text_header(request.param)
-
-
-@pytest.fixture(params=TEXT_HEADER_DESCRIPTORS_PARAMS)
-def text_header_descriptors(
-    request: pytest.FixtureRequest,
-    make_text_header_descriptor: Callable[..., TextHeaderDescriptor],
-) -> TextHeaderDescriptor:
-    """Fixture that creates TextHeaderDescriptor objects."""
-    return make_text_header_descriptor(
-        rows=request.param["rows"],
-        cols=request.param["cols"],
-        encoding=request.param["encoding"],
-        format=request.param["format"],
-        offset=request.param["offset"],
-    )
 
 
 @pytest.fixture()
