@@ -49,8 +49,11 @@ Available information and data acquisition details are accessible via the
 [seg wiki]: https://wiki.seg.org/wiki/Parihaka-3D
 [beg]: https://www.beg.utexas.edu
 
-We will take a look at the 3D unprocessed shot gathers (swath 1). When accessing
-public datasets from S3, we need to set
+We will take a look at the 3D unprocessed shot gathers (swath 1).
+
+#### Configuration Options
+
+When accessing public datasets from S3, we need to set
 `SegyFileSettings().storage_options = {"anon": True}`{l=python} for anonymous
 access. [SegyFileSettings](#SegyFileSettings) exposes all configuration options
 as environment variables. We just need to set `storage_options` with the `JSON`
@@ -61,6 +64,8 @@ for your specific Operating System (OS).
 ```shell
 export SEGY__STORAGE_OPTIONS='{"anon": true}'
 ```
+
+#### Basic Info
 
 Now that we can access public S3 buckets anonymously, we can output a basic
 summary of the file using the `info` command.
@@ -77,6 +82,8 @@ $ segy dump info \
   "fileSize": 1671130800
 }
 ```
+
+#### File Text Header
 
 Let's take a look at the text header.
 
@@ -124,6 +131,44 @@ C38
 C39 written from EGLTools for Matlab on 14-Dec-2009
 C40 END EBCDIC
 ```
+
+#### File Binary Header
+
+```console
+$ segy dump binary-header \
+    s3://open.source.geoscience/open_data/stratton/segy/navmerged/swath_1_geometry.sgy
+{
+  "job_id": 0,
+  "line_no": 0,
+  "reel_no": 1,
+  "data_traces_ensemble": 724,
+  "aux_traces_ensemble": 0,
+  "sample_interval": 2000,
+  "sample_interval_orig": 2000,
+  "samples_per_trace": 3000,
+  "samples_per_trace_orig": 3000,
+  "data_sample_format": 1,
+  "ensemble_fold": 724,
+  "trace_sorting": 1,
+  "vertical_sum": 0,
+  "sweep_freq_start": -30480,
+  "sweep_freq_end": -2692,
+  "sweep_length": 0,
+  "sweep_type": 0,
+  "sweep_trace_no": 0,
+  "sweep_taper_start": 0,
+  "sweep_taper_end": 0,
+  "taper_type": 0,
+  "correlated_traces": 0,
+  "binary_gain": 0,
+  "amp_recovery_method": 0,
+  "measurement_system": 0,
+  "impulse_signal_polarity": 0,
+  "vibratory_polarity": 0
+}
+```
+
+#### Trace Header
 
 This is how we can get three header fields for a few traces.
 
