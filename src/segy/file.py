@@ -28,7 +28,18 @@ if TYPE_CHECKING:
 
 
 class SegyFile:
-    """A SEG-Y file opener with fancy features."""
+    """A SEG-Y file class that has various accessors.
+
+    Args:
+        url: Path to SEG-Y file on disk or remote store.
+        spec: The schema / spec describing the SEG-Y file. This
+            is optional and by default it will try to infer the
+            SEG-Y standard from the binary header.
+        settings: A settings instance to configure / override
+            the SEG-Y parsing logic. Optional.
+        storage_options: The configuration for remote store. Must
+            be `fsspec` compliant. Optional.
+    """
 
     fs: AbstractFileSystem
     url: str
@@ -52,6 +63,8 @@ class SegyFile:
         self._info = self.fs.info(self.url)
         self._parse_binary_header()
 
+    # TODO(Altay): Is this method needed?
+    # https://github.com/TGSAI/segy/issues/30
     @classmethod
     def from_spec(
         cls: type[SegyFile],
@@ -59,7 +72,19 @@ class SegyFile:
         spec: SegyDescriptor,
         storage_options: dict[str, Any] | None = None,
     ) -> SegyFile:
-        """Open a SEG-Y file based on custom spec."""
+        """Open a SEG-Y file based on custom spec.
+
+        Args:
+            url: Path to SEG-Y file on disk or remote store.
+            spec: The schema / spec describing the SEG-Y file. This
+                is optional and by default it will try to infer the
+                SEG-Y standard from the binary header.
+            storage_options: The configuration for remote store. Must
+                be `fsspec` compliant. Optional.
+
+        Returns:
+            An instance of a SegyFile class.
+        """
         return cls(url=url, spec=spec, storage_options=storage_options)
 
     @property
