@@ -29,7 +29,7 @@
 # SEG-Y
 
 > 🚧👷🏻 This project is under active development, expect breaking changes
-> the to API 👷🏻🚧  
+> the to API 👷🏻🚧
 > _\- March, 2024_
 
 This is an efficient and comprehensive SEG-Y parsing library.
@@ -120,11 +120,13 @@ This project was established at [TGS](https://www.tgs.com/). Current
 maintainer is [Altay Sansal](https://github.com/tasansal) with the support
 of many more great colleagues.
 
-The CI/CD tooling is loosely based on [@cjolowicz]'s [Hypermodern Python Cookiecutter]
+The CI/CD tooling is loosely based on [Hypermodern Python Cookiecutter]
 with more modern tooling applied elsewhere!.
 
 [hypermodern python cookiecutter]: https://github.com/cjolowicz/cookiecutter-hypermodern-python
+[pypi]: https://pypi.org/
 [file an issue]: https://github.com/TGSAI/segy/issues
+[pip]: https://pip.pypa.io/
 
 <!-- github-only -->
 
