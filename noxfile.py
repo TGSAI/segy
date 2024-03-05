@@ -216,7 +216,10 @@ def docs_build(session: Session) -> None:
 @session(python=python_versions[0])
 def docs(session: Session) -> None:
     """Build and serve the documentation with live reloading on file changes."""
-    args = session.posargs or ["--open-browser", "docs", "docs/_build"]
+    ignore = [
+        'docs/jupyter_execute/tutorials/quickstart.ipynb'
+    ]
+    args = session.posargs or ["--open-browser", "docs", "docs/_build", "--ignore", *ignore]
     session.install(".")
     session.install(
         "sphinx",
