@@ -105,4 +105,4 @@ class SegyInfo(CamelCaseModel):
 
     sample_interval: int = Field(..., description="Sampling rate from binary header.")
 
-    file_size: float = Field(..., description="File size in GB.")
+    file_size: int = Field(..., description="File size in bytes.")
