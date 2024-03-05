@@ -2,6 +2,7 @@
 
 import json
 
+import pandas as pd
 import typer
 from rich import print
 
@@ -110,8 +111,8 @@ def trace_header(
     segy = SegyFile(uri)
     headers = segy.header[index]
 
-    headers.index[:] = index
-    headers.index.name = "trace_index"
+    row_index = pd.Index(index, name="trace_index")
+    headers.set_index(row_index, inplace=True)
 
     if len(field) > 0:
         headers = headers[field]
