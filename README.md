@@ -121,7 +121,7 @@ maintainer is [Altay Sansal](https://github.com/tasansal) with the support
 of many more great colleagues.
 
 The CI/CD tooling is loosely based on [Hypermodern Python Cookiecutter]
-with more modern tooling applied elsewhere!.
+with more modern tooling applied elsewhere.
 
 [hypermodern python cookiecutter]: https://github.com/cjolowicz/cookiecutter-hypermodern-python
 [pypi]: https://pypi.org/
@@ -132,6 +132,6 @@ with more modern tooling applied elsewhere!.
 
 [apache 2.0 license]: https://github.com/TGSAI/segy/blob/main/LICENSE
 [contributor guide]: https://github.com/TGSAI/segy/blob/main/CONTRIBUTING.md
-[command-line usage]: https://segy.readthedocs.io/en/stable/usage.html
-[api reference]: https://segy.readthedocs.io/en/stable/reference.html
+[command-line usage]: https://segy.readthedocs.io/en/stable/cli_usage.html
+[api reference]: https://segy.readthedocs.io/en/stable/api_reference.html
 [installation instructions]: https://segy.readthedocs.io/en/stable/installation.html
