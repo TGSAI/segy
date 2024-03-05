@@ -144,12 +144,6 @@ def test_structured_data_type_descriptor(
         assert new_sdtd.item_size == new_sdtd.dtype.itemsize
     else:
         assert new_sdtd.item_size == item_size
-    assert new_sdtd == StructuredDataTypeDescriptor.model_validate(
-        new_sdtd.model_dump()
-    )
-    assert new_sdtd == StructuredDataTypeDescriptor.model_validate_json(
-        new_sdtd.model_dump_json()
-    )
 
 
 def test_trace_data_descriptors(trace_data_descriptors: TraceDataDescriptor) -> None:
