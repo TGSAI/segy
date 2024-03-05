@@ -77,7 +77,7 @@ def binary_header(uri: UriArgument, output: JsonFileOutOption = None) -> None:
     bin_header_json = json.dumps(parsed_json[0], indent=2)
 
     if output is None:
-        print(parsed_json)
+        print(bin_header_json)
 
     else:
         output = modify_path(output, suffix="binary", default_extension=".json")
