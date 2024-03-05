@@ -100,14 +100,14 @@ class StructuredFieldDescriptor(DataTypeDescriptor):
         >>> )
 
         The name and offset fields will only be used if the structured
-        field is used within the context of a `StructuredDataTypeDescriptor`.
+        field is used within the context of a :class:`StructuredDataTypeDescriptor`.
 
         >>> data_type.name
         my_var
         >>> data_type.offset
         8
 
-        The `dtype` property is inherited from `DataTypeDescriptor`
+        The `dtype` property is inherited from :class:`DataTypeDescriptor`.
 
         >>> data_type.dtype
         dtype('float32')
