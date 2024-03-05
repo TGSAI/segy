@@ -18,8 +18,8 @@
 ## Defining a Trace
 
 The [TraceDescriptor] is a way to define the structure of a seismic trace
-as stored in SEG-Y files. It is composed of [Trace Header](#trace-header)
-and [Trace Data](#trace-data). This information is combined using the
+as stored in SEG-Y files. It is composed of {ref}`trace-header-descriptor`
+and {ref}`trace-data-descriptor`. This information is combined using the
 [TraceDescriptor].
 
 The [TraceDescriptor] has fields for trace header, optional extended trace
@@ -30,6 +30,8 @@ file. Most of the time this field gets populated automatically.
 A custom trace descriptor can be built programmatically following a simple
 workflow. The same descriptor can be built from `JSON` as well. Navigate to
 [JSON Trace Descriptor](#json-trace-descriptor) below for that.
+
+(trace-header-descriptor)=
 
 ### Trace Header Descriptor
 
@@ -69,6 +71,8 @@ trace_header_descriptor = StructuredDataTypeDescriptor(
     item_size=240,
 )
 ```
+
+(trace-data-descriptor)=
 
 ### Trace Data Descriptor
 

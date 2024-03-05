@@ -91,4 +91,3 @@ configuration, unless user overrides it again within Python.
 [segyfilesettings]: #SegyFileSettings
 [segyfile]: #SegyFile
 [segybinaryheadersettings]: #SegyBinaryHeaderSettings
-[segyfilesettings]: #SegyFileSettings

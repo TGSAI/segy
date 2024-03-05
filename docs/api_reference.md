@@ -34,11 +34,6 @@
 ```
 
 ```{eval-rst}
-.. autopydantic_settings:: segy.config.SampleIntervalSetting
-    :inherited-members: BaseModel
-```
-
-```{eval-rst}
 .. autopydantic_settings:: segy.config.SamplesPerTraceSetting
     :inherited-members: BaseModel
 ```
