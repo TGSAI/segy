@@ -121,17 +121,34 @@ def build_sdt_fields(
             8,
             12,
         ),
+        (
+            build_sdt_fields(
+                ("ibm32", Endianness.BIG, "varA", 0),
+                ("float32", Endianness.BIG, "varB", 4),
+            ),
+            None,
+            12,
+        ),
     ],
 )
 def test_structured_data_type_descriptor(
-    fields: tuple[StructuredFieldDescriptor, ...], item_size: int, offset: int
+    fields: tuple[StructuredFieldDescriptor, ...], item_size: int | None, offset: int
 ) -> None:
     """This tests for creatin a StructuredDataTypeDescriptor for different component data types."""
     new_sdtd = StructuredDataTypeDescriptor(
         fields=list(fields), item_size=item_size, offset=offset
     )
     assert new_sdtd.dtype.names == tuple([f.name for f in fields])
-    assert new_sdtd.item_size == new_sdtd.dtype.itemsize
+    if item_size is not None:
+        assert new_sdtd.item_size == new_sdtd.dtype.itemsize
+    else:
+        assert new_sdtd.item_size == item_size
+    assert new_sdtd == StructuredDataTypeDescriptor.model_validate(
+        new_sdtd.model_dump()
+    )
+    assert new_sdtd == StructuredDataTypeDescriptor.model_validate_json(
+        new_sdtd.model_dump_json()
+    )
 
 
 def test_trace_data_descriptors(trace_data_descriptors: TraceDataDescriptor) -> None:

@@ -45,6 +45,14 @@ def test_full_text_headers(
         len(split_lines),
         len(split_lines[0]),
     )
+    # assertions for exception cases
+    with pytest.raises(ValueError, match="Text length must be equal to rows x cols."):
+        new_text_head_desc._encode(text_header_samples[:-10])
+    with pytest.raises(
+        ValueError, match="rows x cols must be equal wrapped text length."
+    ):
+        new_text_head_desc._wrap(text_header_samples[:-10])
+    assert "\n" not in new_text_head_desc._unwrap(text_header_samples)
 
 
 def test_binary_header_descriptors(
