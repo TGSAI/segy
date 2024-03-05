@@ -21,7 +21,6 @@
 .. autosummary::
 
    TraceDescriptor
-   TraceHeaderDescriptor
    TraceDataDescriptor
 ```
 
@@ -33,9 +32,7 @@
 
 ## Trace Header
 
-```{eval-rst}
-.. autopydantic_model:: TraceHeaderDescriptor
-```
+Structured bla bla
 
 ## Trace Samples
 

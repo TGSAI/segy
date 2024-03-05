@@ -30,8 +30,9 @@ api_reference
 :hidden:
 :caption: Core Concepts and Structures
 
-data_models/header
+data_models/file
 data_models/trace
+data_models/data_type
 ```
 
 ```{toctree}
