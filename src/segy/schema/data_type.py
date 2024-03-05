@@ -146,9 +146,10 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
         >>> )
 
         Note that the fields span the following byte ranges:
-        - field1 > [0, 4)
-        - field2 > [4, 6)
-        - field3 > [16, 20)
+
+        * `field1` between bytes `[0, 4)`
+        * `field2` between bytes `[4, 6)`
+        * `field3` between bytes `[16, 20)`
 
         The gap between `field2` and `field3` will be padded with `void`. In
         this case we expect to see an item size of 20-bytes (total length of
