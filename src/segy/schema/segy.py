@@ -51,7 +51,18 @@ class SegyDescriptor(CamelCaseModel):
         trace_header_fields: list[StructuredFieldDescriptor] | None = None,
         trace_data_spec: TraceDataDescriptor | None = None,
     ) -> SegyDescriptor:
-        """Customize an existing SEG-Y descriptor."""
+        """Customize an existing SEG-Y descriptor.
+
+        Args:
+            text_header_spec: New text header specification.
+            binary_header_fields: List of custom binary header fields.
+            extended_text_spec: New extended text header specification.
+            trace_header_fields: List of custom trace header fields.
+            trace_data_spec: New trace data specification.
+
+        Returns:
+            A modified SEG-Y descriptor with "custom" segy standard.
+        """
         new_descr = self.model_copy(deep=True)
         new_descr.segy_standard = SegyStandard.CUSTOM
 
