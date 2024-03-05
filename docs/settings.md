@@ -56,6 +56,7 @@ settings = SegyFileSettings(
 )
 ```
 
+[]()
 Then this can be passed to [SegyFile] directly.
 
 ```python
@@ -65,6 +66,10 @@ file = SegyFile(uri="...", settings=settings)
 ```
 
 If no settings are provided to [SegyFile], it will take the default values.
+
+```{seealso}
+[SegyFileSettings], [SegyFile], [Endianness]
+```
 
 ## Environment Variables
 
