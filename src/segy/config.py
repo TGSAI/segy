@@ -1,5 +1,9 @@
 """SEG-Y parser configuration."""
+
+
 from __future__ import annotations
+
+from typing import Any
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -11,53 +15,55 @@ from segy.schema import Endianness
 class SegyBaseSettings(BaseSettings):
     """Base class for settings."""
 
-    model_config = SettingsConfigDict(extra="ignore", case_sensitive=True)
+    model_config = SettingsConfigDict(extra="ignore", case_sensitive=False)
 
 
 class SegyFieldSetting(SegyBaseSettings):
     """Setting class to configure a field (key or override)."""
 
-    KEY: str = Field(...)
-    VALUE: int | None = Field(...)
+    key: str = Field(...)
+    value: int | None = Field(...)
 
 
 class SamplesPerTraceSetting(SegyFieldSetting):
     """Configuration for samples per trace parsing."""
 
-    KEY: str = "samples_per_trace"
-    VALUE: int | None = None
+    key: str = "samples_per_trace"
+    value: int | None = None
 
 
 class SampleIntervalSetting(SegyFieldSetting):
     """Configuration for samples interval parsing."""
 
-    KEY: str = "sample_interval"
-    VALUE: int | None = None
+    key: str = "sample_interval"
+    value: int | None = None
 
 
 class ExtendedTextHeaderSetting(SegyFieldSetting):
     """Configuration for extended textual headers parsing."""
 
-    KEY: str = "extended_textual_headers"
-    VALUE: int | None = None
+    key: str = "extended_textual_headers"
+    value: int | None = None
 
 
 class SegyBinaryHeaderSettings(SegyBaseSettings):
     """SEG-Y binary header parsing settings."""
 
-    SAMPLES_PER_TRACE: SamplesPerTraceSetting = SamplesPerTraceSetting()
-    SAMPLE_INTERVAL: SampleIntervalSetting = SampleIntervalSetting()
-    EXTENDED_TEXT_HEADER: ExtendedTextHeaderSetting = ExtendedTextHeaderSetting()
+    samples_per_trace: SamplesPerTraceSetting = SamplesPerTraceSetting()
+    sample_interval: SampleIntervalSetting = SampleIntervalSetting()
+    extended_text_header: ExtendedTextHeaderSetting = ExtendedTextHeaderSetting()
 
 
 class SegyFileSettings(SegyBaseSettings):
     """SEG-Y file parsing settings."""
 
-    BINARY: SegyBinaryHeaderSettings = Field(default_factory=SegyBinaryHeaderSettings)
-    ENDIAN: Endianness | None = Field(default=Endianness.BIG)
-    REVISION: int | float | None = Field(default=None)
+    binary: SegyBinaryHeaderSettings = Field(default_factory=SegyBinaryHeaderSettings)
+    endian: Endianness | None = Field(default=Endianness.BIG)
+    revision: int | float | None = Field(default=None)
 
-    USE_PANDAS: bool = Field(default=True)
+    use_pandas: bool = Field(default=True)
+
+    storage_options: dict[str, Any] = Field(default_factory=dict)
 
     model_config = SettingsConfigDict(
         env_prefix="SEGY__",

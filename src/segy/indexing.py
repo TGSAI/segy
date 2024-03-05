@@ -241,7 +241,7 @@ class TraceIndexer(AbstractIndexer):
         """Decode whole traces (header + data)."""
         data = np.frombuffer(buffer, dtype=self.spec.dtype)
 
-        if self.settings.ENDIAN == Endianness.BIG:
+        if self.settings.endian == Endianness.BIG:
             data = data.byteswap(inplace=True).newbyteorder()
 
         if self.spec.data_descriptor.format == ScalarType.IBM32:
@@ -253,7 +253,7 @@ class TraceIndexer(AbstractIndexer):
         self, data: NDArray[Any]
     ) -> NDArray[Any] | dict[str, NDArray[Any] | DataFrame]:
         """Either return struct array or (Header) DataFrame + (Data) Array."""
-        if self.settings.USE_PANDAS:
+        if self.settings.use_pandas:
             return {"header": DataFrame(data["header"]), "data": data["data"]}
 
         return data
@@ -291,14 +291,14 @@ class HeaderIndexer(AbstractIndexer):
 
         # TODO(Altay): Handle float/ibm32 etc headers.
         # https://github.com/TGSAI/segy/issues/5
-        if self.settings.ENDIAN == Endianness.BIG:
+        if self.settings.endian == Endianness.BIG:
             data = data.byteswap(inplace=True).newbyteorder()
 
         return data  # noqa: RET504
 
     def post_process(self, data: NDArray[Any]) -> NDArray[Any] | DataFrame:
         """Either return header as struct array or DataFrame."""
-        if self.settings.USE_PANDAS:
+        if self.settings.use_pandas:
             return DataFrame(data)
 
         # The numpy array breaks downstream logic so for now
@@ -338,7 +338,7 @@ class DataIndexer(AbstractIndexer):
         """Decode trace data only."""
         data = np.frombuffer(buffer, dtype=self.spec.data_descriptor.dtype)
 
-        if self.settings.ENDIAN == Endianness.BIG:
+        if self.settings.endian == Endianness.BIG:
             data = data.byteswap(inplace=True).newbyteorder()
 
         if self.spec.data_descriptor.format == ScalarType.IBM32:
