@@ -2,6 +2,7 @@
 
 import json
 
+import pandas as pd
 import typer
 from rich import print
 
@@ -13,9 +14,6 @@ from segy.cli.common import TextFileOutOption
 from segy.cli.common import UriArgument
 from segy.cli.common import modify_path
 from segy.schema.segy import SegyInfo
-
-BYTE_TO_MB = 1024**2
-
 
 app = typer.Typer(
     name="dump",
@@ -36,7 +34,7 @@ def info(uri: UriArgument, output: JsonFileOutOption = None) -> None:
         num_traces=segy.num_traces,
         samples_per_trace=segy.binary_header["samples_per_trace"].iloc[0],
         sample_interval=segy.binary_header["sample_interval"].iloc[0],
-        file_size=segy.file_size / BYTE_TO_MB,
+        file_size=segy.file_size,
     )
 
     info_json = info.model_dump_json(indent=2)
@@ -79,7 +77,7 @@ def binary_header(uri: UriArgument, output: JsonFileOutOption = None) -> None:
     bin_header_json = json.dumps(parsed_json[0], indent=2)
 
     if output is None:
-        print(parsed_json)
+        print(bin_header_json)
 
     else:
         output = modify_path(output, suffix="binary", default_extension=".json")
@@ -113,8 +111,8 @@ def trace_header(
     segy = SegyFile(uri)
     headers = segy.header[index]
 
-    headers.index[:] = index
-    headers.index.name = "trace_index"
+    row_index = pd.Index(index, name="trace_index")
+    headers.set_index(row_index, inplace=True)
 
     if len(field) > 0:
         headers = headers[field]

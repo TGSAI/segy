@@ -19,8 +19,6 @@ from segy.standards.rev1 import rev1_binary_file_header
 from segy.standards.rev1 import rev1_extended_text_header
 
 if TYPE_CHECKING:
-    from typing import Any
-
     from fsspec import AbstractFileSystem
 
     from segy.indexing import AbstractIndexer
@@ -37,8 +35,6 @@ class SegyFile:
             SEG-Y standard from the binary header.
         settings: A settings instance to configure / override
             the SEG-Y parsing logic. Optional.
-        storage_options: The configuration for remote store. Must
-            be `fsspec` compliant. Optional.
     """
 
     fs: AbstractFileSystem
@@ -49,43 +45,15 @@ class SegyFile:
         url: str,
         spec: SegyDescriptor | None = None,
         settings: SegyFileSettings | None = None,
-        storage_options: dict[str, Any] | None = None,
     ):
         self.settings = SegyFileSettings() if settings is None else settings
 
-        if storage_options is None:
-            storage_options = {}
-
-        self.fs, self.url = url_to_fs(url, **storage_options)
+        self.fs, self.url = url_to_fs(url, **self.settings.storage_options)
 
         self.spec = self._infer_standard() if spec is None else spec
 
         self._info = self.fs.info(self.url)
         self._parse_binary_header()
-
-    # TODO(Altay): Is this method needed?
-    # https://github.com/TGSAI/segy/issues/30
-    @classmethod
-    def from_spec(
-        cls: type[SegyFile],
-        url: str,
-        spec: SegyDescriptor,
-        storage_options: dict[str, Any] | None = None,
-    ) -> SegyFile:
-        """Open a SEG-Y file based on custom spec.
-
-        Args:
-            url: Path to SEG-Y file on disk or remote store.
-            spec: The schema / spec describing the SEG-Y file. This
-                is optional and by default it will try to infer the
-                SEG-Y standard from the binary header.
-            storage_options: The configuration for remote store. Must
-                be `fsspec` compliant. Optional.
-
-        Returns:
-            An instance of a SegyFile class.
-        """
-        return cls(url=url, spec=spec, storage_options=storage_options)
 
     @property
     def file_size(self) -> int:
@@ -103,7 +71,7 @@ class SegyFile:
         num_ext_text = 0
         # All but Rev0 can have extended text headers
         if self.spec.segy_standard != SegyStandard.REV0:
-            header_key = self.settings.BINARY.EXTENDED_TEXT_HEADER.KEY
+            header_key = self.settings.binary.extended_text_header.key
 
             num_ext_text = 0
             if header_key in self.binary_header:
@@ -111,8 +79,8 @@ class SegyFile:
                 num_ext_text = self.binary_header.at[0, header_key]
 
         # Overriding from settings
-        elif self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE is not None:
-            num_ext_text = self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE
+        elif self.settings.binary.extended_text_header.value is not None:
+            num_ext_text = self.settings.binary.extended_text_header.value
 
         file_metadata_size = file_textual_hdr_size + file_bin_hdr_size
 
@@ -139,7 +107,7 @@ class SegyFile:
         return text_hdr_desc._wrap(text_header)
 
     def _infer_standard(self) -> SegyDescriptor:
-        if self.settings.REVISION is None:
+        if self.settings.revision is None:
             buffer = self.fs.read_block(
                 fn=self.url,
                 offset=rev1_binary_file_header.offset,
@@ -152,7 +120,7 @@ class SegyFile:
             revision = revision / 256.0
 
         else:
-            revision = self.settings.REVISION
+            revision = self.settings.revision
 
         standard = SegyStandard(revision)
         return get_spec(standard)
@@ -170,10 +138,10 @@ class SegyFile:
 
         bin_hdr = np.frombuffer(buffer, dtype=self.spec.binary_file_header.dtype)
 
-        if self.settings.ENDIAN == Endianness.BIG:
+        if self.settings.endian == Endianness.BIG:
             bin_hdr = bin_hdr.byteswap(inplace=True).newbyteorder()
 
-        if self.settings.USE_PANDAS:
+        if self.settings.use_pandas:
             return DataFrame(bin_hdr.reshape(1))
 
         # The numpy array breaks downstream logic so for now
@@ -185,12 +153,12 @@ class SegyFile:
     def _parse_binary_header(self) -> None:
         """Parse the binary header and apply some rules."""
         # Extract number of samples and extended text headers.
-        if self.settings.BINARY.SAMPLES_PER_TRACE.VALUE is None:
-            header_key = self.settings.BINARY.SAMPLES_PER_TRACE.KEY
+        if self.settings.binary.samples_per_trace.value is None:
+            header_key = self.settings.binary.samples_per_trace.key
             # Use df.at method to get a single value and not return a series
             samples_per_trace = self.binary_header.at[0, header_key]
         else:
-            samples_per_trace = self.settings.BINARY.SAMPLES_PER_TRACE.VALUE
+            samples_per_trace = self.settings.binary.samples_per_trace.value
 
         # Calculate sizes for dynamic file metadata
         text_hdr_size = self.spec.text_file_header.itemsize
@@ -203,7 +171,7 @@ class SegyFile:
         num_ext_text = 0
         # All but Rev0 can have extended text headers
         if self.spec.segy_standard != SegyStandard.REV0:
-            header_key = self.settings.BINARY.EXTENDED_TEXT_HEADER.KEY
+            header_key = self.settings.binary.extended_text_header.key
 
             num_ext_text = 0
             if header_key in self.binary_header:
@@ -211,8 +179,8 @@ class SegyFile:
                 num_ext_text = self.binary_header.at[0, header_key]
 
         # Overriding from settings
-        elif self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE is not None:
-            num_ext_text = self.settings.BINARY.EXTENDED_TEXT_HEADER.VALUE
+        elif self.settings.binary.extended_text_header.value is not None:
+            num_ext_text = self.settings.binary.extended_text_header.value
 
         if num_ext_text > 0:
             self.spec.extended_text_header = rev1_extended_text_header

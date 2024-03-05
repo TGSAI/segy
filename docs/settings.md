@@ -23,14 +23,14 @@ SEG-Y file parsing according to your needs and the specifics of your project.
 
 It is composed of various sub-settings isolated by SEG-Y components and various topics.
 
-- **BINARY**: The [SegyBinaryHeaderSettings] is used for binary header configuration
+- **binary**: The [SegyBinaryHeaderSettings] is used for binary header configuration
   while reading a SEG-Y file.
-- **ENDIAN**: This setting determines the byte order that is being used in the SEG-Y file.
+- **endian**: This setting determines the byte order that is being used in the SEG-Y file.
   The possible options are `"big"` or `"little"` based on [Endianness]. If left as None,
   the system defaults to Big Endian (`"big"`).
-- **REVISION**: This setting is used to specify the SEG-Y revision number. If left as
+- **revision**: This setting is used to specify the SEG-Y revision number. If left as
   None, the system will automatically use the revision mentioned in the SEG-Y file.
-- **USE_PANDAS**: This setting is a boolean that decides whether to use pandas for
+- **use_pandas**: This setting is a boolean that decides whether to use pandas for
   headers or not. Does not apply to trace data. The trace data is always returned
   as Numpy arrays. The option to use Numpy for headers is currently disabled and will
   be available at a later release (as of March 2024).
@@ -48,13 +48,13 @@ from segy.schema import Endianness
 
 # Override extended text header count to zero
 binary_header_settings = SegyBinaryHeaderSettings(
-    EXTENDED_TEXT_HEADER={"value": 0}
+    extended_text_header={"value": 0}
 )
 
 settings = SegyFileSettings(
-    BINARY=binary_header_settings,
-    ENDIAN=Endianness.LITTLE,
-    REVISION=1,
+    binary=binary_header_settings,
+    endian=Endianness.LITTLE,
+    revision=1,
 )
 ```
 
