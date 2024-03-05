@@ -31,7 +31,7 @@ $ pip install segy[cloud]
 ```
 
 `cloud` installs [fsspec][fsspec] backed I/O libraries for [AWS' S3][s3fs],
-[Google's GCS][gcsfs], and [Azure ABS][adlfs].\
+[Google's GCS][gcsfs], and [Azure ABS][adlfs].
 
 [fsspec]: https://filesystem-spec.readthedocs.io/en/latest/
 [s3fs]: https://s3fs.readthedocs.io/
