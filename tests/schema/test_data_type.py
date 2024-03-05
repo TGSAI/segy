@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import string
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -164,3 +165,60 @@ def test_trace_data_descriptors(trace_data_descriptors: TraceDataDescriptor) -> 
     expected = np.dtype(f"({samples},){endianness}{format_}")
 
     assert trace_data_descriptors.dtype == expected
+
+
+@pytest.mark.parametrize(
+    ("json_string", "expected"),
+    [
+        (
+            """
+                {"description": "dummy description",
+                 "fields": [{"description": "description of field_one",
+                 "format": "int32","endianness": "big",
+                 "name": "field_one", "offset": 0} ,
+                 {"description": "description of field_two",
+                 "format": "ibm32", "endianness": "big",
+                 "name": "field_two", "offset": 4}],
+                 "itemSize": 8,"offset": 200}
+            """,
+            StructuredDataTypeDescriptor(
+                description="dummy description",
+                fields=[
+                    StructuredFieldDescriptor(
+                        description="description of field_one",
+                        format=ScalarType.INT32,
+                        endianness=Endianness.BIG,
+                        name="field_one",
+                        offset=0,
+                    ),
+                    StructuredFieldDescriptor(
+                        description="description of field_two",
+                        format=ScalarType.IBM32,
+                        endianness=Endianness.BIG,
+                        name="field_two",
+                        offset=4,
+                    ),
+                ],
+                item_size=8,
+                offset=200,
+            ),
+        )
+    ],
+)
+def test_validate_json_structured_data_type_descriptor(
+    json_string: str, expected: StructuredDataTypeDescriptor
+) -> None:
+    """Test for validating recreating a StrucrutedDataTypeDescriptor from a JSON string."""
+    validated_json = StructuredDataTypeDescriptor.model_validate_json(json_string)
+    assert validated_json.description == expected.description
+    assert validated_json.fields == expected.fields
+    assert validated_json.item_size == expected.item_size
+    assert validated_json.offset == expected.offset
+    assert _compare_json_strings(json_string, expected.model_dump_json())
+
+
+def _compare_json_strings(s1: str, s2: str) -> bool:
+    """Helper function for clearing whitespace to compare json strings."""
+    remove = string.whitespace
+    mapping = {ord(c): None for c in remove}
+    return s1.translate(mapping) == s2.translate(mapping)

@@ -97,10 +97,7 @@ def void_buffer(buff_size: int) -> npt.NDArray[np.void]:
     Prefills with random bytes.
     """
     rng = np.random.default_rng()
-    new_void_buffer = None
-    if isinstance(buff_size, int):
-        new_void_buffer = np.frombuffer(rng.bytes(buff_size), dtype=np.void(buff_size))
-    return new_void_buffer
+    return np.frombuffer(rng.bytes(buff_size), dtype=np.void(buff_size))
 
 
 def get_dt_info(
@@ -108,16 +105,15 @@ def get_dt_info(
     atrnames: list[str] | None = None,
 ) -> dict[str, Any]:
     """Helper function to get info about a numpy dtype."""
-    if atrnames is None:
-        atrnames = [
-            "descr",
-            "str",
-            "fields",
-            "itemsize",
-            "byteorder",
-            "shape",
-            "names",
-        ]
+    atrnames = [
+        "descr",
+        "str",
+        "fields",
+        "itemsize",
+        "byteorder",
+        "shape",
+        "names",
+    ]
     dt_info = dict(zip(atrnames, operator.attrgetter(*atrnames)(dt)))
     dt_info["offsets"] = [f[-1] for f in dt_info["fields"].values()]
     dt_info["combo_str"] = ",".join([f[1] for f in dt_info["descr"]])

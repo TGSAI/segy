@@ -192,8 +192,8 @@ def text_header_samples(
 def custom_segy_file_descriptors(
     request: pytest.FixtureRequest,
     make_text_header_descriptor: Callable[..., TextHeaderDescriptor],
-    make_binary_header_descriptor: Callable[..., BinaryHeaderDescriptor],
-    make_trace_header_descriptor: Callable[..., TraceHeaderDescriptor],
+    make_binary_header_descriptor: Callable[..., StructuredDataTypeDescriptor],
+    make_trace_header_descriptor: Callable[..., StructuredDataTypeDescriptor],
     make_trace_data_descriptor: Callable[..., TraceDataDescriptor],
 ) -> Generator[dict[str, Any], None, None]:
     """Helper fixture to return a requested number of custom segy file descriptor params."""
