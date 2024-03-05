@@ -1,8 +1,44 @@
+```{eval-rst}
+:tocdepth: 3
+```
+
 # API Reference
 
-## SEG-Y File Instances
+## SEG-Y File
 
 ```{eval-rst}
-.. automodule:: segy.file
+.. autoclass:: segy.SegyFile
    :members:
+```
+
+## Configuration
+
+```{eval-rst}
+.. autopydantic_settings:: segy.config.SegyFileSettings
+    :inherited-members: BaseModel
+```
+
+```{eval-rst}
+.. autopydantic_settings:: segy.config.SegyBinaryHeaderSettings
+    :inherited-members: BaseModel
+```
+
+```{eval-rst}
+.. autopydantic_settings:: segy.config.ExtendedTextHeaderSetting
+    :inherited-members: BaseModel
+```
+
+```{eval-rst}
+.. autopydantic_settings:: segy.config.SampleIntervalSetting
+    :inherited-members: BaseModel
+```
+
+```{eval-rst}
+.. autopydantic_settings:: segy.config.SampleIntervalSetting
+    :inherited-members: BaseModel
+```
+
+```{eval-rst}
+.. autopydantic_settings:: segy.config.SamplesPerTraceSetting
+    :inherited-members: BaseModel
 ```
