@@ -15,6 +15,8 @@ import pytest
 
 from segy.schema import Endianness
 from segy.schema import ScalarType
+from segy.schema import TextHeaderDescriptor
+from segy.schema import TextHeaderEncoding
 from segy.schema import TraceDataDescriptor
 from segy.schema import TraceDescriptor
 from segy.schema.data_type import StructuredDataTypeDescriptor
@@ -226,6 +228,25 @@ def make_binary_header_descriptor(
         )
 
     return _make_binary_header_descriptor
+
+
+@pytest.fixture(scope="module")
+def make_text_header_descriptor() -> Callable[..., TextHeaderDescriptor]:
+    """Fixture wrapper around helper function for creating BinaryHeaderDescriptor."""
+
+    def _make_text_header_descriptor(
+        rows: int = 40,
+        cols: int = 80,
+        encoding: TextHeaderEncoding = TextHeaderEncoding.EBCDIC,
+        format: ScalarType = ScalarType.UINT8,  # noqa: A002
+        offset: int | None = None,
+    ) -> TextHeaderDescriptor:
+        """Helper function for creating text header descriptor objects."""
+        return TextHeaderDescriptor(
+            rows=rows, cols=cols, encoding=encoding, format=format, offset=offset
+        )
+
+    return _make_text_header_descriptor
 
 
 def generate_unique_names(count: int) -> list[str]:
