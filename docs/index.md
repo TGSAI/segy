@@ -23,6 +23,7 @@ cli_usage
 :caption: Learning and Support
 
 tutorials/index
+settings
 api_reference
 ```
 
