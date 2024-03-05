@@ -51,19 +51,15 @@ Available information and data acquisition details are accessible via the
 
 We will take a look at the 3D unprocessed shot gathers (swath 1).
 
-#### Configuration Options
-
-When accessing public datasets from S3, we need to set
-`SegyFileSettings().storage_options = {"anon": True}`{l=python} for anonymous
-access. [SegyFileSettings](#SegyFileSettings) exposes all configuration options
-as environment variables. We just need to set `storage_options` with the `JSON`
-string `{"anon": true}`{l=python}. On Linux you can do this by the command below.
-Environment variables can be configured in many ways, please refer to the options
-for your specific Operating System (OS).
+````{note}
+To run the below examples, set your S3 configuration. More details in
+{ref}`env-configuration-options`.
 
 ```shell
 export SEGY__STORAGE_OPTIONS='{"anon": true}'
 ```
+
+````
 
 #### Basic Info
 
@@ -184,4 +180,20 @@ trace_index
 101          70628086  219412572  70616695  218864765                 -100
 500          70650057  219412488  70880968  219271571                 -100
 501          70650057  219412488  70880940  219260587                 -100
+```
+
+(env-configuration-options)=
+
+## Configuration Options
+
+When accessing public datasets from S3, we need to set
+`SegyFileSettings().storage_options = {"anon": True}`{l=python} for anonymous
+access. [SegyFileSettings](#SegyFileSettings) exposes all configuration options
+as environment variables. We just need to set `storage_options` with the `JSON`
+string `{"anon": true}`{l=python}. On Linux you can do this by the command below.
+Environment variables can be configured in many ways, please refer to the options
+for your specific Operating System (OS).
+
+```shell
+export SEGY__STORAGE_OPTIONS='{"anon": true}'
 ```
