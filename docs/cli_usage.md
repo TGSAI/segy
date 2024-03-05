@@ -197,3 +197,7 @@ for your specific Operating System (OS).
 ```shell
 export SEGY__STORAGE_OPTIONS='{"anon": true}'
 ```
+
+```{seealso}
+[Settings Management](#settings)
+```
