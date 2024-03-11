@@ -25,7 +25,7 @@ $ pip install -U segy
 You can also install some optional dependencies (extras) like this:
 
 ```shell
-$ pip install multidimio[cloud]
+$ pip install segy[cloud]
 ```
 
 `cloud` installs [fsspec][fsspec] backed I/O libraries for [AWS' S3][s3fs],
