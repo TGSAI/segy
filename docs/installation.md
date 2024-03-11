@@ -22,6 +22,20 @@ $ segy-venv/Scripts/activate
 $ pip install -U segy
 ```
 
+You can also install some optional dependencies (extras) like this:
+
+```shell
+$ pip install multidimio[cloud]
+```
+
+`cloud` installs [fsspec][fsspec] backed I/O libraries for [AWS' S3][s3fs],
+[Google's GCS][gcsfs], and [Azure ABS][adlfs].\
+
+[fsspec]: https://filesystem-spec.readthedocs.io/en/latest/
+[s3fs]: https://s3fs.readthedocs.io/
+[gcsfs]: https://gcsfs.readthedocs.io/
+[adlfs]: https://github.com/fsspec/adlfs
+
 To check if installation was successful see [checking installation](#checking-installation).
 
 You can also install some optional dependencies (extras) like this:
@@ -39,8 +53,6 @@ $ pip install segy[cloud]
 [adlfs]: https://github.com/fsspec/adlfs
 
 ## Using `conda`
-
-> 🚧👷🏻 Conda packaging is not available yet, but in progress 🚧👷🏻
 
 `segy` can also be installed in a `conda` environment.
 

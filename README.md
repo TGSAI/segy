@@ -54,6 +54,14 @@ Simplest way to install `segy` is via [pip] from [PyPI]:
 $ pip install segy
 ```
 
+or install `segy` via [conda] from [conda-forge]:
+
+```shell
+$ conda install -c conda-forge segy
+```
+
+> Extras must be installed separately on `Conda` environments.
+
 For details, please see the [installation instructions]
 in the documentation.
 
