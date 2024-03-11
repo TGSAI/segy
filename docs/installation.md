@@ -40,8 +40,6 @@ $ pip install segy[cloud]
 
 ## Using `conda`
 
-> 🚧👷🏻 Conda packaging is not available yet, but in progress 🚧👷🏻
-
 `segy` can also be installed in a `conda` environment.
 
 ```{note}
