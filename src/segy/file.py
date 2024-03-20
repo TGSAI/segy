@@ -94,7 +94,7 @@ class SegyFile:
             return self.settings.binary.sample_interval.value
 
         header_key = self.settings.binary.sample_interval.key
-        return int(self.binary_header[header_key])
+        return int(self.binary_header[header_key].item())
 
     @property
     def sample_labels(self) -> NDArray[np.int32]:
