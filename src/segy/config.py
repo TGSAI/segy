@@ -1,6 +1,5 @@
 """SEG-Y parser configuration."""
 
-
 from __future__ import annotations
 
 from typing import Any
@@ -53,6 +52,8 @@ class SegyBinaryHeaderSettings(SegyBaseSettings):
     sample_interval: SampleIntervalSetting = SampleIntervalSetting()
     extended_text_header: ExtendedTextHeaderSetting = ExtendedTextHeaderSetting()
 
+    apply_transforms: bool = Field(default=True)
+
 
 class SegyFileSettings(SegyBaseSettings):
     """SEG-Y file parsing settings."""
@@ -60,8 +61,6 @@ class SegyFileSettings(SegyBaseSettings):
     binary: SegyBinaryHeaderSettings = Field(default_factory=SegyBinaryHeaderSettings)
     endian: Endianness = Field(default=Endianness.BIG)
     revision: int | float | None = Field(default=None)
-
-    use_pandas: bool = Field(default=True)
 
     storage_options: dict[str, Any] = Field(default_factory=dict)
 
