@@ -1,6 +1,5 @@
 """Data models representing data types."""
 
-
 from __future__ import annotations
 
 from typing import Any
@@ -13,15 +12,23 @@ from segy.schema.base import BaseTypeDescriptor
 
 
 class Endianness(StrEnum):
-    """Enumeration class with two possible endianness values."""
+    """Enumeration class with three possible endianness values."""
 
     BIG = "big"
     LITTLE = "little"
+    NATIVE = "native"
+
+    def __init__(self, _) -> None:  # noqa: ANN001
+        self._symbol_map = {
+            "big": ">",
+            "little": "<",
+            "native": "=",
+        }
 
     @property
     def symbol(self) -> str:
-        """Get the numpy symbol for the endianness."""
-        return ">" if self == Endianness.BIG else "<"
+        """Get the numpy symbol for the endianness from mapping."""
+        return self._symbol_map[self.value]
 
 
 class ScalarType(StrEnum):
