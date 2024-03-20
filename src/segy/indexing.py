@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from fsspec.utils import merge_offset_ranges
-from pandas import DataFrame
 
 from segy.config import SegyFileSettings
+from segy.header import HeaderAccessor
 from segy.ibm import ibm2ieee
 from segy.schema import Endianness
 from segy.schema import ScalarType
@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
     from fsspec import AbstractFileSystem
     from numpy.typing import NDArray
+    from pandas import DataFrame
 
     from segy.schema import TraceDescriptor
     from segy.schema.base import BaseTypeDescriptor
@@ -252,11 +253,14 @@ class TraceIndexer(AbstractIndexer):
     def post_process(
         self, data: NDArray[Any]
     ) -> NDArray[Any] | dict[str, NDArray[Any] | DataFrame]:
-        """Either return struct array or (Header) DataFrame + (Data) Array."""
-        if self.settings.use_pandas:
-            return {"header": DataFrame(data["header"]), "data": data["data"]}
+        """Return header and samples in dict.
 
-        return data
+        Data is already byte-swapped at decode so not applying it here.
+        We need to standardize the transformations in a way that's
+        applicable to trace data and headers etc.
+        """
+        header_accessor = HeaderAccessor(data=data["header"])
+        return {"header": header_accessor, "data": data["data"]}
 
 
 class HeaderIndexer(AbstractIndexer):
@@ -289,23 +293,23 @@ class HeaderIndexer(AbstractIndexer):
         """Decode headers only."""
         data = np.frombuffer(buffer, dtype=self.spec.header_descriptor.dtype)
 
-        # TODO(Altay): Handle float/ibm32 etc headers.
-        # https://github.com/TGSAI/segy/issues/5
-        if self.settings.endian == Endianness.BIG:
-            data = data.byteswap(inplace=True).newbyteorder()
-
         return data  # noqa: RET504
 
-    def post_process(self, data: NDArray[Any]) -> NDArray[Any] | DataFrame:
-        """Either return header as struct array or DataFrame."""
-        if self.settings.use_pandas:
-            return DataFrame(data)
+    def post_process(self, data: NDArray[Any]) -> HeaderAccessor:
+        """Convert raw struct to accessor."""
+        accessor = HeaderAccessor(data=data)
 
-        # The numpy array breaks downstream logic so for now
-        # turning it off and raising a not implemented error.
-        msg = "Not using pandas for headers not implemented yet."
-        raise NotImplementedError(msg)
-        # return bin_hdr.squeeze()
+        if self.settings.binary.apply_transforms:
+            binary_endian = self.spec.header_descriptor.fields[0].endianness
+            accessor.queue_transform(
+                transform_type="byte_swap",
+                parameters={
+                    "source_byteorder": binary_endian,
+                    "target_byteorder": Endianness.NATIVE,
+                },
+            )
+
+        return accessor
 
 
 class DataIndexer(AbstractIndexer):
