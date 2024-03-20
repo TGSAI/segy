@@ -66,7 +66,7 @@ class SegyFile:
     @property
     def num_ext_text(self) -> int:
         """Return number of extended text headers."""
-        if self.spec.segy_standard == SegyStandard.REV0:
+        if self.spec.segy_standard in {SegyStandard.REV0, SegyStandard.CUSTOM}:
             return 0
 
         # Overriding from settings
