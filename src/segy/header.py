@@ -14,6 +14,7 @@ from pandas import DataFrame
 if TYPE_CHECKING:
     from typing import Any
 
+    from numpy import dtype
     from numpy.typing import NDArray
 
     from segy.schema import Endianness
@@ -146,6 +147,11 @@ class HeaderAccessor:
         """Apply inverse transform to new data."""
         return self._transform_pipeline.inverse_transform(new_data)
 
+    @property
+    def dtype(self) -> dtype:
+        """Data type of the transformed array."""
+        return self._apply_transform().dtype
+
     def __getitem__(self, key: str) -> NDArray[Any]:
         """Return a copy of the transformed data."""
         return self._apply_transform()[key]
@@ -163,9 +169,9 @@ class HeaderAccessor:
     def to_json(self, indent: int = 2) -> str:
         """Convert header to JSON."""
         result_dict = {}
-        array = self._apply_transform()
-        for field in array.dtype.names:
-            field_values = array[field]
+        data = self._apply_transform()
+        for field in self.dtype.names:
+            field_values = data[field]
             result_dict[field] = field_values.squeeze().tolist()
 
         return json_dumps(result_dict, indent=indent)
