@@ -169,7 +169,7 @@ $ segy dump binary-header \
 This is how we can get three header fields for a few traces.
 
 ```console
-$ s3://open.source.geoscience/open_data/stratton/segy/navmerged/swath_1_geometry.sgy \
+$ segy dump trace-header s3://open.source.geoscience/open_data/stratton/segy/navmerged/swath_1_geometry.sgy \
     --index 100 --index 101 --index 500 --index 501 \
     --field src_x --field src_y \
     --field rec_x --field rec_y \
