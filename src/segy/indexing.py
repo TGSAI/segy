@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 
     from fsspec import AbstractFileSystem
     from numpy.typing import NDArray
-    from pandas import DataFrame
 
     from segy.schema import TraceDescriptor
     from segy.schema.base import BaseTypeDescriptor
@@ -252,7 +251,7 @@ class TraceIndexer(AbstractIndexer):
 
     def post_process(
         self, data: NDArray[Any]
-    ) -> NDArray[Any] | dict[str, NDArray[Any] | DataFrame]:
+    ) -> NDArray[Any] | dict[str, NDArray[Any] | HeaderAccessor]:
         """Return header and samples in dict.
 
         Data is already byte-swapped at decode so not applying it here.

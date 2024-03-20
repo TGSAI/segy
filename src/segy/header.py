@@ -46,6 +46,10 @@ class ScalingStrategy(HeaderTransformationStrategy):
 
     def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Forward transformation implementation."""
+        if data.dtype.names is None:
+            msg = f"{self.__class__.__name__} can only work on structured arrays."
+            raise ValueError(msg)
+
         for key in self.keys:
             if key in data.dtype.names:
                 data[key] = [vals * self.scale_factor for vals in data[key]]
@@ -53,6 +57,10 @@ class ScalingStrategy(HeaderTransformationStrategy):
 
     def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Inverse transformation implementation."""
+        if data.dtype.names is None:
+            msg = f"{self.__class__.__name__} can only work on structured arrays."
+            raise ValueError(msg)
+
         for key in self.keys:
             if key in data.dtype.names:
                 data[key] = [vals / self.scale_factor for vals in data[key]]
@@ -76,13 +84,13 @@ class ByteSwapStrategy(HeaderTransformationStrategy):
     def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Swap bytes if target != source. Else it is a no-op."""
         if self.source_byteorder is not self.target_byteorder:
-            data = data.newbyteorder(self.target_byteorder.value).byteswap()
+            data = data.newbyteorder(self.target_byteorder.symbol).byteswap()
         return data
 
     def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Swap bytes if source != target. Else it is a no-op."""
         if self.target_byteorder is not self.source_byteorder:
-            data = data.newbyteorder(self.source_byteorder.value).byteswap()
+            data = data.newbyteorder(self.source_byteorder.symbol).byteswap()
         return data
 
 
@@ -90,7 +98,7 @@ class TransformationPipeline:
     """Pipeline to chain transforms forward and backward."""
 
     def __init__(self) -> None:
-        self.transformations = []
+        self.transformations: list[HeaderTransformationStrategy] = []
 
     def add_transformation(self, transformation: HeaderTransformationStrategy) -> None:
         """Add transformation to pipeline."""
@@ -148,7 +156,7 @@ class HeaderAccessor:
         return self._transform_pipeline.inverse_transform(new_data)
 
     @property
-    def dtype(self) -> dtype:
+    def dtype(self) -> dtype[Any]:
         """Data type of the transformed array."""
         return self._apply_transform().dtype
 
@@ -170,6 +178,11 @@ class HeaderAccessor:
         """Convert header to JSON."""
         result_dict = {}
         data = self._apply_transform()
+
+        if self.dtype.names is None:
+            msg = f"{self.__class__.__name__} can only work on structured arrays."
+            raise ValueError(msg)
+
         for field in self.dtype.names:
             field_values = data[field]
             result_dict[field] = field_values.squeeze().tolist()

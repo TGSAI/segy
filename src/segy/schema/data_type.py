@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from typing import Any
+from typing import Literal
+from typing import cast
 
 import numpy as np
 from pydantic import Field
@@ -26,9 +28,9 @@ class Endianness(StrEnum):
         }
 
     @property
-    def symbol(self) -> str:
+    def symbol(self) -> Literal["<", ">", "="]:
         """Get the numpy symbol for the endianness from mapping."""
-        return self._symbol_map[self.value]
+        return cast(Literal["<", ">", "="], self._symbol_map[self.value])
 
 
 class ScalarType(StrEnum):

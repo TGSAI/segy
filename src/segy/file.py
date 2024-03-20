@@ -84,23 +84,23 @@ class SegyFile:
             return self.settings.binary.samples_per_trace.value
 
         header_key = self.settings.binary.samples_per_trace.key
-        return self.binary_header[header_key].item()
+        return int(self.binary_header[header_key].item())
 
     @property
-    def sample_interval(self) -> int | float:
+    def sample_interval(self) -> int:
         """Return samples interval in file based on spec."""
         # Overriding from settings
         if self.settings.binary.sample_interval.value is not None:
             return self.settings.binary.sample_interval.value
 
         header_key = self.settings.binary.sample_interval.key
-        return self.binary_header[header_key].item()
+        return int(self.binary_header[header_key])
 
     @property
-    def sample_labels(self) -> NDArray[int]:
+    def sample_labels(self) -> NDArray[np.int32]:
         """Return sample axis labels."""
         max_samp = self.sample_interval * self.samples_per_trace
-        return np.arange(0, max_samp, self.sample_interval)
+        return np.arange(0, max_samp, self.sample_interval, dtype="int32")
 
     @property
     def num_traces(self) -> int:
