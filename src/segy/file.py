@@ -175,13 +175,6 @@ class SegyFile:
                     "target_byteorder": Endianness.NATIVE,
                 },
             )
-            accessor.queue_transform(
-                transform_type="scale",
-                parameters={
-                    "scale_factor": 0.001,
-                    "keys": ["sample_interval", "sample_interval_orig"],
-                },
-            )
 
         return accessor
 
