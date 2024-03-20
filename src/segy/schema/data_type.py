@@ -18,7 +18,7 @@ class Endianness(StrEnum):
     LITTLE = "little"
     NATIVE = "native"
 
-    def __init__(self, _) -> None:  # noqa: ANN001
+    def __init__(self, _: str) -> None:
         self._symbol_map = {
             "big": ">",
             "little": "<",
