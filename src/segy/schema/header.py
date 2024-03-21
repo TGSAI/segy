@@ -1,4 +1,5 @@
 """Classes for managing headers and header groups."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -47,7 +48,7 @@ class TextHeaderDescriptor(BaseTypeDescriptor):
             buffer_int = np.frombuffer(buffer, dtype=self.dtype)
             buffer = EBCDIC_TO_ASCII[buffer_int].tobytes()
 
-        return buffer.decode("ascii")
+        return buffer.decode("ascii", errors="ignore")
 
     def _encode(self, text_header: str) -> bytes:
         """Encode string to EBCDIC or ASCII bytes."""
