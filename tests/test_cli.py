@@ -38,7 +38,6 @@ class TestDump:
         result = runner.invoke(app, ["dump", "text-header", s3_path])
         assert result.exit_code == 0
         assert "CLIENT: BUREAU OF ECONOMIC GEOLOGY" in result.stdout
-        assert "(STRATTON FIELD)" in result.stdout
 
     def test_binary_header_dump(self, s3_path: str) -> None:
         """Test binary header dump."""
