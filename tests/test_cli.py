@@ -24,13 +24,14 @@ class TestDump:
     @classmethod
     def setup_class(cls: type[TestDump]) -> None:
         """Set environment variable for anon access to S3."""
+        os.environ["NOCOLOR"] = "1"
         os.environ["SEGY__STORAGE_OPTIONS"] = '{"anon": true}'
 
     def test_info_dump(self, s3_path: str) -> None:
         """Test generic info dump."""
         result = runner.invoke(app, ["dump", "info", s3_path])
         assert result.exit_code == 0
-        assert '"numTraces": 136530' in result.stdout
+        assert '"numTraces": 136530 ss' in result.stdout
         assert '"fileSize": 1671130800' in result.stdout
 
     def test_text_dump(self, s3_path: str) -> None:
