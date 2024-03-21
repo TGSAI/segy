@@ -1,5 +1,7 @@
 """Tests for the CLI."""
 
+from __future__ import annotations
+
 import os
 
 import pytest
@@ -20,7 +22,7 @@ class TestDump:
     """Test class for CLI's dump options."""
 
     @classmethod
-    def setup_class(cls: "TestDump") -> None:
+    def setup_class(cls: type[TestDump]) -> None:
         """Set environment variable for anon access to S3."""
         os.environ["SEGY__STORAGE_OPTIONS"] = '{"anon": true}'
 
