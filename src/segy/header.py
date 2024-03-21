@@ -14,6 +14,7 @@ from pandas import DataFrame
 if TYPE_CHECKING:
     from typing import Any
 
+    from numpy import dtype
     from numpy.typing import DTypeLike
     from numpy.typing import NDArray
 
