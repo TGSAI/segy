@@ -14,7 +14,7 @@ from pandas import DataFrame
 if TYPE_CHECKING:
     from typing import Any
 
-    from numpy import dtype
+    from numpy.typing import DTypeLike
     from numpy.typing import NDArray
 
     from segy.schema import Endianness
@@ -160,6 +160,10 @@ class HeaderAccessor:
         """Data type of the transformed array."""
         return self._apply_transform().dtype
 
+    def view(self, dtype: DTypeLike) -> NDArray[Any]:
+        """Data type of the transformed array."""
+        return self._apply_transform().view(dtype)
+
     def __getitem__(self, key: str) -> NDArray[Any]:
         """Return a copy of the transformed data."""
         return self._apply_transform()[key]
@@ -170,12 +174,8 @@ class HeaderAccessor:
         new_data[key] = value
         self._data = self._apply_inverse_transform(new_data)
 
-    def __repr__(self) -> str:
-        """Nice representation for terminal."""
-        return self._apply_transform().__repr__()
-
-    def to_json(self, indent: int = 2) -> str:
-        """Convert header to JSON."""
+    def to_dict(self) -> dict[str, Any]:
+        """Convert header to dict."""
         result_dict = {}
         data = self._apply_transform()
 
@@ -187,7 +187,11 @@ class HeaderAccessor:
             field_values = data[field]
             result_dict[field] = field_values.squeeze().tolist()
 
-        return json_dumps(result_dict, indent=indent)
+        return result_dict
+
+    def to_json(self, indent: int = 2) -> str:
+        """Convert header to JSON."""
+        return json_dumps(self.to_dict(), indent=indent)
 
     def to_dataframe(self) -> DataFrame:
         """Convert structured data to pandas DataFrame."""
