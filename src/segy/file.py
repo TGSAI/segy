@@ -1,4 +1,5 @@
 """SEG-Y file in-memory constructors."""
+
 from __future__ import annotations
 
 from functools import cached_property
@@ -6,9 +7,9 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from fsspec.core import url_to_fs
-from pandas import DataFrame
 
 from segy.config import SegyFileSettings
+from segy.header import HeaderAccessor
 from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
 from segy.indexing import TraceIndexer
@@ -20,6 +21,7 @@ from segy.standards.rev1 import rev1_extended_text_header
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
+    from numpy.typing import NDArray
 
     from segy.indexing import AbstractIndexer
     from segy.schema import SegyDescriptor
@@ -62,32 +64,57 @@ class SegyFile:
         return size
 
     @property
+    def num_ext_text(self) -> int:
+        """Return number of extended text headers."""
+        if self.spec.segy_standard in {SegyStandard.REV0, SegyStandard.CUSTOM}:
+            return 0
+
+        # Overriding from settings
+        if self.settings.binary.extended_text_header.value is not None:
+            return self.settings.binary.extended_text_header.value
+
+        header_key = self.settings.binary.extended_text_header.key
+        return int(self.binary_header[header_key][0])
+
+    @property
+    def samples_per_trace(self) -> int:
+        """Return samples per trace in file based on spec."""
+        # Overriding from settings
+        if self.settings.binary.samples_per_trace.value is not None:
+            return self.settings.binary.samples_per_trace.value
+
+        header_key = self.settings.binary.samples_per_trace.key
+        return int(self.binary_header[header_key].item())
+
+    @property
+    def sample_interval(self) -> int:
+        """Return samples interval in file based on spec."""
+        # Overriding from settings
+        if self.settings.binary.sample_interval.value is not None:
+            return self.settings.binary.sample_interval.value
+
+        header_key = self.settings.binary.sample_interval.key
+        return int(self.binary_header[header_key].item())
+
+    @property
+    def sample_labels(self) -> NDArray[np.int32]:
+        """Return sample axis labels."""
+        max_samp = self.sample_interval * self.samples_per_trace
+        return np.arange(0, max_samp, self.sample_interval, dtype="int32")
+
+    @property
     def num_traces(self) -> int:
         """Return number of traces in file based on size and spec."""
         file_textual_hdr_size = self.spec.text_file_header.itemsize
         file_bin_hdr_size = self.spec.binary_file_header.itemsize
         trace_size = self.spec.trace.itemsize
 
-        num_ext_text = 0
-        # All but Rev0 can have extended text headers
-        if self.spec.segy_standard != SegyStandard.REV0:
-            header_key = self.settings.binary.extended_text_header.key
-
-            num_ext_text = 0
-            if header_key in self.binary_header:
-                # Use df.at method to get a single value and not return a series
-                num_ext_text = self.binary_header.at[0, header_key]
-
-        # Overriding from settings
-        elif self.settings.binary.extended_text_header.value is not None:
-            num_ext_text = self.settings.binary.extended_text_header.value
-
         file_metadata_size = file_textual_hdr_size + file_bin_hdr_size
 
-        if num_ext_text > 0:
+        if self.num_ext_text > 0:
             self.spec.extended_text_header = rev1_extended_text_header
 
-            ext_text_size = self.spec.extended_text_header.itemsize * int(num_ext_text)
+            ext_text_size = self.spec.extended_text_header.itemsize * self.num_ext_text
             file_metadata_size = file_metadata_size + ext_text_size
 
         return (self.file_size - file_metadata_size) // trace_size
@@ -126,7 +153,7 @@ class SegyFile:
         return get_spec(standard)
 
     @cached_property
-    def binary_header(self) -> DataFrame:
+    def binary_header(self) -> HeaderAccessor:
         """Read binary header from store, based on spec."""
         buffer = bytearray(
             self.fs.read_block(
@@ -138,54 +165,33 @@ class SegyFile:
 
         bin_hdr = np.frombuffer(buffer, dtype=self.spec.binary_file_header.dtype)
 
-        if self.settings.endian == Endianness.BIG:
-            bin_hdr = bin_hdr.byteswap(inplace=True).newbyteorder()
+        accessor = HeaderAccessor(data=bin_hdr)
+        if self.settings.binary.apply_transforms:
+            binary_endian = self.spec.binary_file_header.fields[0].endianness
+            accessor.queue_transform(
+                transform_type="byte_swap",
+                parameters={
+                    "source_byteorder": binary_endian,
+                    "target_byteorder": Endianness.NATIVE,
+                },
+            )
 
-        if self.settings.use_pandas:
-            return DataFrame(bin_hdr.reshape(1))
-
-        # The numpy array breaks downstream logic so for now
-        # turning it off and raising a not implemented error.
-        msg = "Not using pandas for headers not implemented yet."
-        raise NotImplementedError(msg)
-        # return bin_hdr.squeeze()
+        return accessor
 
     def _parse_binary_header(self) -> None:
         """Parse the binary header and apply some rules."""
-        # Extract number of samples and extended text headers.
-        if self.settings.binary.samples_per_trace.value is None:
-            header_key = self.settings.binary.samples_per_trace.key
-            # Use df.at method to get a single value and not return a series
-            samples_per_trace = self.binary_header.at[0, header_key]
-        else:
-            samples_per_trace = self.settings.binary.samples_per_trace.value
-
         # Calculate sizes for dynamic file metadata
         text_hdr_size = self.spec.text_file_header.itemsize
         bin_hdr_size = self.spec.binary_file_header.itemsize
 
         # Update trace start offset and sample length
-        self.spec.trace.data_descriptor.samples = int(samples_per_trace)
+        self.spec.trace.data_descriptor.samples = self.samples_per_trace
         self.spec.trace.offset = text_hdr_size + bin_hdr_size
 
-        num_ext_text = 0
-        # All but Rev0 can have extended text headers
-        if self.spec.segy_standard != SegyStandard.REV0:
-            header_key = self.settings.binary.extended_text_header.key
-
-            num_ext_text = 0
-            if header_key in self.binary_header:
-                # Use df.at method to get a single value and not return a series
-                num_ext_text = self.binary_header.at[0, header_key]
-
-        # Overriding from settings
-        elif self.settings.binary.extended_text_header.value is not None:
-            num_ext_text = self.settings.binary.extended_text_header.value
-
-        if num_ext_text > 0:
+        if self.num_ext_text > 0:
             self.spec.extended_text_header = rev1_extended_text_header
 
-            ext_text_size = self.spec.extended_text_header.itemsize * int(num_ext_text)
+            ext_text_size = self.spec.extended_text_header.itemsize * self.num_ext_text
             self.spec.trace.offset = self.spec.trace.offset + ext_text_size
 
     @property

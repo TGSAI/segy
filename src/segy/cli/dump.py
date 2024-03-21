@@ -1,7 +1,5 @@
 """Command line interface for segy."""
 
-import json
-
 import pandas as pd
 import typer
 from rich import print
@@ -32,8 +30,8 @@ def info(uri: UriArgument, output: JsonFileOutOption = None) -> None:
         uri=uri,
         segy_standard=spec.segy_standard.value,
         num_traces=segy.num_traces,
-        samples_per_trace=segy.binary_header["samples_per_trace"].iloc[0],
-        sample_interval=segy.binary_header["sample_interval"].iloc[0],
+        samples_per_trace=segy.samples_per_trace,
+        sample_interval=segy.sample_interval,
         file_size=segy.file_size,
     )
 
@@ -70,11 +68,7 @@ def binary_header(uri: UriArgument, output: JsonFileOutOption = None) -> None:
     """Print or save the binary header of a SEG-Y file."""
     segy = SegyFile(uri)
     bin_header = segy.binary_header
-    bin_header_json = bin_header.to_json(orient="records")
-
-    # Extract the first element since we know it's a single row
-    parsed_json = json.loads(bin_header_json)
-    bin_header_json = json.dumps(parsed_json[0], indent=2)
+    bin_header_json = bin_header.to_json()
 
     if output is None:
         print(bin_header_json)
@@ -109,7 +103,7 @@ def trace_header(
 ) -> None:
     """Get one or more trace's headers (without samples)."""
     segy = SegyFile(uri)
-    headers = segy.header[index]
+    headers = segy.header[index].to_dataframe()
 
     row_index = pd.Index(index, name="trace_index")
     headers.set_index(row_index, inplace=True)

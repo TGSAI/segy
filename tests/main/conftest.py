@@ -1,4 +1,5 @@
 """conftest for main tests."""
+
 from collections.abc import Callable
 from pathlib import Path
 
@@ -17,6 +18,7 @@ def create_mock_segy_rev0(
     tmp_file: Path,
     num_samples: int,
     num_traces: int,
+    sample_interval: int,
     format_str_to_text_header: Callable[[str], str],
 ) -> SegyFile:
     """Create a temporary file that mocks a segy Rev0 file structure."""
@@ -27,6 +29,7 @@ def create_mock_segy_rev0(
     sample_text_header = format_str_to_text_header(text_header_content)
     binary_header_vals = np.zeros((), dtype=rev0_spec.binary_file_header.dtype)
     binary_header_vals["samples_per_trace"] = num_samples
+    binary_header_vals["sample_interval"] = sample_interval
 
     trace_header_vals = np.zeros((), dtype=rev0_spec.trace.header_descriptor.dtype)
     trace_header_vals["trace_seq_line"] = 1
@@ -53,21 +56,30 @@ def mock_segy_rev0(
     request: list[int], tmp_path: Path, format_str_to_text_header: Callable[[str], str]
 ) -> SegyFile:
     """Returns a temp file that for rev0 SegyFile object."""
-    req_params = getattr(request, "param", [10, 10])
-    num_samples, num_traces = req_params[0], req_params[1]
+    req_params = getattr(request, "param", [10, 10, 2000])
+    num_samples, num_traces, sample_interval = (
+        req_params[0],
+        req_params[1],
+        req_params[2],
+    )
 
     temp_rev0 = tmp_path / "rev0_test.segy"
 
     return create_mock_segy_rev0(
-        temp_rev0, num_samples, num_traces, format_str_to_text_header
+        temp_rev0,
+        num_samples,
+        num_traces,
+        sample_interval,
+        format_str_to_text_header,
     )
 
 
-def create_mock_segy_rev1(
+def create_mock_segy_rev1(  # noqa: PLR0913
     tmp_file: Path,
     num_samples: int,
     num_traces: int,
     num_extended_headers: int,
+    sample_interval: int,
     format_str_to_text_header: Callable[[str], str],
 ) -> SegyFile:
     """Create a temporary file that mocks a segy Rev1 file structure."""
@@ -83,6 +95,7 @@ def create_mock_segy_rev1(
 
     binary_header_vals = np.zeros((), dtype=rev1_spec.binary_file_header.dtype)
     binary_header_vals["samples_per_trace"] = num_samples
+    binary_header_vals["sample_interval"] = sample_interval
     binary_header_vals["extended_textual_headers"] = num_extended_headers
     binary_header_vals["seg_y_revision"] = 1
 
@@ -114,11 +127,13 @@ def mock_segy_rev1(
     request: list[int], tmp_path: Path, format_str_to_text_header: Callable[[str], str]
 ) -> SegyFile:
     """Returns a temp file that for rev1 SegyFile object."""
-    req_params = getattr(request, "param", [10, 10, 2])
-    num_samples, num_traces, num_extended_headers = (
+    req_params = getattr(request, "param", [10, 10, 2, 2000])
+
+    num_samples, num_traces, num_extended_headers, sample_interval = (
         req_params[0],
         req_params[1],
         req_params[2],
+        req_params[3],
     )
 
     temp_rev1 = tmp_path / "rev1_test.segy"
@@ -128,5 +143,6 @@ def mock_segy_rev1(
         num_samples,
         num_traces,
         num_extended_headers,
+        sample_interval,
         format_str_to_text_header,
     )

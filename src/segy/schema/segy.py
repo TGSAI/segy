@@ -1,4 +1,5 @@
 """Descriptor data model implementations for SEG-Y file(s)."""
+
 from __future__ import annotations
 
 from enum import Enum
@@ -103,6 +104,8 @@ class SegyInfo(CamelCaseModel):
         ..., description="Trace length in number of samples."
     )
 
-    sample_interval: int = Field(..., description="Sampling rate from binary header.")
+    sample_interval: int | float = Field(
+        ..., description="Sampling rate from binary header."
+    )
 
     file_size: int = Field(..., description="File size in bytes.")
