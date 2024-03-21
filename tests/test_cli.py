@@ -31,7 +31,7 @@ class TestDump:
         """Test generic info dump."""
         result = runner.invoke(app, ["dump", "info", s3_path])
         assert result.exit_code == 0
-        assert '"numTraces": 136530 ss' in result.stdout
+        assert '"numTraces": 136530' in result.stdout
         assert '"fileSize": 1671130800' in result.stdout
 
     def test_text_dump(self, s3_path: str) -> None:
