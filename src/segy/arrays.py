@@ -3,6 +3,9 @@
 We subclass NumPy ndarray with some methods to enrich it for
 better use experience. Like dictionary or JSON dumps for
 structured arrays.
+
+See here for details:
+https://numpy.org/doc/stable/user/basics.subclassing.html
 """
 
 from __future__ import annotations
