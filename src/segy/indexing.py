@@ -9,11 +9,13 @@ from typing import TYPE_CHECKING
 import numpy as np
 from fsspec.utils import merge_offset_ranges
 
+from segy.arrays import HeaderNDArray
 from segy.config import SegyFileSettings
-from segy.header import HeaderAccessor
 from segy.ibm import ibm2ieee
 from segy.schema import Endianness
 from segy.schema import ScalarType
+from segy.transforms import TransformPipeline
+from segy.transforms import TransformStrategyFactory
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -251,15 +253,15 @@ class TraceIndexer(AbstractIndexer):
 
     def post_process(
         self, data: NDArray[Any]
-    ) -> NDArray[Any] | dict[str, NDArray[Any] | HeaderAccessor]:
+    ) -> NDArray[Any] | dict[str, NDArray[Any] | HeaderNDArray]:
         """Return header and samples in dict.
 
         Data is already byte-swapped at decode so not applying it here.
         We need to standardize the transformations in a way that's
         applicable to trace data and headers etc.
         """
-        header_accessor = HeaderAccessor(data=data["header"])
-        return {"header": header_accessor, "data": data["data"]}
+        header_array = HeaderNDArray(data["header"])
+        return {"header": header_array, "data": data["data"]}
 
 
 class HeaderIndexer(AbstractIndexer):
@@ -294,21 +296,24 @@ class HeaderIndexer(AbstractIndexer):
 
         return data  # noqa: RET504
 
-    def post_process(self, data: NDArray[Any]) -> HeaderAccessor:
+    def post_process(self, data: NDArray[Any]) -> HeaderNDArray:
         """Convert raw struct to accessor."""
-        accessor = HeaderAccessor(data=data)
+        if self.settings.apply_transforms is False:
+            return HeaderNDArray(data)
 
-        if self.settings.binary.apply_transforms:
-            binary_endian = self.spec.header_descriptor.fields[0].endianness
-            accessor.queue_transform(
+        binary_endian = self.spec.header_descriptor.fields[0].endianness
+        pipeline = TransformPipeline()
+        pipeline.add_transformation(
+            TransformStrategyFactory.create_strategy(
                 transform_type="byte_swap",
                 parameters={
-                    "source_byteorder": binary_endian,
-                    "target_byteorder": Endianness.NATIVE,
+                    "source_order": binary_endian,
+                    "target_order": Endianness.NATIVE,
                 },
             )
+        )
 
-        return accessor
+        return HeaderNDArray(pipeline.transform(data))
 
 
 class DataIndexer(AbstractIndexer):

@@ -33,8 +33,8 @@ def test_segy_rev0(
     assert (
         mock_segy_rev0.header[:]["trace_seq_line"] == list(range(1, num_traces + 1))
     ).all()
-    assert (mock_segy_rev0.trace[:]["header"][:] == mock_segy_rev0.header[:][:]).all()
-    assert (mock_segy_rev0.trace[:]["data"][:] == mock_segy_rev0.data[:][:]).all()
+    assert (mock_segy_rev0.trace[:]["header"] == mock_segy_rev0.header[:]).all()
+    assert (mock_segy_rev0.trace[:]["data"] == mock_segy_rev0.data[:]).all()
 
 
 @pytest.mark.parametrize(
@@ -66,5 +66,5 @@ def test_segy_rev1(
         mock_segy_rev1.header[:]["trace_seq_line"] == list(range(1, num_traces + 1))
     ).all()
 
-    assert (mock_segy_rev1.trace[:]["header"][:] == mock_segy_rev1.header[:][:]).all()
-    assert (mock_segy_rev1.trace[:]["data"][:] == mock_segy_rev1.data[:][:]).all()
+    assert (mock_segy_rev1.trace[:]["header"] == mock_segy_rev1.header[:]).all()
+    assert (mock_segy_rev1.trace[:]["data"] == mock_segy_rev1.data[:]).all()
