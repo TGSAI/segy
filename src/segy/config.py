@@ -52,8 +52,6 @@ class SegyBinaryHeaderSettings(SegyBaseSettings):
     sample_interval: SampleIntervalSetting = SampleIntervalSetting()
     extended_text_header: ExtendedTextHeaderSetting = ExtendedTextHeaderSetting()
 
-    apply_transforms: bool = Field(default=True)
-
 
 class SegyFileSettings(SegyBaseSettings):
     """SEG-Y file parsing settings."""
@@ -63,6 +61,7 @@ class SegyFileSettings(SegyBaseSettings):
     revision: int | float | None = Field(default=None)
 
     storage_options: dict[str, Any] = Field(default_factory=dict)
+    apply_transforms: bool = Field(default=True)
 
     model_config = SettingsConfigDict(
         env_prefix="SEGY__",
