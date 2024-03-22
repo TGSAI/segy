@@ -5,15 +5,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from typing import TypeVar
 
+from numpy import ndarray
+
 if TYPE_CHECKING:
     from typing import Any
-
-    from numpy.typing import NDArray
 
     from segy.schema import Endianness
 
 
-T = TypeVar("T", bound="NDArray")
+T = TypeVar("T", bound=ndarray)
 
 
 class TransformStrategy:
