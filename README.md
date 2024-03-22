@@ -133,8 +133,10 @@ with more modern tooling applied elsewhere.
 
 [hypermodern python cookiecutter]: https://github.com/cjolowicz/cookiecutter-hypermodern-python
 [pypi]: https://pypi.org/
+[conda-forge]: https://conda-forge.org/
 [file an issue]: https://github.com/TGSAI/segy/issues
 [pip]: https://pip.pypa.io/
+[conda]: https://docs.conda.io/
 
 <!-- github-only -->
 
