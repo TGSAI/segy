@@ -90,6 +90,19 @@ class TestTransforms:
         roundtrip_header = strategy.inverse_transform(transformed_header)
         np.testing.assert_allclose(roundtrip_header.item(), expected_roundtrip)
 
+    def test_scale_field_exceptions(self, mock_data: NDArray[Any]) -> None:
+        """Test expected error if non-struct is given."""
+        strategy = TransformStrategyFactory.create_strategy(
+            transform_type="scale_field",
+            parameters={"scale_factor": 10, "keys": ["field1", "field2"]},
+        )
+
+        with pytest.raises(ValueError, match="only work on structured arrays"):
+            strategy.transform(mock_data)
+
+        with pytest.raises(ValueError, match="only work on structured arrays"):
+            strategy.inverse_transform(mock_data)
+
     def test_transform_pipeline(self, mock_data: NDArray[Any]) -> None:
         """Test transformation pipeline."""
         pipeline = TransformPipeline()
@@ -117,3 +130,13 @@ class TestTransforms:
 
         roundtrip_data = pipeline.inverse_transform(transformed_data)
         np.testing.assert_allclose(roundtrip_data, mock_data)
+
+    def test_transform_factory_exception(self) -> None:
+        """Test unknown transformation type."""
+        factory = TransformStrategyFactory()
+
+        with pytest.raises(KeyError, match="Unsupported transformation"):
+            factory.create_strategy(
+                transform_type="non_existent_transform",
+                parameters={},
+            )

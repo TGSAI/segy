@@ -146,4 +146,4 @@ class TransformStrategyFactory:
             return ScaleFieldStrategy(**parameters)
 
         msg = f"Unsupported transformation type: {transform_type}"
-        raise ValueError(msg)
+        raise KeyError(msg)
