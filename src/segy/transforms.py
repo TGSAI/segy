@@ -8,11 +8,12 @@ from typing import TypeVar
 if TYPE_CHECKING:
     from typing import Any
 
-    from segy.arrays import BaseNDArray
+    from numpy.typing import NDArray
+
     from segy.schema import Endianness
 
 
-T = TypeVar("T", bound="BaseNDArray")
+T = TypeVar("T", bound="NDArray")
 
 
 class TransformStrategy:
