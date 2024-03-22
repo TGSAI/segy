@@ -3,27 +3,23 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from typing import TypeVar
-
-from numpy import ndarray
 
 if TYPE_CHECKING:
     from typing import Any
 
+    from numpy.typing import NDArray
+
     from segy.schema import Endianness
-
-
-T = TypeVar("T", bound=ndarray)
 
 
 class TransformStrategy:
     """Base class for header transformation strategies."""
 
-    def transform(self, data: T) -> T:
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Forward transformation implementation."""
         raise NotImplementedError
 
-    def inverse_transform(self, data: T) -> T:
+    def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Inverse transformation implementation."""
         raise NotImplementedError
 
@@ -38,11 +34,11 @@ class ScaleStrategy(TransformStrategy):
     def __init__(self, scale_factor: int | float):
         self.scale_factor = scale_factor
 
-    def transform(self, data: T) -> T:
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Forward transformation implementation."""
         return data * self.scale_factor
 
-    def inverse_transform(self, data: T) -> T:
+    def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Inverse transformation implementation."""
         return data / self.scale_factor
 
@@ -59,7 +55,7 @@ class ScaleFieldStrategy(TransformStrategy):
         self.scale_factor = scale_factor
         self.keys = keys
 
-    def transform(self, data: T) -> T:
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Forward transformation implementation."""
         if data.dtype.names is None:
             msg = f"{self.__class__.__name__} can only work on structured arrays."
@@ -70,7 +66,7 @@ class ScaleFieldStrategy(TransformStrategy):
                 data[key] = [vals * self.scale_factor for vals in data[key]]
         return data
 
-    def inverse_transform(self, data: T) -> T:
+    def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Inverse transformation implementation."""
         if data.dtype.names is None:
             msg = f"{self.__class__.__name__} can only work on structured arrays."
@@ -96,13 +92,13 @@ class ByteSwapStrategy(TransformStrategy):
         self.source_order = source_order
         self.target_order = target_order
 
-    def transform(self, data: T) -> T:
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Swap bytes if target != source. Else it is a no-op."""
         if self.source_order is not self.target_order:
             data = data.newbyteorder(self.target_order.symbol).byteswap()
         return data
 
-    def inverse_transform(self, data: T) -> T:
+    def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Swap bytes if source != target. Else it is a no-op."""
         if self.target_order is not self.source_order:
             data = data.newbyteorder(self.source_order.symbol).byteswap()
@@ -119,13 +115,13 @@ class TransformPipeline:
         """Add transformation to pipeline."""
         self.transformations.append(transformation)
 
-    def transform(self, data: T) -> T:
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Apply all transformations in sequence."""
         for transformation in self.transformations:
             data = transformation.transform(data)
         return data
 
-    def inverse_transform(self, data: T) -> T:
+    def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Apply all inverse transformations in reverse sequence."""
         for transformation in reversed(self.transformations):
             data = transformation.inverse_transform(data)

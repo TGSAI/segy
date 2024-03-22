@@ -298,10 +298,8 @@ class HeaderIndexer(AbstractIndexer):
 
     def post_process(self, data: NDArray[Any]) -> HeaderNDArray:
         """Convert raw struct to accessor."""
-        data = HeaderNDArray(data)
-
-        if self.settings.binary.apply_transforms is False:
-            return data
+        if self.settings.apply_transforms is False:
+            return HeaderNDArray(data)
 
         binary_endian = self.spec.header_descriptor.fields[0].endianness
         pipeline = TransformPipeline()
@@ -315,7 +313,7 @@ class HeaderIndexer(AbstractIndexer):
             )
         )
 
-        return pipeline.transform(data)
+        return HeaderNDArray(pipeline.transform(data))
 
 
 class DataIndexer(AbstractIndexer):

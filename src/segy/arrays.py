@@ -22,14 +22,14 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
-class BaseNDArray(np.ndarray):
+class BaseNDArray(np.ndarray):  # type: ignore[type-arg]
     """Base class for array interface. Like ndarray but extensible."""
 
     def __new__(cls, input_array: NDArray[Any]) -> BaseNDArray:
         """Numpy subclass logic."""
         return np.asarray(input_array).view(cls)
 
-    def __array_finalize__(self, obj: NDArray[Any]) -> None:
+    def __array_finalize__(self, obj: NDArray[Any] | None) -> None:
         """Numpy subclass logic."""
         if obj is None:
             return

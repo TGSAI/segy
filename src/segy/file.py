@@ -166,10 +166,9 @@ class SegyFile:
         )
 
         bin_hdr = np.frombuffer(buffer, dtype=self.spec.binary_file_header.dtype)
-        bin_hdr = HeaderNDArray(bin_hdr)
 
-        if self.settings.binary.apply_transforms is False:
-            return bin_hdr
+        if self.settings.apply_transforms is False:
+            return HeaderNDArray(bin_hdr)
 
         binary_endian = self.spec.binary_file_header.fields[0].endianness
         pipeline = TransformPipeline()
@@ -183,7 +182,7 @@ class SegyFile:
             )
         )
 
-        return pipeline.transform(bin_hdr)
+        return HeaderNDArray(pipeline.transform(bin_hdr))
 
     def _parse_binary_header(self) -> None:
         """Parse the binary header and apply some rules."""
