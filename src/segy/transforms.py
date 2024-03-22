@@ -63,7 +63,7 @@ class ScaleFieldStrategy(TransformStrategy):
 
         for key in self.keys:
             if key in data.dtype.names:
-                data[key] = [vals * self.scale_factor for vals in data[key]]
+                data[key] = data[key] * self.scale_factor
         return data
 
     def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
@@ -74,7 +74,7 @@ class ScaleFieldStrategy(TransformStrategy):
 
         for key in self.keys:
             if key in data.dtype.names:
-                data[key] = [vals / self.scale_factor for vals in data[key]]
+                data[key] = data[key] / self.scale_factor
         return data
 
 
