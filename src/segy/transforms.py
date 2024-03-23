@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import Literal
+
+from segy.ibm import ibm2ieee
+from segy.ibm import ieee2ibm
 
 if TYPE_CHECKING:
     from typing import Any
@@ -105,6 +109,29 @@ class ByteSwapStrategy(TransformStrategy):
         return data
 
 
+class IbmFloatStrategy(TransformStrategy):
+    """Transform to swap bytes in a structured dtype.
+
+    We need to store both source and target, so its reversible.
+
+    Args:
+        direction: IBM Float conversion direction.
+    """
+
+    functions_map = {
+        "to_ibm": lambda x: ieee2ibm(x.astype("float32")),
+        "to_ieee": lambda x: ibm2ieee(x.view("uint32")),
+    }
+
+    def __init__(self, direction: Literal["to_ibm", "to_ieee"]):
+        self.direction = direction
+        self._transform_fn = self.functions_map[direction]
+
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Swap bytes if target != source. Else it is a no-op."""
+        return self._transform_fn(data)
+
+
 class TransformPipeline:
     """Pipeline to chain transforms forward and backward."""
 
@@ -144,6 +171,9 @@ class TransformStrategyFactory:
 
         if transform_type == "scale_field":
             return ScaleFieldStrategy(**parameters)
+
+        if transform_type == "ibm_float":
+            return IbmFloatStrategy(**parameters)
 
         msg = f"Unsupported transformation type: {transform_type}"
         raise KeyError(msg)
