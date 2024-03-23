@@ -129,7 +129,7 @@ class IbmFloatStrategy(TransformStrategy):
 
     def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Swap bytes if target != source. Else it is a no-op."""
-        return self._transform_fn(data)
+        return self._transform_fn(data)  # type: ignore
 
 
 class TransformPipeline:

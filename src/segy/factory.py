@@ -18,17 +18,17 @@ if TYPE_CHECKING:
     from segy.schema import SegyDescriptor
 
 
-DEFAULT_TEXT_HEADER = [
+DEFAULT_TEXT_HEADER_LINES = [
     "C01 File written by the open-source segy library.",
     "C02",
     "C03 Website: https://segy.readthedocs.io",
     "C04 Source: https://github.com/TGSAI/segy",
 ]
 
-DEFAULT_TEXT_HEADER += [f"C{line_no:02}" for line_no in range(5, 40)]
-DEFAULT_TEXT_HEADER += ["C40 END TEXTUAL HEADER"]
-DEFAULT_TEXT_HEADER = [line.ljust(80) for line in DEFAULT_TEXT_HEADER]
-DEFAULT_TEXT_HEADER = "\n".join(DEFAULT_TEXT_HEADER)
+DEFAULT_TEXT_HEADER_LINES += [f"C{line_no:02}" for line_no in range(5, 40)]
+DEFAULT_TEXT_HEADER_LINES += ["C40 END TEXTUAL HEADER"]
+DEFAULT_TEXT_HEADER_LINES = [line.ljust(80) for line in DEFAULT_TEXT_HEADER_LINES]
+DEFAULT_TEXT_HEADER = "\n".join(DEFAULT_TEXT_HEADER_LINES)
 
 
 class SegyFactory:
@@ -105,7 +105,7 @@ class SegyFactory:
 
         return data_template
 
-    def create_traces(self, headers: NDArray, data: NDArray[Any]) -> bytes:
+    def create_traces(self, headers: NDArray[Any], data: NDArray[Any]) -> bytes:
         """Create traces based on SEG-Y spec."""
         trace_descriptor = self.spec.trace
         trace_descriptor.data_descriptor.samples = self.samples_per_trace
