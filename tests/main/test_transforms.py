@@ -184,7 +184,6 @@ class TestTransforms:
         np.testing.assert_allclose(converted_data, expected)
 
         roundtrip_data = pipeline.inverse_transform(converted_data)
-        breakpoint()
         np.testing.assert_allclose(roundtrip_data, mock_ibm_data)
 
     def test_transform_pipeline(self, mock_data: NDArray[Any]) -> None:
