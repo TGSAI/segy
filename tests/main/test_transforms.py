@@ -8,7 +8,10 @@ from typing import Any
 import numpy as np
 import pytest
 
+from segy.ibm import ibm2ieee
+from segy.ibm import ieee2ibm
 from segy.schema import Endianness
+from segy.schema import ScalarType as SegyScalarType
 from segy.transforms import TransformPipeline
 from segy.transforms import TransformStrategyFactory
 
@@ -30,9 +33,27 @@ def mock_header() -> NDArray[Any]:
 
 
 @pytest.fixture()
+def mock_float_header() -> NDArray[Any]:
+    """Generate a mock structured array with floating point fields."""
+    names = ["field1", "field2", "field3"]
+    formats = [">i4", ">i4", ">u4"]
+    dtype = np.dtype({"names": names, "formats": formats})
+    arr = np.empty(shape=1, dtype=dtype)
+    arr[:] = (-989, 123131, 0x413243F7)
+    return arr
+
+
+@pytest.fixture()
 def mock_data() -> NDArray[Any]:
     """Generate a mock structured array to test transforms."""
     return np.asarray([[-1, 0, 1], [2, 3, 4]])
+
+
+@pytest.fixture()
+def mock_ibm_data() -> NDArray[Any]:
+    """Generate a mock structured array with ibm values."""
+    data_dtype = f">{SegyScalarType.IBM32.char}"
+    return np.array([0x4276A000, 0xC0280000, 0x413243F7], dtype=data_dtype)
 
 
 class TestTransforms:
@@ -102,6 +123,69 @@ class TestTransforms:
 
         with pytest.raises(ValueError, match="only work on structured arrays"):
             strategy.inverse_transform(mock_data)
+
+    def test_convert_float_header(self, mock_float_header: NDArray[Any]) -> None:
+        """Test converting IBM32 floats to IEEE floats."""
+        expected = (-989, 123131, 3.141593)
+        pipeline = TransformPipeline()
+
+        pipeline.add_transformation(
+            TransformStrategyFactory.create_strategy(
+                transform_type="byte_swap",
+                parameters={
+                    "source_order": Endianness.BIG,
+                    "target_order": Endianness.LITTLE,
+                },
+            )
+        )
+        pipeline.add_transformation(
+            TransformStrategyFactory.create_strategy(
+                transform_type="float_convert",
+                parameters={
+                    "source_dtype": np.dtype(SegyScalarType.IBM32.char),
+                    "target_dtype": np.dtype(SegyScalarType.FLOAT32.char),
+                    "forward_convert_func": ibm2ieee,
+                    "reverse_convert_func": ieee2ibm,
+                },
+            )
+        )
+        converted_header = pipeline.transform(mock_float_header)
+        np.testing.assert_allclose(converted_header.item(), expected)
+
+        roundtrip_header = pipeline.inverse_transform(converted_header)
+        np.testing.assert_allclose(roundtrip_header.item(), mock_float_header.item())
+
+    def test_convert_float_data(self, mock_ibm_data: NDArray[Any]) -> None:
+        """Test converting IBM32 floats to IEEE floats."""
+        expected = np.array((118.625, -0.15625, 3.141593), dtype="<f4")
+        pipeline = TransformPipeline()
+
+        pipeline.add_transformation(
+            TransformStrategyFactory.create_strategy(
+                transform_type="byte_swap",
+                parameters={
+                    "source_order": Endianness.BIG,
+                    "target_order": Endianness.LITTLE,
+                },
+            )
+        )
+        pipeline.add_transformation(
+            TransformStrategyFactory.create_strategy(
+                transform_type="float_convert",
+                parameters={
+                    "source_dtype": np.dtype(SegyScalarType.IBM32.char),
+                    "target_dtype": np.dtype(SegyScalarType.FLOAT32.char),
+                    "forward_convert_func": ibm2ieee,
+                    "reverse_convert_func": ieee2ibm,
+                },
+            )
+        )
+        converted_data = pipeline.transform(mock_ibm_data)
+        np.testing.assert_allclose(converted_data, expected)
+
+        roundtrip_data = pipeline.inverse_transform(converted_data)
+        breakpoint()
+        np.testing.assert_allclose(roundtrip_data, mock_ibm_data)
 
     def test_transform_pipeline(self, mock_data: NDArray[Any]) -> None:
         """Test transformation pipeline."""

@@ -3,13 +3,48 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import Any
+
+from numpy import dtype
+from numpy.typing import NDArray
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Iterable
+    from collections.abc import KeysView
+    from collections.abc import ValuesView
     from typing import Any
+    from typing import Protocol
 
     from numpy.typing import NDArray
 
     from segy.schema import Endianness
+
+    class DTypeFields(Protocol):
+        """Typed protocol for dtype.fields mapping methods."""
+
+        def keys(self) -> KeysView[str]:
+            """Keys view protocol."""
+            ...
+
+        def values(self) -> ValuesView[Any]:
+            """Values view protocol."""
+            ...
+
+        def items(self) -> Iterable[tuple[str, Any]]:
+            """Mapping items protocol."""
+            ...
+
+    class SupportsFields(Protocol):
+        """Typed protocol for dtype methods."""
+
+        fields: DTypeFields | None
+        names: tuple[str, ...] | None
+        char: str
+        itemsize: int
+        base: dtype[Any] | None
+
+    StructDtype = dtype[Any] | SupportsFields
 
 
 class TransformStrategy:
@@ -105,6 +140,119 @@ class ByteSwapStrategy(TransformStrategy):
         return data
 
 
+class FloatConversionStrategy(TransformStrategy):
+    """Transform to convert float types in a structured dtype.
+
+    The logic of this strategy is to handle converting subfields
+    of an array that match 'source_dtype' to a different 'target_dtype'.
+    If an array has no fields, it will check if the 'source_dtype'
+    matches the type of the array, and will convert the whole array
+    to 'target_dtype'.
+
+    Args:
+        source_dtype: The dtype to match for converting.
+        target_dtype: The dtype to convert to.
+        forward_convert_func: Function to convert source_dtype to target_dtype
+        reverse_convert_func: Function to convert target_dtype to source_dtype
+    """
+
+    def __init__(
+        self,
+        source_dtype: dtype[Any],
+        target_dtype: dtype[Any],
+        forward_convert_func: Callable[..., NDArray[Any]],
+        reverse_convert_func: Callable[..., NDArray[Any]],
+    ):
+        self.source_dtype = source_dtype
+        self.target_dtype = target_dtype
+        self.forward_convert_func = forward_convert_func
+        self.reverse_convert_func = reverse_convert_func
+
+    def _find_type_fields(self, struct_dtype: StructDtype, type_char: str) -> list[str]:
+        if struct_dtype.fields is not None:
+            # Find the names of the fields that match the dtype to convert
+            return [
+                name
+                for (name, ndtype) in struct_dtype.fields.items()
+                if ndtype[0].char == type_char
+            ]
+        return []
+
+    def _replace_type_fields(
+        self,
+        struct_dtype: dtype[Any],
+        field_names_to_replace: list[str],
+        replacement_type: dtype[Any],
+    ) -> dtype[Any]:
+        if struct_dtype.fields is not None:
+            # Check all the named fields in dtype, replace the ones to convert
+            # otherwise keep the field the same
+            return dtype(
+                [
+                    (
+                        name,
+                        (
+                            cur_dtype[0]
+                            if name not in field_names_to_replace
+                            else replacement_type
+                        ),
+                    )
+                    for name, cur_dtype in struct_dtype.fields.items()
+                ]
+            )
+        return struct_dtype
+
+    def _convert_fields(
+        self,
+        data: NDArray[Any],
+        convert_func: Callable[..., NDArray[Any]],
+        from_type: dtype[Any],
+        to_type: dtype[Any],
+    ) -> NDArray[Any]:
+        # Check if any fields of data match the type to convert
+        if convert_fields := self._find_type_fields(data.dtype, from_type.char):
+            # Create a new dtype with replaced types for fields to convert
+            converted_dtype = self._replace_type_fields(
+                data.dtype, convert_fields, to_type
+            )
+            data_view = data.view(converted_dtype)
+            for field in convert_fields:
+                data_view[field] = convert_func(data[field])
+            return data_view
+        # If no fields in data, check if the type to convert matches the whole array
+        if data.dtype == from_type:
+            data_view = data.view(to_type)
+            data_view[:] = convert_func(data)
+            return data_view
+        return data
+
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Forward transformation implementation.
+
+        Args:
+            data: Input data to transform.
+
+        Returns:
+            Transformed data.
+        """
+        return self._convert_fields(
+            data, self.forward_convert_func, self.source_dtype, self.target_dtype
+        )
+
+    def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Inverse transformation implementation.
+
+        Args:
+            data: Input data to transform.
+
+        Returns:
+            Transformed data.
+        """
+        return self._convert_fields(
+            data, self.reverse_convert_func, self.target_dtype, self.source_dtype
+        )
+
+
 class TransformPipeline:
     """Pipeline to chain transforms forward and backward."""
 
@@ -144,6 +292,9 @@ class TransformStrategyFactory:
 
         if transform_type == "scale_field":
             return ScaleFieldStrategy(**parameters)
+
+        if transform_type == "float_convert":
+            return FloatConversionStrategy(**parameters)
 
         msg = f"Unsupported transformation type: {transform_type}"
         raise KeyError(msg)
