@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from collections.abc import ValuesView
     from typing import Any
     from typing import Protocol
+    from typing import Union
 
     from numpy.typing import NDArray
 
@@ -44,7 +45,7 @@ if TYPE_CHECKING:
         itemsize: int
         base: dtype[Any] | None
 
-    StructDtype = dtype[Any] | SupportsFields
+    StructDtype = Union[dtype[Any], SupportsFields]
 
 
 class TransformStrategy:
