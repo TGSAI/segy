@@ -63,6 +63,7 @@ class SegyFactory:
         binary_descriptor = self.spec.binary_file_header
         bin_header = np.zeros(shape=1, dtype=binary_descriptor.dtype)
 
+        bin_header["seg_y_revision"] = self.spec.segy_standard.value * 256
         bin_header["sample_interval"] = self.sample_interval
         bin_header["sample_interval_orig"] = self.sample_interval
         bin_header["samples_per_trace"] = self.samples_per_trace
