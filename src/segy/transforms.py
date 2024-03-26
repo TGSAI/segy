@@ -166,7 +166,7 @@ class ByteSwapTransform(Transform):
 
 
 class CastTypeTransform(Transform):
-    """Casts numeric data by based on target type.
+    """Casts numeric data based on target type.
 
     Args:
         target_type: Desired data type to cast.
