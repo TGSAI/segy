@@ -14,6 +14,7 @@ from segy.transforms import TransformPipeline
 from segy.transforms import get_endianness
 
 if TYPE_CHECKING:
+    from numpy.typing import DTypeLike
     from numpy.typing import NDArray
 
 
@@ -174,52 +175,47 @@ class TestIbmFloat:
         assert transformed_header.item() == expected
 
 
+@pytest.mark.parametrize(
+    ("endian", "cast_to"),
+    [
+        (Endianness.LITTLE, "<i4"),
+        (Endianness.BIG, ">i4"),
+    ],
+)
 class TestCastType:
     """Test dtype casting transforms."""
 
-    def test_cast_dtype_little(self, mock_data_little: NDArray[Any]) -> None:
+    def test_cast_dtype(
+        self,
+        request: pytest.FixtureRequest,
+        endian: Endianness,
+        cast_to: DTypeLike,
+    ) -> None:
         """Test array casting with little endian."""
-        cast_type = "int32"
-        expected = mock_data_little.astype(cast_type)
+        mock_data = request.getfixturevalue(f"mock_data_{endian.value}")
+        expected = mock_data.astype(cast_to)
 
-        transform = TransformFactory.create("cast", cast_type)
-        cast_data = transform.apply(mock_data_little)
+        transform = TransformFactory.create("cast", cast_to)
+        cast_data = transform.apply(mock_data)
 
         np.testing.assert_array_equal(cast_data, expected)
-        assert get_endianness(cast_data) == Endianness.LITTLE
+        assert get_endianness(cast_data) == endian
 
-    def test_cast_dtype_big(self, mock_data_big: NDArray[Any]) -> None:
-        """Test array casting with big endian."""
-        cast_type = ">i4"
-
-        expected = mock_data_big.astype(cast_type)
-        transform = TransformFactory.create("cast", cast_type)
-
-        cast_data = transform.apply(mock_data_big)
-        np.testing.assert_array_equal(cast_data, expected)
-        assert get_endianness(cast_data) == Endianness.BIG
-
-    def test_cast_dtype_field_little(self, mock_header_little: NDArray[Any]) -> None:
+    def test_cast_dtype_field_little(
+        self,
+        request: pytest.FixtureRequest,
+        endian: Endianness,
+        cast_to: DTypeLike,
+    ) -> None:
         """Test structured array field casting with little endian."""
-        cast_type = "uint32"
+        mock_data = request.getfixturevalue(f"mock_header_{endian.value}")
         expected = (42, 1, 3)
 
-        transform = TransformFactory.create("cast", cast_type, keys=["field3"])
-        cast_data = transform.apply(mock_header_little)
+        transform = TransformFactory.create("cast", cast_to, keys=["field3"])
+        cast_data = transform.apply(mock_data)
 
         np.testing.assert_array_equal(cast_data.item(), expected)
-        assert get_endianness(cast_data) == Endianness.LITTLE
-
-    def test_cast_dtype_field_big(self, mock_header_big: NDArray[Any]) -> None:
-        """Test array casting with big endian."""
-        cast_type = ">u4"
-        expected = (42, 1, 3)
-
-        transform = TransformFactory.create("cast", cast_type, keys=["field3"])
-        cast_data = transform.apply(mock_header_big)
-
-        np.testing.assert_array_equal(cast_data.item(), expected)
-        assert get_endianness(cast_data) == Endianness.BIG
+        assert get_endianness(cast_data) == endian
 
 
 class TestTransformPipeline:
