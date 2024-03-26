@@ -61,7 +61,8 @@ class SegyFactory:
         the rows.
 
         Args:
-            text: String containing text header rows.
+            text: String containing text header rows. If left as None, a default
+                textual header will be created.
 
         Returns:
             bytes: Bytes containing the encoded text header, ready to write.
