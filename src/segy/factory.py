@@ -32,7 +32,13 @@ DEFAULT_TEXT_HEADER = "\n".join(DEFAULT_TEXT_HEADER_LINES)
 
 
 class SegyFactory:
-    """Factory class for composing SEG-Y by components."""
+    """Factory class for composing SEG-Y by components.
+
+    Args:
+        spec: SEG-Y specification.
+        sample_interval: Sample interval to use in new file.
+        samples_per_trace: Number of samples per trace.
+    """
 
     def __init__(
         self,
@@ -47,19 +53,32 @@ class SegyFactory:
 
         self.spec.trace.data_descriptor.samples = samples_per_trace
 
-    def create_textual_header(self, text: str = DEFAULT_TEXT_HEADER) -> bytes:
+    def create_textual_header(self, text: str | None = None) -> bytes:
         """Create a textual header for the SEG-Y file.
 
-        This should be 3200 characters long.  If the provided text is
-        shorter, it will be padded with spaces.
+        The length of the text should match the rows and columns in the spec's
+        TextHeaderDescriptor. The newlines must also be in the text to separate
+        the rows.
+
+        Args:
+            text: String containing text header rows.
+
+        Returns:
+            bytes: Bytes containing the encoded text header, ready to write.
         """
+        text = DEFAULT_TEXT_HEADER if text is None else text
+
         text_descriptor = self.spec.text_file_header
         text = text_descriptor._unwrap(text)
 
         return text_descriptor._encode(text)
 
     def create_binary_header(self) -> bytes:
-        """Create a binary header for the SEG-Y file."""
+        """Create a binary header for the SEG-Y file.
+
+        Returns:
+            bytes: Bytes containing the encoded binary header, ready to write.
+        """
         binary_descriptor = self.spec.binary_file_header
         bin_header = np.zeros(shape=1, dtype=binary_descriptor.dtype)
 
@@ -76,7 +95,15 @@ class SegyFactory:
         size: int = 1,
         fill: bool = True,
     ) -> NDArray[Any]:
-        """Create a trace header template array that conforms to the SEG-Y spec."""
+        """Create a trace header template array that conforms to the SEG-Y spec.
+
+        Args:
+            size: Number of headers for the template.
+            fill: Optional, fill with zeros. Default is True.
+
+        Returns:
+            header_template: Array containing the trace header template.
+        """
         descriptor = self.spec.trace.header_descriptor
         dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
 
@@ -95,7 +122,15 @@ class SegyFactory:
         size: int = 1,
         fill: bool = True,
     ) -> NDArray[Any]:
-        """Create a trace data template array that conforms to the SEG-Y spec."""
+        """Create a trace data template array that conforms to the SEG-Y spec.
+
+        Args:
+            size: Number of traces for the template.
+            fill: Optional, fill with zeros. Default is True.
+
+        Returns:
+            header_template: Array containing the trace data template.
+        """
         descriptor = self.spec.trace.data_descriptor
         dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
 
@@ -107,7 +142,25 @@ class SegyFactory:
         return data_template
 
     def create_traces(self, headers: NDArray[Any], data: NDArray[Any]) -> bytes:
-        """Create traces based on SEG-Y spec."""
+        """Convert trace data and header to bytes conforming to SEG-Y spec.
+
+        The rows (length) of the headers and traces must match. The headers
+        must be a (num_traces,) shape array and data must be a
+        (num_traces, num_samples) shape array. They can be created via the
+        `create_trace_header_template` and `create_trace_data_template` methods.
+
+        Args:
+            headers: Header array.
+            data: Data array.
+
+        Returns:
+            bytes: Bytes containing the encoded traces, ready to write.
+
+        Raises:
+            AttributeError: if data dimensions are wrong (not 2D trace,samples).
+            ValueError: if there is a shape mismatch between headers.
+            ValueError: if there is a shape mismatch number of samples.
+        """
         trace_descriptor = self.spec.trace
         trace_descriptor.data_descriptor.samples = self.samples_per_trace
 
