@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from segy.schema import Endianness
+from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
-from segy.transforms import TransformStrategyFactory
 
 if TYPE_CHECKING:
     from typing import Any
@@ -130,26 +130,15 @@ class SegyFactory:
         header_pipeline = TransformPipeline()
         data_pipeline = TransformPipeline()
 
-        convert_to_ibm = TransformStrategyFactory.create_strategy(
-            transform_type="ibm_float",
-            parameters={"direction": "to_ibm"},
-        )
+        byte_swap = TransformFactory.create("byte_swap", target_endian)
+        ibm_float = TransformFactory.create("ibm_float", "to_ibm")
 
-        byte_swap = TransformStrategyFactory.create_strategy(
-            transform_type="byte_swap",
-            parameters={
-                "source_order": Endianness.NATIVE,
-                "target_order": target_endian,
-            },
-        )
-
-        header_pipeline.add_transformation(byte_swap)
-
-        data_pipeline.add_transformation(convert_to_ibm)
-        data_pipeline.add_transformation(byte_swap)
+        header_pipeline.add_transform(byte_swap)
+        data_pipeline.add_transform(ibm_float)
+        data_pipeline.add_transform(byte_swap)
 
         trace = np.empty(shape=len(data), dtype=trace_descriptor.dtype)
-        trace["header"] = header_pipeline.transform(headers)
-        trace["data"] = data_pipeline.transform(data)
+        trace["header"] = header_pipeline.apply(headers)
+        trace["data"] = data_pipeline.apply(data)
 
         return trace.tobytes()
