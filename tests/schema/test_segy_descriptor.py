@@ -1,4 +1,4 @@
-"""tests for SegyDescriptor components."""
+"""Tests for SegyDescriptor components."""
 
 from typing import Any
 
