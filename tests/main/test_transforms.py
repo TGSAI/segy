@@ -201,7 +201,7 @@ class TestCastType:
         np.testing.assert_array_equal(cast_data, expected)
         assert get_endianness(cast_data) == endian
 
-    def test_cast_dtype_field_little(
+    def test_cast_dtype_field(
         self,
         request: pytest.FixtureRequest,
         endian: Endianness,
