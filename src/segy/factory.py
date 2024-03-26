@@ -65,7 +65,7 @@ class SegyFactory:
                 textual header will be created.
 
         Returns:
-            bytes: Bytes containing the encoded text header, ready to write.
+            Bytes containing the encoded text header, ready to write.
         """
         text = DEFAULT_TEXT_HEADER if text is None else text
 
@@ -78,7 +78,7 @@ class SegyFactory:
         """Create a binary header for the SEG-Y file.
 
         Returns:
-            bytes: Bytes containing the encoded binary header, ready to write.
+            Bytes containing the encoded binary header, ready to write.
         """
         binary_descriptor = self.spec.binary_file_header
         bin_header = np.zeros(shape=1, dtype=binary_descriptor.dtype)
@@ -103,7 +103,7 @@ class SegyFactory:
             fill: Optional, fill with zeros. Default is True.
 
         Returns:
-            ndarray: Array containing the trace header template.
+            Array containing the trace header template.
         """
         descriptor = self.spec.trace.header_descriptor
         dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
@@ -130,7 +130,7 @@ class SegyFactory:
             fill: Optional, fill with zeros. Default is True.
 
         Returns:
-            ndarray: Array containing the trace data template.
+            Array containing the trace data template.
         """
         descriptor = self.spec.trace.data_descriptor
         dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
@@ -155,7 +155,7 @@ class SegyFactory:
             data: Data array.
 
         Returns:
-            bytes: Bytes containing the encoded traces, ready to write.
+            Bytes containing the encoded traces, ready to write.
 
         Raises:
             AttributeError: if data dimensions are wrong (not 2D trace,samples).
