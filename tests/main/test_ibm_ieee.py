@@ -1,4 +1,5 @@
-"""tests for data types defined for SegyFile components."""
+"""Tests for data types defined for SegyFile components."""
+
 import numpy as np
 import pytest
 

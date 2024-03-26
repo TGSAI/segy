@@ -1,4 +1,5 @@
 """Core functionality for SEG-Y ninja templates."""
+
 from __future__ import annotations
 
 from abc import abstractmethod

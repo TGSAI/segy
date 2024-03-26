@@ -1,6 +1,5 @@
 """Data models for manipulating all kinds of SEG-Y files."""
 
-
 from segy.schema.data_type import Endianness
 from segy.schema.data_type import ScalarType
 from segy.schema.data_type import StructuredDataTypeDescriptor

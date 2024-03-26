@@ -3,7 +3,6 @@
 This is very janky, we need to find a better way to do this.
 """
 
-
 from __future__ import annotations
 
 import string

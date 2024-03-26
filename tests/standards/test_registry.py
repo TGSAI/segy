@@ -1,4 +1,5 @@
-"""tests for functions in segy.schema.registry."""
+"""Tests for functions in segy.schema.registry."""
+
 import pytest
 
 from segy.schema import SegyDescriptor

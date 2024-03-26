@@ -1,6 +1,5 @@
 """Tests for the Text Headers, Binary Headers, and Trace Headers for different SEGY revisions."""
 
-
 from __future__ import annotations
 
 import operator
