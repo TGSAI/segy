@@ -18,8 +18,8 @@ from segy.schema import SegyStandard
 from segy.standards.registry import get_spec
 from segy.standards.rev1 import rev1_binary_file_header
 from segy.standards.rev1 import rev1_extended_text_header
+from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
-from segy.transforms import TransformStrategyFactory
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
@@ -170,19 +170,12 @@ class SegyFile:
         if self.settings.apply_transforms is False:
             return HeaderNDArray(bin_hdr)
 
-        binary_endian = self.spec.binary_file_header.fields[0].endianness
-        pipeline = TransformPipeline()
-        pipeline.add_transformation(
-            TransformStrategyFactory.create_strategy(
-                transform_type="byte_swap",
-                parameters={
-                    "source_order": binary_endian,
-                    "target_order": Endianness.NATIVE,
-                },
-            )
-        )
+        byte_swap = TransformFactory.create("byte_swap", Endianness.NATIVE)
 
-        return HeaderNDArray(pipeline.transform(bin_hdr))
+        pipeline = TransformPipeline()
+        pipeline.add_transform(byte_swap)
+
+        return HeaderNDArray(pipeline.apply(bin_hdr))
 
     def _parse_binary_header(self) -> None:
         """Parse the binary header and apply some rules."""

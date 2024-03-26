@@ -472,7 +472,7 @@ TRACE_HEADER_FIELDS_REV0 = [
         description="End Time of Mute",
     ),
     StructuredFieldDescriptor(
-        name="nsamples",
+        name="samples_per_trace",
         offset=114,
         format=ScalarType.INT16,
         endianness=Endianness.BIG,

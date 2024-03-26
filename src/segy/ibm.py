@@ -1,6 +1,5 @@
 """Low-level floating point conversion operations."""
 
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -9,8 +8,11 @@ import numba as nb
 import numpy as np
 
 if TYPE_CHECKING:
-    from segy.typing import NDArrayFloat32
-    from segy.typing import NDArrayUint32
+    from numpy.typing import NDArray
+
+    NDArrayUint32 = NDArray[np.uint32]
+    NDArrayFloat32 = NDArray[np.float32]
+
 
 # IEEE to IBM MASKS ETC
 IEEE32_SIGN = np.uint32(0x80000000)
