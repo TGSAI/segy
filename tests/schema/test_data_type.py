@@ -1,6 +1,5 @@
 """Tests for components that define fields and data types of a SEGY Schema."""
 
-
 from __future__ import annotations
 
 import string
