@@ -2,178 +2,243 @@
 
 from __future__ import annotations
 
+import sys
+from abc import abstractmethod
 from typing import TYPE_CHECKING
-from typing import Literal
+
+import numpy as np
 
 from segy.ibm import ibm2ieee
 from segy.ibm import ieee2ibm
+from segy.schema import Endianness
 
 if TYPE_CHECKING:
     from typing import Any
 
+    from numpy.typing import DTypeLike
     from numpy.typing import NDArray
 
-    from segy.schema import Endianness
+
+def get_endianness(data: NDArray[Any]) -> Endianness:
+    """Map the numpy byte order character to Endianness."""
+    if data.dtype.isnative:
+        return Endianness[sys.byteorder.upper()]
+
+    return Endianness.LITTLE if data.dtype.byteorder == "<" else Endianness.BIG
 
 
-class TransformStrategy:
+def _modify_dtype_field(
+    old_dtype: np.dtype[np.void],
+    key: str,
+    new_type: np.dtype[Any],
+) -> np.dtype[np.void]:
+    """Constructs a new dtype for the structured array after a type change in one of its fields."""
+    new_fields = []
+    for old_descr in old_dtype.descr:
+        if old_descr[0] == key:
+            new_descr = list(old_descr)
+            new_descr[1] = str(new_type)
+            new_fields.append(tuple(new_descr))
+        else:
+            new_fields.append(old_descr)
+
+    return np.dtype(new_fields)
+
+
+def _modify_structured_field(
+    data: NDArray[np.void],
+    key: str,
+    transformed: NDArray[Any],
+) -> NDArray[np.void]:
+    """Handle structured array assignment with dtype change or promotion."""
+    if data.dtype.names is None:  # pragma: no cover
+        msg = "Cannot modify dtype for non-structured array."
+        raise ValueError(msg)
+
+    # Assign and return early if basic types are the same. Numpy handles endianness.
+    if transformed.dtype == data[key].dtype:
+        data[key] = transformed
+        return data
+
+    # If transform changed field type, we need to define the new array dtype.
+    old_field_dtype = data[key].dtype
+    new_field_dtype = transformed.dtype
+    new_struct_dtype = _modify_dtype_field(data.dtype, key, new_field_dtype)
+
+    # If the field size hasn't changed we can do it in-place with view magic, no copy.
+    # Example: uint32 scaled by a negative integer, result fits into output: int32.
+    if new_struct_dtype.itemsize == data.dtype.itemsize:
+        data[key] = transformed.view(old_field_dtype)
+        return data.view(new_struct_dtype)
+
+    # Worst case scenario, field size changes. We need to initialize a new
+    # array and copy all the old data and the new data to appropriate fields.
+    # Example: int32 field scaled by float32 scalar, resulting in float64 output.
+    new_data = np.empty_like(data, dtype=new_struct_dtype)
+    for orig_key in data.dtype.names:
+        if orig_key == key:  # skip transformed key
+            continue
+        new_data[orig_key] = data[orig_key]
+
+    new_data[key] = transformed
+
+    return new_data
+
+
+class Transform:
     """Base class for header transformation strategies."""
 
-    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        """Forward transformation implementation."""
-        raise NotImplementedError
-
-    def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        """Inverse transformation implementation."""
-        raise NotImplementedError
-
-
-class ScaleStrategy(TransformStrategy):
-    """Transform to scale a numpy array.
-
-    Args:
-        scale_factor: Scalar to use in transformations.
-    """
-
-    def __init__(self, scale_factor: int | float):
-        self.scale_factor = scale_factor
-
-    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        """Forward transformation implementation."""
-        return data * self.scale_factor
-
-    def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        """Inverse transformation implementation."""
-        return data / self.scale_factor
-
-
-class ScaleFieldStrategy(TransformStrategy):
-    """Transform to scale user defined keys in a structured dtype.
-
-    Args:
-        scale_factor: Scalar to use in transformations.
-        keys: List of fields to apply the transformation on.
-    """
-
-    def __init__(self, scale_factor: int | float, keys: list[str]):
-        self.scale_factor = scale_factor
+    def __init__(self, keys: list[str] | None = None) -> None:
         self.keys = keys
 
-    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        """Forward transformation implementation."""
+    def apply(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Applies transformation based on ndarray or struct array."""
+        if self.keys is None:
+            return self._transform(data)
+
+        return self._transform_struct(data)
+
+    @abstractmethod
+    def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Abstract transformation method on numpy arrays."""
+
+    def _transform_struct(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Generalized transform for structured arrays."""
+        if self.keys is None:  # pragma: no cover
+            msg = "Trying to modify structured array fields with no keys provided."
+            raise ValueError(msg)
+
         if data.dtype.names is None:
-            msg = f"{self.__class__.__name__} can only work on structured arrays."
+            msg = "The array to transform doesn't contain any fields."
+            raise ValueError(msg)
+
+        missing_fields = set(self.keys) - set(data.dtype.names)
+        if missing_fields:
+            msg = f"Field(s) {missing_fields} not in the array."
             raise ValueError(msg)
 
         for key in self.keys:
-            if key in data.dtype.names:
-                data[key] = data[key] * self.scale_factor
-        return data
+            transformed = self._transform(data[key])
+            data = _modify_structured_field(data, key, transformed)
 
-    def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        """Inverse transformation implementation."""
-        if data.dtype.names is None:
-            msg = f"{self.__class__.__name__} can only work on structured arrays."
-            raise ValueError(msg)
-
-        for key in self.keys:
-            if key in data.dtype.names:
-                data[key] = data[key] / self.scale_factor
         return data
 
 
-class ByteSwapStrategy(TransformStrategy):
-    """Transform to swap bytes in a structured dtype.
-
-    We need to store both source and target, so its reversible.
+class ScaleTransform(Transform):
+    """Scales numeric data by a specified factor.
 
     Args:
-        source_order: Source byte order.
+        scalar: Scalar to apply to the data.
+        keys: Optional list of keys to apply the transform.
+    """
+
+    def __init__(self, scalar: float, keys: list[str] | None = None) -> None:
+        super().__init__(keys)
+        self.scalar = scalar
+
+    def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        orig_endian = get_endianness(data)
+        data = data * self.scalar
+        new_endian = get_endianness(data)
+        if new_endian is not orig_endian:
+            data = data.byteswap().newbyteorder()
+        return data
+
+
+class ByteSwapTransform(Transform):
+    """Byte swaps numeric data by based on target order.
+
+    Args:
         target_order: Desired byte order.
     """
 
-    def __init__(self, source_order: Endianness, target_order: Endianness):
-        self.source_order = source_order
+    def __init__(self, target_order: Endianness) -> None:
+        super().__init__()
         self.target_order = target_order
 
-    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        """Swap bytes if target != source. Else it is a no-op."""
-        if self.source_order is not self.target_order:
+    def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        source_order = get_endianness(data)
+
+        if source_order != self.target_order:
             data = data.newbyteorder(self.target_order.symbol).byteswap()
-        return data
 
-    def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        """Swap bytes if source != target. Else it is a no-op."""
-        if self.target_order is not self.source_order:
-            data = data.newbyteorder(self.source_order.symbol).byteswap()
         return data
 
 
-class IbmFloatStrategy(TransformStrategy):
-    """Transform to swap bytes in a structured dtype.
+class CastTypeTransform(Transform):
+    """Byte swaps numeric data by based on target order.
 
-    We need to store both source and target, so its reversible.
+    Args:
+        target_type: Desired data type to cast.
+        keys: Optional list of keys to apply the transform.
+    """
+
+    def __init__(self, target_type: DTypeLike, keys: list[str] | None = None) -> None:
+        super().__init__(keys=keys)
+        self.target_type = np.dtype(target_type)
+
+    def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        return data.astype(self.target_type)
+
+
+class IbmFloatTransform(Transform):
+    """IBM float convert an array.
 
     Args:
         direction: IBM Float conversion direction.
+        keys: Optional list of keys to apply the transform.
     """
 
-    functions_map = {
+    ibm_func_map = {
         "to_ibm": lambda x: ieee2ibm(x.astype("float32")),
         "to_ieee": lambda x: ibm2ieee(x.view("uint32")),
     }
 
-    def __init__(self, direction: Literal["to_ibm", "to_ieee"]):
+    def __init__(self, direction: str, keys: list[str] | None = None) -> None:
+        super().__init__(keys)
         self.direction = direction
-        self._transform_fn = self.functions_map[direction]
 
-    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        """Swap bytes if target != source. Else it is a no-op."""
-        return self._transform_fn(data)  # type: ignore
+    def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        return self.ibm_func_map[self.direction](data)  # type: ignore
+
+
+class TransformFactory:
+    """Factory class to generate transformation strategies."""
+
+    transform_map: dict[str, type[Transform]] = {
+        "scale": ScaleTransform,
+        "byte_swap": ByteSwapTransform,
+        "ibm_float": IbmFloatTransform,
+        "cast": CastTypeTransform,
+    }
+
+    @classmethod
+    def create(
+        cls: type[TransformFactory],
+        transform_type: str,
+        *args: Any,  # noqa: ANN401
+        **kwargs: Any,  # noqa: ANN401
+    ) -> Transform:
+        """Create an instance of transformation and return it."""
+        if transform_type not in cls.transform_map:
+            msg = f"Unsupported transformation type: {transform_type}"
+            raise KeyError(msg)
+
+        return cls.transform_map[transform_type](*args, **kwargs)
 
 
 class TransformPipeline:
-    """Pipeline to chain transforms forward and backward."""
+    """Executes a sequence of transformations on data."""
 
     def __init__(self) -> None:
-        self.transformations: list[TransformStrategy] = []
+        self.transforms: list[Transform] = []
 
-    def add_transformation(self, transformation: TransformStrategy) -> None:
-        """Add transformation to pipeline."""
-        self.transformations.append(transformation)
+    def add_transform(self, transform: Transform) -> None:
+        """Adds a transformation to the pipeline."""
+        self.transforms.append(transform)
 
-    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        """Apply all transformations in sequence."""
-        for transformation in self.transformations:
-            data = transformation.transform(data)
+    def apply(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Applies all transformations in sequence."""
+        for transform in self.transforms:
+            data = transform.apply(data)
         return data
-
-    def inverse_transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        """Apply all inverse transformations in reverse sequence."""
-        for transformation in reversed(self.transformations):
-            data = transformation.inverse_transform(data)
-        return data
-
-
-class TransformStrategyFactory:
-    """Factory class to generate transformation strategies."""
-
-    @staticmethod
-    def create_strategy(
-        transform_type: str, parameters: dict[str, Any]
-    ) -> TransformStrategy:
-        """Create an instance of transformation and return it."""
-        if transform_type == "byte_swap":
-            return ByteSwapStrategy(**parameters)
-
-        if transform_type == "scale":
-            return ScaleStrategy(**parameters)
-
-        if transform_type == "scale_field":
-            return ScaleFieldStrategy(**parameters)
-
-        if transform_type == "ibm_float":
-            return IbmFloatStrategy(**parameters)
-
-        msg = f"Unsupported transformation type: {transform_type}"
-        raise KeyError(msg)

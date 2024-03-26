@@ -9,18 +9,19 @@ import numpy as np
 import pytest
 
 from segy.schema import Endianness
+from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
-from segy.transforms import TransformStrategyFactory
+from segy.transforms import get_endianness
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
 @pytest.fixture()
-def mock_header() -> NDArray[Any]:
-    """Generate a mock structured array to test transforms."""
+def mock_header_little() -> NDArray[Any]:
+    """Generate a mock structured array to test transforms with little endian."""
     names = ["field1", "field2", "field3"]
-    formats = [">u4", ">i4", ">f4"]
+    formats = ["<u4", "<i4", "<f4"]
 
     dtype = np.dtype({"names": names, "formats": formats})
     arr = np.empty(shape=1, dtype=dtype)
@@ -30,113 +31,274 @@ def mock_header() -> NDArray[Any]:
 
 
 @pytest.fixture()
-def mock_data() -> NDArray[Any]:
-    """Generate a mock structured array to test transforms."""
-    return np.asarray([[-1, 0, 1], [2, 3, 4]])
+def mock_header_big(mock_header_little: NDArray[Any]) -> NDArray[Any]:
+    """Generate a mock structured array to test transforms with big endian."""
+    return mock_header_little.byteswap().newbyteorder()
 
 
-class TestTransforms:
-    """Test all forward and reverse transformations."""
+@pytest.fixture()
+def mock_header_ibm() -> NDArray[Any]:
+    """Generate a mock structured array to test IBM float field transform."""
+    names = ["u4_field", "ibm_field", "u2_field"]
+    formats = ["<u4", "<u4", "<u2"]
 
-    def test_byteswap(self, mock_header: NDArray[Any]) -> None:
+    dtype = np.dtype({"names": names, "formats": formats})
+    arr = np.empty(shape=1, dtype=dtype)
+    arr[:] = (256, 0x4276A000, 8)
+
+    return arr
+
+
+@pytest.fixture()
+def mock_data_little() -> NDArray[Any]:
+    """Generate a mock little endian structured array to test transforms."""
+    return np.asarray([[3.14, 42, 0], [-2, 3, -4]]).astype(np.float32)
+
+
+@pytest.fixture()
+def mock_data_big(mock_data_little: NDArray[Any]) -> NDArray[Any]:
+    """Generate a mock big endian structured array to test transforms."""
+    return mock_data_little.byteswap().newbyteorder()
+
+
+class TestByteSwap:
+    """Test byte swap transformations."""
+
+    @pytest.mark.parametrize(
+        ("input_endian", "expected_order"),
+        [
+            ("little", Endianness.BIG),
+            ("big", Endianness.LITTLE),
+            ("big", Endianness.BIG),  # test_noop
+        ],
+    )
+    def test_byteswap(
+        self,
+        request: pytest.FixtureRequest,
+        input_endian: str,
+        expected_order: Endianness,
+    ) -> None:
         """Test byte swap transform."""
-        expected = (42, 1, 3.1415)
-        strategy = TransformStrategyFactory.create_strategy(
-            transform_type="byte_swap",
-            parameters={
-                "source_order": Endianness.BIG,
-                "target_order": Endianness.LITTLE,
-            },
-        )
+        mock_data = request.getfixturevalue(f"mock_data_{input_endian}")
+        expected_dtype = mock_data.dtype.newbyteorder(expected_order.symbol)
 
-        transformed_header = strategy.transform(mock_header)
-        np.testing.assert_allclose(transformed_header.item(), expected)
-        assert transformed_header.dtype == mock_header.dtype.newbyteorder()
+        transform = TransformFactory.create("byte_swap", expected_order)
+        swapped_data = transform.apply(mock_data)
 
-        roundtrip_header = strategy.inverse_transform(transformed_header)
-        np.testing.assert_allclose(roundtrip_header.item(), expected)
-        assert roundtrip_header.dtype == mock_header.dtype
+        np.testing.assert_allclose(swapped_data, mock_data)
+        assert swapped_data.dtype == expected_dtype
 
-    def test_scale(self, mock_data: NDArray[Any]) -> None:
+
+@pytest.mark.parametrize("endian", [Endianness.LITTLE, Endianness.BIG])
+class TestScaling:
+    """Test scaling swap transformations."""
+
+    @pytest.mark.parametrize("fields", [None, ["field1"]])
+    def test_scale(
+        self,
+        request: pytest.FixtureRequest,
+        endian: Endianness,
+        fields: list[str] | None,
+    ) -> None:
         """Test array scaling."""
         scale_factor = 5
-        strategy = TransformStrategyFactory.create_strategy(
-            transform_type="scale",
-            parameters={
-                "scale_factor": scale_factor,
-            },
-        )
+        is_structured = fields is not None
 
-        transformed_data = strategy.transform(mock_data)
+        mock_fixture = f"mock_data_{endian.value}"
 
-        expected = mock_data * scale_factor
-        np.testing.assert_array_equal(transformed_data, expected)
+        if is_structured:
+            mock_fixture = mock_fixture.replace("data", "header")
 
-        rountrip_data = strategy.inverse_transform(transformed_data)
-        np.testing.assert_array_equal(rountrip_data, mock_data)
+        mock_data = request.getfixturevalue(mock_fixture)
 
-    def test_scale_field(self, mock_header: NDArray[Any]) -> None:
-        """Test structured array field(s) scaling."""
-        expected = (420, 10, 3.1415)
-        expected_roundtrip = (42, 1, 3.1415)
-        strategy = TransformStrategyFactory.create_strategy(
-            transform_type="scale_field",
-            parameters={"scale_factor": 10, "keys": ["field1", "field2"]},
-        )
+        if is_structured and fields is not None:
+            expected = mock_data.copy()
+            for field in fields:
+                expected[field] = mock_data[field] * scale_factor
+        else:
+            expected = mock_data * scale_factor
 
-        transformed_header = strategy.transform(mock_header)
-        np.testing.assert_allclose(transformed_header.item(), expected)
+        transform = TransformFactory.create("scale", scale_factor, keys=fields)
+        scaled_data = transform.apply(mock_data)
 
-        roundtrip_header = strategy.inverse_transform(transformed_header)
-        np.testing.assert_allclose(roundtrip_header.item(), expected_roundtrip)
+        np.testing.assert_array_equal(scaled_data, expected)
+        assert get_endianness(scaled_data) == endian
 
-    def test_scale_field_exceptions(self, mock_data: NDArray[Any]) -> None:
-        """Test expected error if non-struct is given."""
-        strategy = TransformStrategyFactory.create_strategy(
-            transform_type="scale_field",
-            parameters={"scale_factor": 10, "keys": ["field1", "field2"]},
-        )
+    def test_scale_field_casting(
+        self,
+        request: pytest.FixtureRequest,
+        endian: Endianness,
+    ) -> None:
+        """Test casted structured field scaling."""
+        mock_data = request.getfixturevalue(f"mock_header_{endian.value}")
 
-        with pytest.raises(ValueError, match="only work on structured arrays"):
-            strategy.transform(mock_data)
+        scale_factor = 0.1
+        keys = ["field1"]
+        expected = (4.2, 1, 3.1415)
 
-        with pytest.raises(ValueError, match="only work on structured arrays"):
-            strategy.inverse_transform(mock_data)
+        transform = TransformFactory.create("scale", scale_factor, keys=keys)
+        scaled_data = transform.apply(mock_data)
 
-    def test_transform_pipeline(self, mock_data: NDArray[Any]) -> None:
-        """Test transformation pipeline."""
+        np.testing.assert_array_almost_equal(scaled_data.item(), expected)
+        assert get_endianness(scaled_data) == endian
+
+
+class TestIbmFloat:
+    """Test IBM Float transformations."""
+
+    def test_ibm_float(self) -> None:
+        """Test array scaling."""
+        ieee_value = np.asarray(3.141593)
+        expected_ibm_uint32 = 0x413243F7
+
+        transform = TransformFactory.create("ibm_float", "to_ibm")
+        ibm_uint32 = transform.apply(ieee_value)
+
+        assert ibm_uint32 == expected_ibm_uint32
+
+        ibm_value = np.asarray([0x4276A000], dtype="uint32")
+        expected_ieee = np.asarray([118.625])
+
+        transform = TransformFactory.create("ibm_float", "to_ieee")
+        ibm_value = transform.apply(ibm_value)
+
+        np.testing.assert_array_equal(ibm_value, expected_ieee)
+
+    def test_ibm_float_field(self, mock_header_ibm: NDArray[Any]) -> None:
+        """Test array scaling."""
+        expected = (256, 118.625, 8)
+
+        transform = TransformFactory.create("ibm_float", "to_ieee", keys=["ibm_field"])
+        transformed_header = transform.apply(mock_header_ibm)
+
+        assert transformed_header.item() == expected
+
+
+class TestCastType:
+    """Test dtype casting transforms."""
+
+    def test_cast_dtype_little(self, mock_data_little: NDArray[Any]) -> None:
+        """Test array casting with little endian."""
+        cast_type = "int32"
+        expected = mock_data_little.astype(cast_type)
+
+        transform = TransformFactory.create("cast", cast_type)
+        cast_data = transform.apply(mock_data_little)
+
+        np.testing.assert_array_equal(cast_data, expected)
+        assert get_endianness(cast_data) == Endianness.LITTLE
+
+    def test_cast_dtype_big(self, mock_data_big: NDArray[Any]) -> None:
+        """Test array casting with big endian."""
+        cast_type = ">i4"
+
+        expected = mock_data_big.astype(cast_type)
+        transform = TransformFactory.create("cast", cast_type)
+
+        cast_data = transform.apply(mock_data_big)
+        np.testing.assert_array_equal(cast_data, expected)
+        assert get_endianness(cast_data) == Endianness.BIG
+
+    def test_cast_dtype_field_little(self, mock_header_little: NDArray[Any]) -> None:
+        """Test structured array field casting with little endian."""
+        cast_type = "uint32"
+        expected = (42, 1, 3)
+
+        transform = TransformFactory.create("cast", cast_type, keys=["field3"])
+        cast_data = transform.apply(mock_header_little)
+
+        np.testing.assert_array_equal(cast_data.item(), expected)
+        assert get_endianness(cast_data) == Endianness.LITTLE
+
+    def test_cast_dtype_field_big(self, mock_header_big: NDArray[Any]) -> None:
+        """Test array casting with big endian."""
+        cast_type = ">u4"
+        expected = (42, 1, 3)
+
+        transform = TransformFactory.create("cast", cast_type, keys=["field3"])
+        cast_data = transform.apply(mock_header_big)
+
+        np.testing.assert_array_equal(cast_data.item(), expected)
+        assert get_endianness(cast_data) == Endianness.BIG
+
+
+class TestTransformPipeline:
+    """Tests for transform pipeline and transform integration."""
+
+    @staticmethod
+    def build_transform_pipeline(
+        scale_factor: int,
+        fields: list[str] | None,
+    ) -> TransformPipeline:
+        """Build common transform pipeline for tests."""
+        cast_type = "float16"
+
+        scale_transform = TransformFactory.create("scale", scale_factor, keys=fields)
+        endian_transform = TransformFactory.create("byte_swap", Endianness.LITTLE)
+        cast_transform = TransformFactory.create("cast", cast_type, keys=fields)
+
         pipeline = TransformPipeline()
+        pipeline.add_transform(scale_transform)
+        pipeline.add_transform(endian_transform)
+        pipeline.add_transform(cast_transform)
 
+        return pipeline
+
+    def test_transform_pipeline(self, mock_data_big: NDArray[Any]) -> None:
+        """Test transformation pipeline and transform integration."""
         scale_factor = 3
-        pipeline.add_transformation(
-            TransformStrategyFactory.create_strategy(
-                transform_type="scale",
-                parameters={"scale_factor": scale_factor},
-            )
+        expected_data = mock_data_big.byteswap().newbyteorder()
+        expected_data = (expected_data * scale_factor).astype("float16")
+
+        expected_dtype = expected_data.dtype
+
+        pipeline = self.build_transform_pipeline(scale_factor=scale_factor, fields=None)
+
+        transformed_data = pipeline.apply(mock_data_big)
+        np.testing.assert_allclose(transformed_data, expected_data)
+        assert transformed_data.dtype == expected_dtype
+
+    def test_transform_pipeline_field(self, mock_header_big: NDArray[Any]) -> None:
+        """Test transformation pipeline and transform integration for struct fields."""
+        scale_factor = 3
+        fields = ["field2", "field3"]
+
+        names = ["field1", "field2", "field3"]
+        formats = ["<u4", "<f2", "<f2"]
+        expected_dtype = np.dtype({"names": names, "formats": formats})
+
+        expected_data = mock_header_big.copy()
+        for field in fields:
+            expected_data[field] = expected_data[field] * scale_factor
+
+        expected_data = expected_data.byteswap().newbyteorder()
+        expected_data = expected_data.astype(expected_dtype)
+
+        pipeline = self.build_transform_pipeline(
+            scale_factor=scale_factor, fields=fields
         )
 
-        pipeline.add_transformation(
-            TransformStrategyFactory.create_strategy(
-                transform_type="byte_swap",
-                parameters={
-                    "source_order": Endianness.LITTLE,
-                    "target_order": Endianness.BIG,
-                },
-            )
-        )
+        transformed_data = pipeline.apply(mock_header_big)
+        assert transformed_data == expected_data
+        assert transformed_data.dtype == expected_dtype
 
-        transformed_data = pipeline.transform(mock_data)
-        np.testing.assert_allclose(transformed_data, mock_data * scale_factor)
+    def test_transform_exceptions(
+        self,
+        mock_data_little: NDArray[Any],
+        mock_header_big: NDArray[Any],
+    ) -> None:
+        """Test transformation field errors."""
+        scale_transform = TransformFactory.create("scale", 1, ["field1"])
+        with pytest.raises(ValueError, match="doesn't contain any fields"):
+            scale_transform.apply(mock_data_little)
 
-        roundtrip_data = pipeline.inverse_transform(transformed_data)
-        np.testing.assert_allclose(roundtrip_data, mock_data)
+        scale_transform = TransformFactory.create("scale", 1, ["non_existent"])
+        with pytest.raises(ValueError, match="{'non_existent'} not in the array"):
+            scale_transform.apply(mock_header_big)
 
     def test_transform_factory_exception(self) -> None:
         """Test unknown transformation type."""
-        factory = TransformStrategyFactory()
+        factory = TransformFactory()
 
         with pytest.raises(KeyError, match="Unsupported transformation"):
-            factory.create_strategy(
-                transform_type="non_existent_transform",
-                parameters={},
-            )
+            factory.create("non_existent_transform")
