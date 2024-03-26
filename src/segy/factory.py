@@ -103,7 +103,7 @@ class SegyFactory:
             fill: Optional, fill with zeros. Default is True.
 
         Returns:
-            header_template: Array containing the trace header template.
+            ndarray: Array containing the trace header template.
         """
         descriptor = self.spec.trace.header_descriptor
         dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
@@ -130,7 +130,7 @@ class SegyFactory:
             fill: Optional, fill with zeros. Default is True.
 
         Returns:
-            header_template: Array containing the trace data template.
+            ndarray: Array containing the trace data template.
         """
         descriptor = self.spec.trace.data_descriptor
         dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
