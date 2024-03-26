@@ -11,6 +11,13 @@
    :members:
 ```
 
+## SEG-Y Factory
+
+```{eval-rst}
+.. autoclass:: segy.SegyFactory
+   :members:
+```
+
 ## Configuration
 
 ```{eval-rst}
