@@ -162,7 +162,7 @@ class SegyFile:
         return get_spec(standard)
 
     @cached_property
-    def binary_header(self) -> NDArray:
+    def binary_header(self) -> HeaderArray:
         """Read binary header from store, based on spec."""
         buffer = self.fs.read_block(
             fn=self.url,
