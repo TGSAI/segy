@@ -15,7 +15,6 @@ import pytest
 from segy.schema import ScalarType
 from segy.schema import TextHeaderDescriptor
 from segy.schema import TextHeaderEncoding
-from segy.schema import TraceDescriptor
 from segy.schema import TraceSampleDescriptor
 from segy.schema.data_type import StructuredDataTypeDescriptor
 from segy.schema.data_type import StructuredFieldDescriptor
@@ -151,35 +150,6 @@ def make_trace_sample_descriptor() -> Callable[..., TraceSampleDescriptor]:
         )
 
     return _make_trace_sample_descriptor
-
-
-@pytest.fixture(scope="module")
-def make_trace_descriptor(
-    make_trace_header_descriptor: Callable[..., StructuredDataTypeDescriptor],
-    make_trace_sample_descriptor: Callable[..., TraceSampleDescriptor],
-) -> Callable[..., TraceDescriptor]:
-    """Fixture wrapper for helper function to create trace descriptors."""
-
-    def _make_trace_descriptor(
-        head_params: dict[str, str | list[str]],
-        data_params: dict[str, str | int],
-    ) -> TraceDescriptor:
-        """Convenience function for creating TraceDescriptor object.
-
-        Args:
-            head_params: dictionary containing params for trace header descriptor
-            data_params: dictionary containing params for trace data descriptor
-
-
-        Returns:
-            TraceDescriptor: Descriptor object for TraceDescriptor
-        """
-        return TraceDescriptor(
-            header_descriptor=make_trace_header_descriptor(**head_params),
-            sample_descriptor=make_trace_sample_descriptor(**data_params),
-        )
-
-    return _make_trace_descriptor
 
 
 @pytest.fixture(scope="module")
