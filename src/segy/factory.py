@@ -180,7 +180,7 @@ class SegyFactory:
             msg = "Header array must have the same number of rows as data array."
             raise ValueError(msg)
 
-        target_endian = trace_descriptor.data_descriptor.endianness
+        target_endian = trace_descriptor.endianness
 
         header_pipeline = TransformPipeline()
         data_pipeline = TransformPipeline()
