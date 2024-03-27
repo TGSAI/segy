@@ -14,7 +14,13 @@ from segy.schema.base import BaseTypeDescriptor
 
 
 class Endianness(StrEnum):
-    """Enumeration class with three possible endianness values."""
+    """Enumeration class with three possible endianness values.
+
+    Examples:
+        >>> endian = Endianness.BIG
+        >>> print(endian.symbol)
+        >
+    """
 
     BIG = "big"
     LITTLE = "little"
@@ -34,13 +40,7 @@ class Endianness(StrEnum):
 
 
 class ScalarType(StrEnum):
-    """A class representing scalar data types.
-
-    Examples:
-        >>> endian = Endianness.BIG
-        >>> print(endian.symbol)
-        >
-    """
+    """A class representing scalar data types."""
 
     IBM32 = "ibm32"
     INT64 = "int64"
@@ -70,29 +70,23 @@ class DataTypeDescriptor(BaseTypeDescriptor):
     Examples:
         A big endian float:
 
-        >>> data_type = DataTypeDescriptor(format="float32", endianness="big")
+        >>> data_type = DataTypeDescriptor(format="float32")
         >>> data_type.dtype
-        dtype('>f4')
+        dtype('float32')
 
         A little endian (native in x86/arm64) 16-bit unsigned integer:
 
-        >>> data_type = DataTypeDescriptor(format="uint16", endianness="little")
+        >>> data_type = DataTypeDescriptor(format="uint16")
         >>> data_type.dtype
         dtype('uint16')
     """
 
     format: ScalarType = Field(..., description="The data type of the field.")  # noqa: A003
-    endianness: Endianness = Field(
-        default=Endianness.BIG, description="The byte order of the field."
-    )
 
     @property
     def dtype(self) -> np.dtype[Any]:
         """Converts the byte order and data type of the object into a NumPy dtype."""
-        symbol = self.endianness.symbol
-        char = self.format.char
-
-        return np.dtype(symbol + char)
+        return np.dtype(self.format.char)
 
 
 class StructuredFieldDescriptor(DataTypeDescriptor):
@@ -104,7 +98,6 @@ class StructuredFieldDescriptor(DataTypeDescriptor):
         >>> data_type = StructuredFieldDescriptor(
         >>>     name="my_var",
         >>>     format="float32",
-        >>>     endianness="little",
         >>>     offset=8,
         >>> )
 
@@ -138,19 +131,16 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
         >>> field1 = StructuredFieldDescriptor(
         >>>     name="foo",
         >>>     format="int32",
-        >>>     endianness="big",
         >>>     offset=0,
         >>> )
         >>> field2 = StructuredFieldDescriptor(
         >>>     name="bar",
         >>>     format="int16",
-        >>>     endianness="big",
         >>>     offset=4,
         >>> )
         >>> field3 = StructuredFieldDescriptor(
         >>>     name="fizz",
         >>>     format="int32",
-        >>>     endianness="big",
         >>>     offset=16,
         >>> )
 
@@ -202,6 +192,10 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
     )
     offset: int | None = Field(default=None, ge=0, description="Starting byte offset.")
 
+    endianness: Endianness | None = Field(
+        default=None, description="Endianness of structured data type."
+    )
+
     @property
     def dtype(self) -> np.dtype[Any]:
         """Converts the names, data types, and offsets of the object into a NumPy dtype."""
@@ -218,4 +212,9 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
         if self.item_size is not None:
             dtype_conf["itemsize"] = self.item_size
 
-        return np.dtype(dtype_conf)  # type: ignore
+        struct_dtype = np.dtype(dtype_conf)
+
+        if self.endianness is not None:
+            struct_dtype = struct_dtype.newbyteorder(self.endianness.symbol)
+
+        return struct_dtype  # type: ignore
