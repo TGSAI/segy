@@ -59,3 +59,17 @@ class HeaderArray(SegyArray):
     def to_dataframe(self) -> DataFrame:
         """Convert structured data to pandas DataFrame."""
         return DataFrame.from_records(self)
+
+
+class TraceArray(SegyArray):
+    """Trace ndarray with convenience features."""
+
+    @property
+    def header(self) -> HeaderArray:
+        """Access headers of the trace(s)."""
+        return HeaderArray(self["header"])
+
+    @property
+    def data(self) -> NDArray[Any]:
+        """Access data of the trace(s)."""
+        return self["data"]
