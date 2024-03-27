@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 from fsspec.utils import merge_offset_ranges
 
+from segy.arrays import HeaderArray
+from segy.arrays import TraceArray
 from segy.config import SegyFileSettings
 from segy.transforms import Transform
 from segy.transforms import TransformPipeline
@@ -217,9 +219,10 @@ class TraceIndexer(AbstractIndexer):
 
         return starts, ends
 
-    def decode(self, buffer: bytearray) -> NDArray[Any]:
+    def decode(self, buffer: bytearray) -> TraceArray:
         """Decode whole traces (header + data)."""
-        return np.frombuffer(buffer, dtype=self.spec.dtype)
+        data = np.frombuffer(buffer, dtype=self.spec.dtype)
+        return TraceArray(data)
 
 
 class HeaderIndexer(AbstractIndexer):
@@ -248,9 +251,10 @@ class HeaderIndexer(AbstractIndexer):
 
         return starts, ends
 
-    def decode(self, buffer: bytearray) -> NDArray[Any]:
+    def decode(self, buffer: bytearray) -> HeaderArray:
         """Decode headers only."""
-        return np.frombuffer(buffer, dtype=self.spec.dtype["header"])
+        data = np.frombuffer(buffer, dtype=self.spec.dtype["header"])
+        return HeaderArray(data)
 
 
 class DataIndexer(AbstractIndexer):
