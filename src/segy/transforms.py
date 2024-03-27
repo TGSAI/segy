@@ -27,22 +27,49 @@ def get_endianness(data: NDArray[Any]) -> Endianness:
     return Endianness.LITTLE if data.dtype.byteorder == "<" else Endianness.BIG
 
 
+def _extract_nested_dtype(dtype: np.dtype[Any]) -> np.dtype[Any] | dict[str, Any]:
+    if dtype.fields is None:
+        return dtype
+
+    return {
+        "names": dtype.names,
+        "formats": [
+            _extract_nested_dtype(dtype.fields[name][0]) for name in dtype.names
+        ],
+        "offsets": [dtype.fields[name][1] for name in dtype.names],
+        "itemsize": dtype.itemsize,
+    }
+
+
 def _modify_dtype_field(
     old_dtype: np.dtype[np.void],
     key: str,
     new_type: np.dtype[Any],
 ) -> np.dtype[np.void]:
     """Constructs a new dtype for the structured array after a type change in one of its fields."""
-    new_fields = []
-    for old_descr in old_dtype.descr:
-        if old_descr[0] == key:
-            new_descr = list(old_descr)
-            new_descr[1] = str(new_type)
-            new_fields.append(tuple(new_descr))
-        else:
-            new_fields.append(old_descr)
+    dtype_info = _extract_nested_dtype(old_dtype)
 
-    return np.dtype(new_fields)
+    key_index = dtype_info["names"].index(key)
+    key_to_modify = dtype_info["formats"][key_index]
+
+    if key_to_modify.kind == "V":
+        new_type = np.dtype((new_type.str,) + key_to_modify.subdtype[1:])
+
+    dtype_info["formats"][key_index] = new_type
+
+    # Check if field size changed
+    old_size = key_to_modify.itemsize
+    new_size = new_type.itemsize
+    diff_size = new_size - old_size
+
+    if diff_size != 0:
+        offsets = dtype_info["offsets"]
+        dtype_info["offsets"] = [
+            x + (diff_size if i > key_index else 0) for i, x in enumerate(offsets)
+        ]
+        dtype_info["itemsize"] = dtype_info["itemsize"] + diff_size
+
+    return np.dtype(dtype_info)
 
 
 def _modify_structured_field(
