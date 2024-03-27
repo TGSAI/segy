@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 from pydantic import Field
+from pydantic import model_validator
 
 from segy.schema.base import BaseTypeDescriptor
 
@@ -54,6 +55,16 @@ class TraceDescriptor(BaseTypeDescriptor):
     endianness: Endianness | None = Field(
         default=None, description="Endianness of traces and headers."
     )
+
+    @model_validator(mode="after")
+    def update_submodel_endianness(self) -> TraceDescriptor:
+        """Ensure that submodel endianness matches the trace endianness."""
+        self.header_descriptor.endianness = self.endianness
+
+        if self.extended_header_descriptor is not None:
+            self.extended_header_descriptor.endianness = self.endianness
+
+        return self
 
     @property
     def dtype(self) -> np.dtype[Any]:
