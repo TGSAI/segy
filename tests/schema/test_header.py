@@ -7,12 +7,14 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 import numpy as np
-import numpy.typing as npt
 import pytest
 
 from segy.schema.header import TextHeaderDescriptor
 
 if TYPE_CHECKING:
+    from numpy.typing import DTypeLike
+    from numpy.typing import NDArray
+
     from segy.schema.data_type import StructuredDataTypeDescriptor
 
 
@@ -90,7 +92,7 @@ def test_trace_header_descriptors(
     )
 
 
-def void_buffer(buff_size: int) -> npt.NDArray[np.void]:
+def void_buffer(buff_size: int) -> NDArray[np.void]:
     """Creates a new buffer of requested number of bytes with void(number_bytes) datatype.
 
     Prefills with random bytes.
@@ -99,10 +101,7 @@ def void_buffer(buff_size: int) -> npt.NDArray[np.void]:
     return np.frombuffer(rng.bytes(buff_size), dtype=np.void(buff_size))
 
 
-def get_dt_info(
-    dt: np.dtype[Any],
-    atrnames: list[str] | None = None,
-) -> dict[str, Any]:
+def get_dt_info(dtype: DTypeLike) -> dict[str, Any]:
     """Helper function to get info about a numpy dtype."""
     atrnames = [
         "descr",
@@ -113,7 +112,7 @@ def get_dt_info(
         "shape",
         "names",
     ]
-    dt_info = dict(zip(atrnames, operator.attrgetter(*atrnames)(dt)))
+    dt_info = dict(zip(atrnames, operator.attrgetter(*atrnames)(dtype)))
     dt_info["offsets"] = [f[-1] for f in dt_info["fields"].values()]
     dt_info["combo_str"] = ",".join([f[1] for f in dt_info["descr"]])
     return dt_info
