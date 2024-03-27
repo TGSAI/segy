@@ -22,10 +22,10 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
-class BaseNDArray(np.ndarray):  # type: ignore[type-arg]
+class SegyArray(np.ndarray):  # type: ignore[type-arg]
     """Base class for array interface. Like ndarray but extensible."""
 
-    def __new__(cls, input_array: NDArray[Any]) -> BaseNDArray:
+    def __new__(cls, input_array: NDArray[Any]) -> SegyArray:
         """Numpy subclass logic."""
         return np.asarray(input_array).view(cls)
 
@@ -35,7 +35,7 @@ class BaseNDArray(np.ndarray):  # type: ignore[type-arg]
             return
 
 
-class HeaderNDArray(BaseNDArray):
+class HeaderArray(SegyArray):
     """Header ndarray with convenience features."""
 
     def to_dict(self) -> dict[str, Any]:
