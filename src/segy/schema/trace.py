@@ -9,20 +9,17 @@ import numpy as np
 from pydantic import Field
 
 from segy.schema.base import BaseTypeDescriptor
-from segy.schema.data_type import Endianness
-from segy.schema.data_type import StructuredDataTypeDescriptor
 
 if TYPE_CHECKING:
+    from segy.schema.data_type import Endianness
     from segy.schema.data_type import ScalarType
+    from segy.schema.data_type import StructuredDataTypeDescriptor
 
 
 class TraceDataDescriptor(BaseTypeDescriptor):
     """A descriptor class for a Trace Data (samples)."""
 
     format: ScalarType = Field(..., description="Format of trace samples.")  # noqa: A003
-    endianness: Endianness = Field(
-        default=Endianness.BIG, description="Endianness of trace samples."
-    )
     samples: int | None = Field(
         default=None,
         description=(
@@ -35,7 +32,7 @@ class TraceDataDescriptor(BaseTypeDescriptor):
     def dtype(self) -> np.dtype[Any]:
         """Get numpy dtype."""
         format_char = self.format.char
-        dtype_str = "".join([self.endianness.symbol, str(self.samples), format_char])
+        dtype_str = f"{self.samples}{format_char}"
         return np.dtype(dtype_str)
 
 
@@ -54,6 +51,9 @@ class TraceDescriptor(BaseTypeDescriptor):
     offset: int | None = Field(
         default=None, description="Starting offset of the trace."
     )
+    endianness: Endianness | None = Field(
+        default=None, description="Endianness of traces and headers."
+    )
 
     @property
     def dtype(self) -> np.dtype[Any]:
@@ -61,4 +61,9 @@ class TraceDescriptor(BaseTypeDescriptor):
         header_dtype = self.header_descriptor.dtype
         data_dtype = self.data_descriptor.dtype
 
-        return np.dtype([("header", header_dtype), ("data", data_dtype)])
+        trace_dtype = np.dtype([("header", header_dtype), ("data", data_dtype)])
+
+        if self.endianness is not None:
+            trace_dtype = trace_dtype.newbyteorder(self.endianness.symbol)
+
+        return trace_dtype
