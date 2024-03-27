@@ -27,7 +27,7 @@ def test_custom_segy_descriptor(
         trace_header_fields=custom_segy_file_descriptors[
             "trace_header_descriptor"
         ].fields,
-        trace_data_spec=custom_segy_file_descriptors["trace_data_descriptor"],
+        trace_data_spec=custom_segy_file_descriptors["trace_sample_descriptor"],
     )
     assert (
         custom_spec.text_file_header
@@ -42,6 +42,6 @@ def test_custom_segy_descriptor(
         == custom_segy_file_descriptors["trace_header_descriptor"].fields
     )
     assert (
-        custom_spec.trace.data_descriptor
-        == custom_segy_file_descriptors["trace_data_descriptor"]
+        custom_spec.trace.sample_descriptor
+        == custom_segy_file_descriptors["trace_sample_descriptor"]
     )

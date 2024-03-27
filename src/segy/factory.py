@@ -51,7 +51,7 @@ class SegyFactory:
         self.sample_interval = sample_interval
         self.samples_per_trace = samples_per_trace
 
-        self.spec.trace.data_descriptor.samples = samples_per_trace
+        self.spec.trace.sample_descriptor.samples = samples_per_trace
 
     def create_textual_header(self, text: str | None = None) -> bytes:
         """Create a textual header for the SEG-Y file.
@@ -132,7 +132,7 @@ class SegyFactory:
         Returns:
             Array containing the trace data template.
         """
-        descriptor = self.spec.trace.data_descriptor
+        descriptor = self.spec.trace.sample_descriptor
         dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
 
         data_template = np.empty(shape=size, dtype=dtype)
@@ -142,7 +142,7 @@ class SegyFactory:
 
         return data_template
 
-    def create_traces(self, headers: NDArray[Any], data: NDArray[Any]) -> bytes:
+    def create_traces(self, headers: NDArray[Any], samples: NDArray[Any]) -> bytes:
         """Convert trace data and header to bytes conforming to SEG-Y spec.
 
         The rows (length) of the headers and traces must match. The headers
@@ -152,7 +152,7 @@ class SegyFactory:
 
         Args:
             headers: Header array.
-            data: Data array.
+            samples: Data array.
 
         Returns:
             Bytes containing the encoded traces, ready to write.
@@ -163,24 +163,24 @@ class SegyFactory:
             ValueError: if there is a shape mismatch number of samples.
         """
         trace_descriptor = self.spec.trace
-        trace_descriptor.data_descriptor.samples = self.samples_per_trace
+        trace_descriptor.sample_descriptor.samples = self.samples_per_trace
 
-        if data.ndim != 2:  # noqa: PLR2004
+        if samples.ndim != 2:  # noqa: PLR2004
             msg = (
                 "Data array must be 2-dimensional with rows as traces "
                 "and columns as data samples."
             )
             raise AttributeError(msg)
 
-        if data.shape[1] != self.samples_per_trace:
+        if samples.shape[1] != self.samples_per_trace:
             msg = f"Trace length must be {self.samples_per_trace}."
             raise ValueError(msg)
 
-        if len(headers) != len(data):
+        if len(headers) != len(samples):
             msg = "Header array must have the same number of rows as data array."
             raise ValueError(msg)
 
-        target_endian = trace_descriptor.data_descriptor.endianness
+        target_endian = trace_descriptor.endianness
 
         header_pipeline = TransformPipeline()
         data_pipeline = TransformPipeline()
@@ -192,8 +192,8 @@ class SegyFactory:
         data_pipeline.add_transform(ibm_float)
         data_pipeline.add_transform(byte_swap)
 
-        trace = np.empty(shape=len(data), dtype=trace_descriptor.dtype)
+        trace = np.empty(shape=len(samples), dtype=trace_descriptor.dtype)
         trace["header"] = header_pipeline.apply(headers)
-        trace["data"] = data_pipeline.apply(data)
+        trace["sample"] = data_pipeline.apply(samples)
 
         return trace.tobytes()

@@ -26,15 +26,16 @@ def test_segy_rev0(
     assert mock_segy_rev0.samples_per_trace == num_samples
     assert mock_segy_rev0.num_ext_text == 0
 
-    assert mock_segy_rev0.spec.trace.data_descriptor.samples == num_samples
-    assert len(mock_segy_rev0.data[:]) == num_traces
-    expected_value = 1.0
-    assert (mock_segy_rev0.data[:] == expected_value).all()
+    assert mock_segy_rev0.spec.trace.sample_descriptor.samples == num_samples
+    assert len(mock_segy_rev0.sample[:]) == num_traces
     assert (
         mock_segy_rev0.header[:]["trace_seq_line"] == list(range(1, num_traces + 1))
     ).all()
-    assert (mock_segy_rev0.trace[:]["header"] == mock_segy_rev0.header[:]).all()
-    assert (mock_segy_rev0.trace[:]["data"] == mock_segy_rev0.data[:]).all()
+
+    expected_value = 1.0
+    assert_array_equal(mock_segy_rev0.sample[:], expected_value)
+    assert_array_equal(mock_segy_rev0.trace[:].header, mock_segy_rev0.header[:])
+    assert_array_equal(mock_segy_rev0.trace[:].sample, mock_segy_rev0.sample[:])
 
 
 @pytest.mark.parametrize(
@@ -58,13 +59,13 @@ def test_segy_rev1(
     assert mock_segy_rev1.samples_per_trace == num_samples
     assert mock_segy_rev1.num_ext_text == n_ext_headers
 
-    assert mock_segy_rev1.spec.trace.data_descriptor.samples == num_samples
-    assert len(mock_segy_rev1.data[:]) == num_traces
-    expected_value = 1.0
-    assert (mock_segy_rev1.data[:] == expected_value).all()
+    assert mock_segy_rev1.spec.trace.sample_descriptor.samples == num_samples
+    assert len(mock_segy_rev1.sample[:]) == num_traces
     assert (
         mock_segy_rev1.header[:]["trace_seq_line"] == list(range(1, num_traces + 1))
     ).all()
 
-    assert (mock_segy_rev1.trace[:]["header"] == mock_segy_rev1.header[:]).all()
-    assert (mock_segy_rev1.trace[:]["data"] == mock_segy_rev1.data[:]).all()
+    expected_value = 1.0
+    assert_array_equal(mock_segy_rev1.sample[:], expected_value)
+    assert_array_equal(mock_segy_rev1.trace[:].header, mock_segy_rev1.header[:])
+    assert_array_equal(mock_segy_rev1.trace[:].sample, mock_segy_rev1.sample[:])

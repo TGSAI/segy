@@ -22,10 +22,10 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
-class BaseNDArray(np.ndarray):  # type: ignore[type-arg]
+class SegyArray(np.ndarray):  # type: ignore[type-arg]
     """Base class for array interface. Like ndarray but extensible."""
 
-    def __new__(cls, input_array: NDArray[Any]) -> BaseNDArray:
+    def __new__(cls, input_array: NDArray[Any]) -> SegyArray:
         """Numpy subclass logic."""
         return np.asarray(input_array).view(cls)
 
@@ -35,7 +35,7 @@ class BaseNDArray(np.ndarray):  # type: ignore[type-arg]
             return
 
 
-class HeaderNDArray(BaseNDArray):
+class HeaderArray(SegyArray):
     """Header ndarray with convenience features."""
 
     def to_dict(self) -> dict[str, Any]:
@@ -59,3 +59,17 @@ class HeaderNDArray(BaseNDArray):
     def to_dataframe(self) -> DataFrame:
         """Convert structured data to pandas DataFrame."""
         return DataFrame.from_records(self)
+
+
+class TraceArray(SegyArray):
+    """Trace ndarray with convenience features."""
+
+    @property
+    def header(self) -> HeaderArray:
+        """Access headers of the trace(s)."""
+        return HeaderArray(self["header"])
+
+    @property
+    def sample(self) -> NDArray[Any]:
+        """Access data of the trace(s)."""
+        return self["sample"]

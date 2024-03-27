@@ -125,7 +125,7 @@ def trace_data(
     """Get one or more trace's samples (without headers)."""
     segy = SegyFile(uri)
 
-    print(segy.data[index])
+    print(segy.sample[index])
 
     if output is not None:
         msg = "Trace data dump to file is not implemented yet."

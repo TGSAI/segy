@@ -1,6 +1,5 @@
 """Tests for the compontent classes in the schema directory."""
 
-import itertools
 from collections.abc import Callable
 from collections.abc import Generator
 from typing import Any
@@ -9,15 +8,12 @@ import pytest
 
 from segy.schema import ScalarType
 from segy.schema import TextHeaderDescriptor
-from segy.schema import TraceDataDescriptor
+from segy.schema import TraceSampleDescriptor
 from segy.schema.data_type import DataTypeDescriptor
-from segy.schema.data_type import Endianness
 from segy.schema.data_type import StructuredDataTypeDescriptor
 
 # Constants defined for ScalarType
 DTYPE_FORMATS = [s.value for s in ScalarType]
-
-DTYPE_ENDIANNESS = [Endianness.LITTLE, Endianness.BIG]
 
 # For cases where a description is supplied or not
 DTYPE_DESCRIPTIONS = [None, "this is a data type description"]
@@ -42,20 +38,15 @@ TEXT_HEADER_DESCRIPTORS_PARAMS = [
 
 
 BINARY_HEADER_DESCRIPTORS_PARAMS = [
-    (dt_string, None, None, dt_endian)
-    for dt_string in BINARY_HEADER_TEST_DTYPE_STRINGS
-    for dt_endian in DTYPE_ENDIANNESS
+    (dt_string, None, None) for dt_string in BINARY_HEADER_TEST_DTYPE_STRINGS
 ]
 
 TRACE_HEADER_DESCRIPTORS_PARAMS = [
-    (dt_string, dt_endian)
-    for dt_string in TRACE_HEADER_TEST_DTYPE_STRINGS
-    for dt_endian in DTYPE_ENDIANNESS
+    (dt_string,) for dt_string in TRACE_HEADER_TEST_DTYPE_STRINGS
 ]
 
 TRACE_DATA_DESCRIPTORS_PARAMS = [
-    (p1, p2, DTYPE_DESCRIPTIONS[1], 100)
-    for p1, p2 in zip(DTYPE_FORMATS, itertools.cycle(DTYPE_ENDIANNESS))
+    (p1, DTYPE_DESCRIPTIONS[1], 100) for p1 in DTYPE_FORMATS
 ]
 
 
@@ -77,7 +68,6 @@ def binary_header_descriptors(
         dt_string=request.param[0],
         names=request.param[1],
         offsets=request.param[2],
-        endianness=request.param[3],
     )
 
 
@@ -96,37 +86,28 @@ def trace_header_descriptors(
         Descriptor object of trace headers.
 
     """
-    return make_trace_header_descriptor(
-        dt_string=request.param[0], endianness=request.param[1]
-    )
+    return make_trace_header_descriptor(dt_string=request.param[0])
 
 
-@pytest.fixture(
-    params=[
-        (p1, p2, DTYPE_DESCRIPTIONS[1])
-        for p1, p2 in zip(DTYPE_FORMATS, itertools.cycle(DTYPE_ENDIANNESS))
-    ]
-)
+@pytest.fixture(params=[(p1, DTYPE_DESCRIPTIONS[1]) for p1 in DTYPE_FORMATS])
 def data_types(request: pytest.FixtureRequest) -> DataTypeDescriptor:
     """Fixture to create all combinations of data types defined in ScalarType."""
     return DataTypeDescriptor(
         format=request.param[0],
-        endianness=request.param[1],
-        description=request.param[2],
+        description=request.param[1],
     )
 
 
 @pytest.fixture(params=TRACE_DATA_DESCRIPTORS_PARAMS)
-def trace_data_descriptors(
+def trace_sample_descriptors(
     request: pytest.FixtureRequest,
-    make_trace_data_descriptor: Callable[..., TraceDataDescriptor],
-) -> TraceDataDescriptor:
-    """Fixture that creates TraceDataDescriptors of different data types and endianness."""
-    return make_trace_data_descriptor(
+    make_trace_sample_descriptor: Callable[..., TraceSampleDescriptor],
+) -> TraceSampleDescriptor:
+    """Fixture that creates TraceDataDescriptors of different data types."""
+    return make_trace_sample_descriptor(
         format=request.param[0],
-        endianness=request.param[1],
-        description=request.param[2],
-        samples=request.param[3],
+        description=request.param[1],
+        samples=request.param[2],
     )
 
 
@@ -194,7 +175,7 @@ def custom_segy_file_descriptors(
     make_text_header_descriptor: Callable[..., TextHeaderDescriptor],
     make_binary_header_descriptor: Callable[..., StructuredDataTypeDescriptor],
     make_trace_header_descriptor: Callable[..., StructuredDataTypeDescriptor],
-    make_trace_data_descriptor: Callable[..., TraceDataDescriptor],
+    make_trace_sample_descriptor: Callable[..., TraceSampleDescriptor],
 ) -> Generator[dict[str, Any], None, None]:
     """Helper fixture to return a requested number of custom segy file descriptor params."""
     num_file_descriptors = getattr(request, "params", 1)
@@ -209,7 +190,7 @@ def custom_segy_file_descriptors(
             "trace_header_descriptor": make_trace_header_descriptor(
                 *TRACE_HEADER_DESCRIPTORS_PARAMS[i]
             ),
-            "trace_data_descriptor": make_trace_data_descriptor(
+            "trace_sample_descriptor": make_trace_sample_descriptor(
                 *TRACE_DATA_DESCRIPTORS_PARAMS[i]
             ),
         }

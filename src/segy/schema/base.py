@@ -25,7 +25,11 @@ class CamelCaseModel(BaseModel):
             - populate_by_name: Flag indicating whether to populate by name.
     """
 
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        validate_assignment=True,
+    )
 
     def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:  # noqa: ANN401
         """Dump the model into a dictionary by alias."""

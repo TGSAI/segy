@@ -57,7 +57,7 @@ class SegyFileSettings(SegyBaseSettings):
     """SEG-Y file parsing settings."""
 
     binary: SegyBinaryHeaderSettings = Field(default_factory=SegyBinaryHeaderSettings)
-    endian: Endianness = Field(default=Endianness.BIG)
+    endianness: Endianness = Field(default=Endianness.BIG)
     revision: int | float | None = Field(default=None)
 
     storage_options: dict[str, Any] = Field(default_factory=dict)

@@ -7,22 +7,20 @@ from typing import Any
 
 import numpy as np
 from pydantic import Field
+from pydantic import model_validator
 
 from segy.schema.base import BaseTypeDescriptor
-from segy.schema.data_type import Endianness
-from segy.schema.data_type import StructuredDataTypeDescriptor
 
 if TYPE_CHECKING:
+    from segy.schema.data_type import Endianness
     from segy.schema.data_type import ScalarType
+    from segy.schema.data_type import StructuredDataTypeDescriptor
 
 
-class TraceDataDescriptor(BaseTypeDescriptor):
-    """A descriptor class for a Trace Data (samples)."""
+class TraceSampleDescriptor(BaseTypeDescriptor):
+    """A descriptor class for a Trace Samples."""
 
     format: ScalarType = Field(..., description="Format of trace samples.")  # noqa: A003
-    endianness: Endianness = Field(
-        default=Endianness.BIG, description="Endianness of trace samples."
-    )
     samples: int | None = Field(
         default=None,
         description=(
@@ -35,7 +33,7 @@ class TraceDataDescriptor(BaseTypeDescriptor):
     def dtype(self) -> np.dtype[Any]:
         """Get numpy dtype."""
         format_char = self.format.char
-        dtype_str = "".join([self.endianness.symbol, str(self.samples), format_char])
+        dtype_str = f"{self.samples}{format_char}"
         return np.dtype(dtype_str)
 
 
@@ -48,17 +46,35 @@ class TraceDescriptor(BaseTypeDescriptor):
     extended_header_descriptor: StructuredDataTypeDescriptor | None = Field(
         default=None, description="Extended trace header descriptor."
     )
-    data_descriptor: TraceDataDescriptor = Field(
+    sample_descriptor: TraceSampleDescriptor = Field(
         ..., description="Trace data descriptor."
     )
     offset: int | None = Field(
         default=None, description="Starting offset of the trace."
     )
+    endianness: Endianness | None = Field(
+        default=None, description="Endianness of traces and headers."
+    )
+
+    @model_validator(mode="after")
+    def update_submodel_endianness(self) -> TraceDescriptor:
+        """Ensure that submodel endianness matches the trace endianness."""
+        self.header_descriptor.endianness = self.endianness
+
+        if self.extended_header_descriptor is not None:
+            self.extended_header_descriptor.endianness = self.endianness
+
+        return self
 
     @property
     def dtype(self) -> np.dtype[Any]:
         """Get numpy dtype."""
         header_dtype = self.header_descriptor.dtype
-        data_dtype = self.data_descriptor.dtype
+        data_dtype = self.sample_descriptor.dtype
 
-        return np.dtype([("header", header_dtype), ("data", data_dtype)])
+        trace_dtype = np.dtype([("header", header_dtype), ("sample", data_dtype)])
+
+        if self.endianness is not None:
+            trace_dtype = trace_dtype.newbyteorder(self.endianness.symbol)
+
+        return trace_dtype

@@ -15,6 +15,7 @@ from segy.schema import Endianness
 if TYPE_CHECKING:
     from typing import Any
 
+    from numpy._typing._dtype_like import _DTypeDict
     from numpy.typing import DTypeLike
     from numpy.typing import NDArray
 
@@ -27,22 +28,57 @@ def get_endianness(data: NDArray[Any]) -> Endianness:
     return Endianness.LITTLE if data.dtype.byteorder == "<" else Endianness.BIG
 
 
+def _extract_nested_dtype(dtype: np.dtype[Any]) -> DTypeLike:
+    """Extract nested dtype information from struct dtype."""
+    if dtype.names is None or dtype.fields is None:
+        return dtype
+
+    dtype_info: _DTypeDict = {
+        "names": dtype.names,
+        "formats": [
+            _extract_nested_dtype(dtype.fields[name][0]) for name in dtype.names
+        ],
+        "offsets": [dtype.fields[name][1] for name in dtype.names],
+        "itemsize": dtype.itemsize,
+    }
+
+    return dtype_info
+
+
 def _modify_dtype_field(
     old_dtype: np.dtype[np.void],
     key: str,
     new_type: np.dtype[Any],
 ) -> np.dtype[np.void]:
     """Constructs a new dtype for the structured array after a type change in one of its fields."""
-    new_fields = []
-    for old_descr in old_dtype.descr:
-        if old_descr[0] == key:
-            new_descr = list(old_descr)
-            new_descr[1] = str(new_type)
-            new_fields.append(tuple(new_descr))
-        else:
-            new_fields.append(old_descr)
+    if old_dtype.names is None:  # pragma: no cover
+        msg = "Cannot modify dtype for non-structured array."
+        raise ValueError(msg)
 
-    return np.dtype(new_fields)
+    dtype_info: _DTypeDict = _extract_nested_dtype(old_dtype)  # type: ignore[assignment]
+
+    key_index = dtype_info["names"].index(key)
+    key_to_modify = dtype_info["formats"][key_index]
+
+    if key_to_modify.kind == "V":
+        new_type = np.dtype((new_type.str,) + key_to_modify.subdtype[1:])
+
+    dtype_info["formats"][key_index] = new_type  # type: ignore[index]
+
+    # Check if field size changed
+    old_size = key_to_modify.itemsize
+    new_size = new_type.itemsize
+    diff_size = new_size - old_size
+
+    if diff_size != 0:
+        offsets = dtype_info["offsets"]
+        itemsize = dtype_info["itemsize"]
+        dtype_info["offsets"] = [
+            x + (diff_size if i > key_index else 0) for i, x in enumerate(offsets)
+        ]
+        dtype_info["itemsize"] = itemsize + diff_size
+
+    return np.dtype(dtype_info)
 
 
 def _modify_structured_field(

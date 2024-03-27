@@ -6,15 +6,17 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from pydantic import Field
+from pydantic import model_validator
 
 from segy.schema.base import CamelCaseModel
 
 if TYPE_CHECKING:
+    from segy.schema.data_type import Endianness
     from segy.schema.data_type import StructuredDataTypeDescriptor
     from segy.schema.data_type import StructuredFieldDescriptor
     from segy.schema.header import TextHeaderDescriptor
-    from segy.schema.trace import TraceDataDescriptor
     from segy.schema.trace import TraceDescriptor
+    from segy.schema.trace import TraceSampleDescriptor
 
 
 class SegyStandard(Enum):
@@ -44,13 +46,25 @@ class SegyDescriptor(CamelCaseModel):
     )
     trace: TraceDescriptor = Field(..., description="Trace header + data descriptor.")
 
+    endianness: Endianness | None = Field(
+        default=None, description="Endianness of SEG-Y file."
+    )
+
+    @model_validator(mode="after")
+    def update_submodel_endianness(self) -> SegyDescriptor:
+        """Ensure that submodel endianness matches the SEG-Y endianness."""
+        self.binary_file_header.endianness = self.endianness
+        self.trace.endianness = self.endianness
+
+        return self
+
     def customize(  # noqa: PLR0913
         self: SegyDescriptor,
         text_header_spec: TextHeaderDescriptor | None = None,
         binary_header_fields: list[StructuredFieldDescriptor] | None = None,
         extended_text_spec: TextHeaderDescriptor | None = None,
         trace_header_fields: list[StructuredFieldDescriptor] | None = None,
-        trace_data_spec: TraceDataDescriptor | None = None,
+        trace_data_spec: TraceSampleDescriptor | None = None,
     ) -> SegyDescriptor:
         """Customize an existing SEG-Y descriptor.
 
@@ -84,7 +98,7 @@ class SegyDescriptor(CamelCaseModel):
 
         # Update trace data spec if its specified; else will revert to default.
         if trace_data_spec:
-            new_descr.trace.data_descriptor = trace_data_spec
+            new_descr.trace.sample_descriptor = trace_data_spec
 
         return new_descr
 
