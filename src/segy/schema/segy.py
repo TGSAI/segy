@@ -10,6 +10,7 @@ from pydantic import Field
 from segy.schema.base import CamelCaseModel
 
 if TYPE_CHECKING:
+    from segy.schema.data_type import Endianness
     from segy.schema.data_type import StructuredDataTypeDescriptor
     from segy.schema.data_type import StructuredFieldDescriptor
     from segy.schema.header import TextHeaderDescriptor
@@ -43,6 +44,10 @@ class SegyDescriptor(CamelCaseModel):
         default=None, description="Extended textual header descriptor."
     )
     trace: TraceDescriptor = Field(..., description="Trace header + data descriptor.")
+
+    endianness: Endianness | None = Field(
+        default=None, description="Endianness of SEG-Y file."
+    )
 
     def customize(  # noqa: PLR0913
         self: SegyDescriptor,
