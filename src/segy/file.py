@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING
 import numpy as np
 from fsspec.core import url_to_fs
 
-from segy.arrays import HeaderNDArray
 from segy.config import SegyFileSettings
 from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
 from segy.indexing import TraceIndexer
 from segy.schema import Endianness
+from segy.schema import ScalarType
 from segy.schema import SegyStandard
 from segy.standards.registry import get_spec
 from segy.standards.rev1 import rev1_binary_file_header
@@ -57,7 +57,13 @@ class SegyFile:
         self.spec = self._infer_standard() if spec is None else spec
 
         self._info = self.fs.info(self.url)
+        self._update_spec_endianness()
         self._parse_binary_header()
+
+    def _update_spec_endianness(self) -> None:
+        """If spec has no endianness, get it from settings."""
+        if self.spec.endianness is None:
+            self.spec.endianness.endianness = self.settings.endianness
 
     @property
     def file_size(self) -> int:
@@ -155,27 +161,23 @@ class SegyFile:
         return get_spec(standard)
 
     @cached_property
-    def binary_header(self) -> HeaderNDArray:
+    def binary_header(self) -> NDArray:
         """Read binary header from store, based on spec."""
-        buffer = bytearray(
-            self.fs.read_block(
-                fn=self.url,
-                offset=self.spec.binary_file_header.offset,
-                length=self.spec.binary_file_header.itemsize,
-            )
+        buffer = self.fs.read_block(
+            fn=self.url,
+            offset=self.spec.binary_file_header.offset,
+            length=self.spec.binary_file_header.itemsize,
         )
 
         bin_hdr = np.frombuffer(buffer, dtype=self.spec.binary_file_header.dtype)
 
-        if self.settings.apply_transforms is False:
-            return HeaderNDArray(bin_hdr)
+        transforms = TransformPipeline()
+        transforms.add_transform(
+            TransformFactory.create("byte_swap", Endianness.LITTLE),
+        )
+        transforms.add_transform(TransformFactory.create("header_array"))
 
-        byte_swap = TransformFactory.create("byte_swap", Endianness.NATIVE)
-
-        pipeline = TransformPipeline()
-        pipeline.add_transform(byte_swap)
-
-        return HeaderNDArray(pipeline.apply(bin_hdr))
+        return transforms.apply(bin_hdr)
 
     def _parse_binary_header(self) -> None:
         """Parse the binary header and apply some rules."""
@@ -196,6 +198,13 @@ class SegyFile:
     @property
     def data(self) -> AbstractIndexer:
         """Way to access the file to fetch trace data only."""
+        transforms = [
+            TransformFactory.create("byte_swap", Endianness.LITTLE),
+        ]
+
+        if self.spec.trace.data_descriptor.format == ScalarType.IBM32:
+            transforms.append(TransformFactory.create("ibm_float", "to_ieee"))
+
         return DataIndexer(
             self.fs,
             self.url,
@@ -203,11 +212,17 @@ class SegyFile:
             self.num_traces,
             kind="data",
             settings=self.settings,
+            transforms=transforms,
         )
 
     @property
     def header(self) -> AbstractIndexer:
         """Way to access the file to fetch trace headers only."""
+        transforms = [
+            TransformFactory.create("byte_swap", Endianness.LITTLE),
+            TransformFactory.create("header_array"),
+        ]
+
         return HeaderIndexer(
             self.fs,
             self.url,
@@ -215,11 +230,21 @@ class SegyFile:
             self.num_traces,
             kind="header",
             settings=self.settings,
+            transforms=transforms,
         )
 
     @property
     def trace(self) -> AbstractIndexer:
         """Way to access the file to fetch full traces (headers + data)."""
+        transforms = [
+            TransformFactory.create("byte_swap", Endianness.LITTLE),
+        ]
+
+        if self.spec.trace.data_descriptor.format == ScalarType.IBM32:
+            transforms.append(
+                TransformFactory.create("ibm_float", "to_ieee", keys=["data"])
+            )
+
         return TraceIndexer(
             self.fs,
             self.url,
@@ -227,4 +252,5 @@ class SegyFile:
             self.num_traces,
             kind="trace",
             settings=self.settings,
+            transforms=transforms,
         )

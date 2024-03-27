@@ -9,12 +9,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 from fsspec.utils import merge_offset_ranges
 
-from segy.arrays import HeaderNDArray
 from segy.config import SegyFileSettings
-from segy.ibm import ibm2ieee
-from segy.schema import Endianness
-from segy.schema import ScalarType
-from segy.transforms import TransformFactory
+from segy.transforms import Transform
 from segy.transforms import TransformPipeline
 
 if TYPE_CHECKING:
@@ -26,32 +22,6 @@ if TYPE_CHECKING:
 
     from segy.schema import TraceDescriptor
     from segy.schema.base import BaseTypeDescriptor
-
-
-def trace_ibm2ieee_inplace(trace: NDArray[Any]) -> NDArray[Any]:
-    """Convert data of a trace (headers + data) from IBM32 to float32 in place.
-
-    Args:
-        trace: A numpy array of type <trace-dtype> containing the trace data.
-
-    Returns:
-        A numpy array of type <new-trace-dtype> converted from the input trace data,
-        preserving the original header information.
-
-    Note:
-        This method converts IBM format trace data to IEEE format inplace, without
-        creating a copy of the trace array.
-    """
-    header_dtype = trace.dtype["header"]
-    data_dtype = trace.dtype["data"]
-
-    num_samp = data_dtype.shape
-    data_dtype_f32 = np.dtype(("float32", num_samp))
-
-    trace_dtype_fp32 = np.dtype([("header", header_dtype), ("data", data_dtype_f32)])
-    trace["data"] = ibm2ieee(trace["data"]).view("uint32")
-
-    return trace.view(trace_dtype_fp32)
 
 
 def merge_cat_file(
@@ -134,6 +104,7 @@ class AbstractIndexer(ABC):
         max_value: An integer representing the maximum value of the index.
         kind: A string representing the kind of index.
         settings: Optional parsing settings.
+        transforms: The transforms to apply after decoding.
     """
 
     def __init__(  # noqa: PLR0913
@@ -144,6 +115,7 @@ class AbstractIndexer(ABC):
         max_value: int,
         kind: str,
         settings: SegyFileSettings | None = None,
+        transforms: list[Transform] | None = None,
     ):
         self.fs = fs
         self.url = url
@@ -152,6 +124,12 @@ class AbstractIndexer(ABC):
         self.kind = kind
         self.settings = SegyFileSettings() if settings is None else settings
 
+        self.transform_pipeline = TransformPipeline()
+
+        if transforms is not None:
+            for transform in transforms:
+                self.transform_pipeline.add_transform(transform)
+
     @abstractmethod
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
         """Logic to calculate start/end bytes."""
@@ -159,6 +137,10 @@ class AbstractIndexer(ABC):
     @abstractmethod
     def decode(self, buffer: bytearray) -> NDArray[Any]:
         """How to decode the bytes after reading."""
+
+    def post_process(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Apply transforms to the data after decoding."""
+        return self.transform_pipeline.apply(data)
 
     def __getitem__(self, item: int | list[int] | slice) -> Any:  # noqa: ANN401
         """Operator for integers, lists, and slices with bounds checking."""
@@ -189,10 +171,6 @@ class AbstractIndexer(ABC):
 
         data = self.fetch(indices)
         return self.post_process(data)
-
-    def post_process(self, data: NDArray[Any]) -> Any:  # noqa: ANN401
-        """Optional post-processing. Override in subclass if needed."""
-        return data
 
     def fetch(self, indices: list[int]) -> NDArray[Any]:
         """Fetches and decodes binary data from the given indices.
@@ -241,27 +219,7 @@ class TraceIndexer(AbstractIndexer):
 
     def decode(self, buffer: bytearray) -> NDArray[Any]:
         """Decode whole traces (header + data)."""
-        data = np.frombuffer(buffer, dtype=self.spec.dtype)
-
-        if self.settings.endian == Endianness.BIG:
-            data = data.byteswap(inplace=True).newbyteorder()
-
-        if self.spec.data_descriptor.format == ScalarType.IBM32:
-            data = trace_ibm2ieee_inplace(data)
-
-        return data
-
-    def post_process(
-        self, data: NDArray[Any]
-    ) -> NDArray[Any] | dict[str, NDArray[Any] | HeaderNDArray]:
-        """Return header and samples in dict.
-
-        Data is already byte-swapped at decode so not applying it here.
-        We need to standardize the transformations in a way that's
-        applicable to trace data and headers etc.
-        """
-        header_array = HeaderNDArray(data["header"])
-        return {"header": header_array, "data": data["data"]}
+        return np.frombuffer(buffer, dtype=self.spec.dtype)
 
 
 class HeaderIndexer(AbstractIndexer):
@@ -292,21 +250,7 @@ class HeaderIndexer(AbstractIndexer):
 
     def decode(self, buffer: bytearray) -> NDArray[Any]:
         """Decode headers only."""
-        data = np.frombuffer(buffer, dtype=self.spec.header_descriptor.dtype)
-
-        return data  # noqa: RET504
-
-    def post_process(self, data: NDArray[Any]) -> HeaderNDArray:
-        """Convert raw struct to accessor."""
-        if self.settings.apply_transforms is False:
-            return HeaderNDArray(data)
-
-        byte_swap = TransformFactory.create("byte_swap", Endianness.NATIVE)
-
-        pipeline = TransformPipeline()
-        pipeline.add_transform(byte_swap)
-
-        return HeaderNDArray(pipeline.apply(data))
+        return np.frombuffer(buffer, dtype=self.spec.dtype["header"])
 
 
 class DataIndexer(AbstractIndexer):
@@ -337,12 +281,4 @@ class DataIndexer(AbstractIndexer):
 
     def decode(self, buffer: bytearray) -> NDArray[Any]:
         """Decode trace data only."""
-        data = np.frombuffer(buffer, dtype=self.spec.data_descriptor.dtype)
-
-        if self.settings.endian == Endianness.BIG:
-            data = data.byteswap(inplace=True).newbyteorder()
-
-        if self.spec.data_descriptor.format == ScalarType.IBM32:
-            data = ibm2ieee(data).view("float32")
-
-        return data
+        return np.frombuffer(buffer, dtype=self.spec.dtype["data"])
