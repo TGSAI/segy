@@ -3,21 +3,15 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from typing import Any
 
 import fsspec
 import numpy as np
 import pytest
 
-from segy.ibm import ieee2ibm
 from segy.indexing import bounds_check
 from segy.indexing import merge_cat_file
-from segy.indexing import trace_ibm2ieee_inplace
-from segy.schema import Endianness
-from segy.schema import TraceDescriptor
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from pathlib import Path
 
 err_msg_format = "indices {0} are out of bounds."
@@ -75,44 +69,3 @@ def test_merge_cat_file(
     cast_res = np.frombuffer(cat_res, dtype=packed_dtype)
 
     np.testing.assert_array_equal(cast_res, struct)
-
-
-@pytest.mark.parametrize(
-    ("header_params", "data_params", "float_vals"),
-    [
-        (
-            {
-                "dt_string": "i2,i4",
-                "names": ["a", "b"],
-                "endianness": Endianness.LITTLE,
-            },
-            {"format": "uint32", "endianness": Endianness.LITTLE, "samples": 3},
-            [0.0, 0.1, 3.141593],
-        ),
-        (
-            {"dt_string": "i2,i4", "names": ["a", "b"], "endianness": Endianness.BIG},
-            {"format": "uint32", "endianness": Endianness.BIG, "samples": 3},
-            [1.01, -2.01, 33.11],
-        ),
-    ],
-)
-def test_trace_ibm2ieee_inplace(
-    header_params: dict[str, Any],
-    data_params: dict[str, Any],
-    float_vals: list[float],
-    make_trace_descriptor: Callable[..., TraceDescriptor],
-) -> None:
-    """Test changing dtype of IBM32 values inplace."""
-    trace_descr = make_trace_descriptor(header_params, data_params)
-    samp_trace = np.zeros(1, dtype=trace_descr.dtype)
-    ieee_floats = np.array(float_vals, dtype="<f4")
-    ibm_floats = ieee2ibm(ieee_floats)
-    if trace_descr.data_descriptor.endianness == Endianness.BIG:
-        # emulating how trace indexer swaps byte order
-        # of big endian data types
-        samp_trace = samp_trace.byteswap(inplace=True).newbyteorder()
-
-    samp_trace["data"].squeeze()[:] = ibm_floats[:]
-    inplace_swap_vals = trace_ibm2ieee_inplace(samp_trace)
-    actual_floats = inplace_swap_vals["data"].squeeze()
-    np.testing.assert_array_almost_equal(ieee_floats, actual_floats)

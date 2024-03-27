@@ -7,7 +7,8 @@ import numpy as np
 import pytest
 
 from segy import SegyFile
-from segy import ibm as convert_floats
+from segy.ibm import ieee2ibm
+from segy.schema import Endianness
 from segy.standards import SegyStandard
 from segy.standards import registry
 
@@ -25,6 +26,8 @@ def create_mock_segy_rev0(
     rev0_spec = registry.get_spec(SegyStandard.REV0)
     rev0_spec.trace.data_descriptor.samples = num_samples
 
+    rev0_spec.endianness = Endianness.LITTLE
+
     text_header_content = text_header_default_content
     sample_text_header = format_str_to_text_header(text_header_content)
     binary_header_vals = np.zeros((), dtype=rev0_spec.binary_file_header.dtype)
@@ -34,15 +37,15 @@ def create_mock_segy_rev0(
     trace_header_vals = np.zeros((), dtype=rev0_spec.trace.header_descriptor.dtype)
     trace_header_vals["trace_seq_line"] = 1
     trace_data_vals = np.zeros((), dtype=rev0_spec.trace.data_descriptor.dtype)
-    trace_data_vals[:] = convert_floats.ieee2ibm(np.ones(num_samples, dtype="float32"))
+    trace_data_vals[:] = ieee2ibm(np.ones(num_samples, dtype="float32"))
 
     buffer_out = b""
     buffer_out += rev0_spec.text_file_header._encode(sample_text_header)
     buffer_out += binary_header_vals.tobytes()
 
     for _ in range(num_traces):
-        buffer_out += trace_header_vals.copy(order="K").tobytes()
-        buffer_out += trace_data_vals.copy(order="K").tobytes()
+        buffer_out += trace_header_vals.copy().tobytes()
+        buffer_out += trace_data_vals.copy().tobytes()
         trace_header_vals["trace_seq_line"] += 1
 
     with tmp_file.open(mode="wb") as fh:
@@ -86,6 +89,8 @@ def create_mock_segy_rev1(  # noqa: PLR0913
     rev1_spec = registry.get_spec(SegyStandard.REV1)
     rev1_spec.trace.data_descriptor.samples = num_samples
 
+    rev1_spec.endianness = Endianness.LITTLE
+
     text_header_content = text_header_default_content
     sample_text_header = format_str_to_text_header(text_header_content)
     extended_text_headers = [
@@ -102,7 +107,7 @@ def create_mock_segy_rev1(  # noqa: PLR0913
     trace_header_vals = np.zeros((), dtype=rev1_spec.trace.header_descriptor.dtype)
     trace_header_vals["trace_seq_line"] = 1
     trace_data_vals = np.zeros((), dtype=rev1_spec.trace.data_descriptor.dtype)
-    trace_data_vals[:] = convert_floats.ieee2ibm(np.ones(num_samples, dtype="float32"))
+    trace_data_vals[:] = ieee2ibm(np.ones(num_samples, dtype="float32"))
 
     buffer_out = b""
     buffer_out += rev1_spec.text_file_header._encode(sample_text_header)

@@ -8,6 +8,7 @@ from fsspec import filesystem
 
 from segy import SegyFile
 from segy.factory import SegyFactory
+from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.schema import SegyDescriptor
 from segy.schema import SegyStandard
@@ -23,6 +24,7 @@ from segy.schema import TraceDescriptor
 def mock_segy_spec() -> SegyDescriptor:
     """Create a fixture for the mock SegyDescriptor class."""
     return SegyDescriptor(
+        endianness=Endianness.BIG,
         segy_standard=SegyStandard.REV0,
         text_file_header=TextHeaderDescriptor(
             rows=2,
