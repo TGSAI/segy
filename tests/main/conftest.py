@@ -24,7 +24,7 @@ def create_mock_segy_rev0(
 ) -> SegyFile:
     """Create a temporary file that mocks a segy Rev0 file structure."""
     rev0_spec = registry.get_spec(SegyStandard.REV0)
-    rev0_spec.trace.data_descriptor.samples = num_samples
+    rev0_spec.trace.sample_descriptor.samples = num_samples
 
     rev0_spec.endianness = Endianness.LITTLE
 
@@ -36,7 +36,7 @@ def create_mock_segy_rev0(
 
     trace_header_vals = np.zeros((), dtype=rev0_spec.trace.header_descriptor.dtype)
     trace_header_vals["trace_seq_line"] = 1
-    trace_data_vals = np.zeros((), dtype=rev0_spec.trace.data_descriptor.dtype)
+    trace_data_vals = np.zeros((), dtype=rev0_spec.trace.sample_descriptor.dtype)
     trace_data_vals[:] = ieee2ibm(np.ones(num_samples, dtype="float32"))
 
     buffer_out = b""
@@ -87,7 +87,7 @@ def create_mock_segy_rev1(  # noqa: PLR0913
 ) -> SegyFile:
     """Create a temporary file that mocks a segy Rev1 file structure."""
     rev1_spec = registry.get_spec(SegyStandard.REV1)
-    rev1_spec.trace.data_descriptor.samples = num_samples
+    rev1_spec.trace.sample_descriptor.samples = num_samples
 
     rev1_spec.endianness = Endianness.LITTLE
 
@@ -106,7 +106,7 @@ def create_mock_segy_rev1(  # noqa: PLR0913
 
     trace_header_vals = np.zeros((), dtype=rev1_spec.trace.header_descriptor.dtype)
     trace_header_vals["trace_seq_line"] = 1
-    trace_data_vals = np.zeros((), dtype=rev1_spec.trace.data_descriptor.dtype)
+    trace_data_vals = np.zeros((), dtype=rev1_spec.trace.sample_descriptor.dtype)
     trace_data_vals[:] = ieee2ibm(np.ones(num_samples, dtype="float32"))
 
     buffer_out = b""

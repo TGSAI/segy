@@ -8,8 +8,8 @@ from segy.schema.header import TextHeaderDescriptor
 from segy.schema.header import TextHeaderEncoding
 from segy.schema.segy import SegyDescriptor
 from segy.schema.segy import SegyStandard
-from segy.schema.trace import TraceDataDescriptor
 from segy.schema.trace import TraceDescriptor
+from segy.schema.trace import TraceSampleDescriptor
 
 __all__ = [
     "Endianness",
@@ -18,7 +18,7 @@ __all__ = [
     "StructuredFieldDescriptor",
     "TextHeaderDescriptor",
     "TextHeaderEncoding",
-    "TraceDataDescriptor",
+    "TraceSampleDescriptor",
     "TraceDescriptor",
     "SegyDescriptor",
     "SegyStandard",

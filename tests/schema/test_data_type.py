@@ -16,7 +16,7 @@ from segy.schema.data_type import StructuredDataTypeDescriptor
 from segy.schema.data_type import StructuredFieldDescriptor
 
 if TYPE_CHECKING:
-    from segy.schema.trace import TraceDataDescriptor
+    from segy.schema.trace import TraceSampleDescriptor
 
 
 @pytest.mark.parametrize(
@@ -136,18 +136,20 @@ def test_structured_data_type_descriptor(
         assert new_sdtd.item_size == item_size
 
 
-def test_trace_data_descriptors(trace_data_descriptors: TraceDataDescriptor) -> None:
+def test_trace_sample_descriptors(
+    trace_sample_descriptors: TraceSampleDescriptor,
+) -> None:
     """Test for reading trace data descriptors.
 
     Tested on a buffer of random values and compares descriptor
     dtype results to a standard numpy struct to parse the same values.
     """
-    samples = trace_data_descriptors.samples
-    format_ = trace_data_descriptors.format.char
+    samples = trace_sample_descriptors.samples
+    format_ = trace_sample_descriptors.format.char
 
     expected = np.dtype(f"({samples},){format_}")
 
-    assert trace_data_descriptors.dtype == expected
+    assert trace_sample_descriptors.dtype == expected
 
 
 def test_validate_json_structured_data_type_descriptor() -> None:

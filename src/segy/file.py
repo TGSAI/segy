@@ -10,8 +10,8 @@ from fsspec.core import url_to_fs
 
 from segy.arrays import HeaderArray
 from segy.config import SegyFileSettings
-from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
+from segy.indexing import SampleIndexer
 from segy.indexing import TraceIndexer
 from segy.schema import Endianness
 from segy.schema import ScalarType
@@ -64,7 +64,7 @@ class SegyFile:
     def _update_spec_endianness(self) -> None:
         """If spec has no endianness, get it from settings."""
         if self.spec.endianness is None:
-            self.spec.endianness.endianness = self.settings.endianness
+            self.spec.endianness = self.settings.endianness
 
     @property
     def file_size(self) -> int:
@@ -186,7 +186,7 @@ class SegyFile:
         bin_hdr_size = self.spec.binary_file_header.itemsize
 
         # Update trace start offset and sample length
-        self.spec.trace.data_descriptor.samples = self.samples_per_trace
+        self.spec.trace.sample_descriptor.samples = self.samples_per_trace
         self.spec.trace.offset = text_hdr_size + bin_hdr_size
 
         if self.num_ext_text > 0:
@@ -196,21 +196,21 @@ class SegyFile:
             self.spec.trace.offset = self.spec.trace.offset + ext_text_size
 
     @property
-    def data(self) -> AbstractIndexer:
+    def sample(self) -> AbstractIndexer:
         """Way to access the file to fetch trace data only."""
         transforms = [
             TransformFactory.create("byte_swap", Endianness.LITTLE),
         ]
 
-        if self.spec.trace.data_descriptor.format == ScalarType.IBM32:
+        if self.spec.trace.sample_descriptor.format == ScalarType.IBM32:
             transforms.append(TransformFactory.create("ibm_float", "to_ieee"))
 
-        return DataIndexer(
+        return SampleIndexer(
             self.fs,
             self.url,
             self.spec.trace,
             self.num_traces,
-            kind="data",
+            kind="sample",
             settings=self.settings,
             transforms=transforms,
         )
@@ -239,9 +239,9 @@ class SegyFile:
             TransformFactory.create("byte_swap", Endianness.LITTLE),
         ]
 
-        if self.spec.trace.data_descriptor.format == ScalarType.IBM32:
+        if self.spec.trace.sample_descriptor.format == ScalarType.IBM32:
             transforms.append(
-                TransformFactory.create("ibm_float", "to_ieee", keys=["data"])
+                TransformFactory.create("ibm_float", "to_ieee", keys=["sample"])
             )
 
         return TraceIndexer(

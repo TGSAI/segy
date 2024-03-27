@@ -257,8 +257,8 @@ class HeaderIndexer(AbstractIndexer):
         return HeaderArray(data)
 
 
-class DataIndexer(AbstractIndexer):
-    """Indexer for reading trace data only.
+class SampleIndexer(AbstractIndexer):
+    """Indexer for reading trace samples only.
 
     Inherits from AbstractIndexer. Implements decoding based on trace
     descriptor.
@@ -269,7 +269,7 @@ class DataIndexer(AbstractIndexer):
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
         """Convert data indices to byte ranges (without trace headers)."""
         trace_itemsize = self.spec.dtype.itemsize
-        data_itemsize = self.spec.data_descriptor.dtype.itemsize
+        data_itemsize = self.spec.sample_descriptor.dtype.itemsize
         header_itemsize = self.spec.header_descriptor.dtype.itemsize
 
         if self.spec.offset is None:
@@ -284,5 +284,5 @@ class DataIndexer(AbstractIndexer):
         return starts, ends
 
     def decode(self, buffer: bytearray) -> NDArray[Any]:
-        """Decode trace data only."""
-        return np.frombuffer(buffer, dtype=self.spec.dtype["data"])
+        """Decode trace samples only."""
+        return np.frombuffer(buffer, dtype=self.spec.dtype["sample"])

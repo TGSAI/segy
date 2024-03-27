@@ -98,7 +98,7 @@ class SegyDescriptor(CamelCaseModel):
 
         # Update trace data spec if its specified; else will revert to default.
         if trace_data_spec:
-            new_descr.trace.data_descriptor = trace_data_spec
+            new_descr.trace.sample_descriptor = trace_data_spec
 
         return new_descr
 

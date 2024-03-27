@@ -70,6 +70,6 @@ class TraceArray(SegyArray):
         return HeaderArray(self["header"])
 
     @property
-    def data(self) -> NDArray[Any]:
+    def sample(self) -> NDArray[Any]:
         """Access data of the trace(s)."""
-        return self["data"]
+        return self["sample"]

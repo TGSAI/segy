@@ -6,8 +6,8 @@ from segy.schema import SegyDescriptor
 from segy.schema import SegyStandard
 from segy.schema import TextHeaderDescriptor
 from segy.schema import TextHeaderEncoding
-from segy.schema import TraceDataDescriptor
 from segy.schema import TraceDescriptor
+from segy.schema import TraceSampleDescriptor
 from segy.schema.data_type import StructuredDataTypeDescriptor
 from segy.schema.data_type import StructuredFieldDescriptor
 from segy.standards.rev0 import BINARY_FILE_HEADER_FIELDS_REV0
@@ -184,14 +184,14 @@ rev1_trace_header = StructuredDataTypeDescriptor(
 )
 
 
-rev1_trace_data = TraceDataDescriptor(
+rev1_trace_data = TraceSampleDescriptor(
     format=ScalarType.IBM32,  # noqa: A003
 )
 
 
 rev1_trace = TraceDescriptor(
     header_descriptor=rev1_trace_header,
-    data_descriptor=rev1_trace_data,
+    sample_descriptor=rev1_trace_data,
 )
 
 

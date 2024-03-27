@@ -16,8 +16,8 @@ from segy.schema import StructuredDataTypeDescriptor
 from segy.schema import StructuredFieldDescriptor
 from segy.schema import TextHeaderDescriptor
 from segy.schema import TextHeaderEncoding
-from segy.schema import TraceDataDescriptor
 from segy.schema import TraceDescriptor
+from segy.schema import TraceSampleDescriptor
 
 
 @pytest.fixture()
@@ -85,7 +85,7 @@ def mock_segy_spec() -> SegyDescriptor:
                 ],
                 item_size=16,
             ),
-            data_descriptor=TraceDataDescriptor(
+            sample_descriptor=TraceSampleDescriptor(
                 format=ScalarType.IBM32,  # noqa: A003
             ),
         ),
@@ -135,13 +135,13 @@ class TestSegyFactoryFile:
     @pytest.mark.parametrize("trace_idx", [0, 5, 11])
     def test_trace_data(self, mock_segy_file: SegyFile, trace_idx: int) -> None:
         """Check that the trace data is correct."""
-        assert (mock_segy_file.data[trace_idx] == trace_idx).all()
+        assert (mock_segy_file.sample[trace_idx] == trace_idx).all()
 
     @pytest.mark.parametrize("trace_idx", [0, 5, 11])
     def test_trace(self, mock_segy_file: SegyFile, trace_idx: int) -> None:
         """Check that the trace header + data accessor is correct."""
         assert mock_segy_file.trace[trace_idx].header.item() == (11, 2000, trace_idx)
-        assert (mock_segy_file.trace[trace_idx].data == trace_idx).all()
+        assert (mock_segy_file.trace[trace_idx].sample == trace_idx).all()
 
 
 class TestSegyFactoryExceptions:

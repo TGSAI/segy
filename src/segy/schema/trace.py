@@ -17,8 +17,8 @@ if TYPE_CHECKING:
     from segy.schema.data_type import StructuredDataTypeDescriptor
 
 
-class TraceDataDescriptor(BaseTypeDescriptor):
-    """A descriptor class for a Trace Data (samples)."""
+class TraceSampleDescriptor(BaseTypeDescriptor):
+    """A descriptor class for a Trace Samples."""
 
     format: ScalarType = Field(..., description="Format of trace samples.")  # noqa: A003
     samples: int | None = Field(
@@ -46,7 +46,7 @@ class TraceDescriptor(BaseTypeDescriptor):
     extended_header_descriptor: StructuredDataTypeDescriptor | None = Field(
         default=None, description="Extended trace header descriptor."
     )
-    data_descriptor: TraceDataDescriptor = Field(
+    sample_descriptor: TraceSampleDescriptor = Field(
         ..., description="Trace data descriptor."
     )
     offset: int | None = Field(
@@ -70,9 +70,9 @@ class TraceDescriptor(BaseTypeDescriptor):
     def dtype(self) -> np.dtype[Any]:
         """Get numpy dtype."""
         header_dtype = self.header_descriptor.dtype
-        data_dtype = self.data_descriptor.dtype
+        data_dtype = self.sample_descriptor.dtype
 
-        trace_dtype = np.dtype([("header", header_dtype), ("data", data_dtype)])
+        trace_dtype = np.dtype([("header", header_dtype), ("sample", data_dtype)])
 
         if self.endianness is not None:
             trace_dtype = trace_dtype.newbyteorder(self.endianness.symbol)
