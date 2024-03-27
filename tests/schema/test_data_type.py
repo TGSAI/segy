@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import string
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -184,10 +183,3 @@ def test_validate_json_structured_data_type_descriptor() -> None:
 
     actual_model = StructuredDataTypeDescriptor.model_validate_json(struct_json)
     assert actual_model == expected_model
-
-
-def _compare_json_strings(s1: str, s2: str) -> bool:
-    """Helper function for clearing whitespace to compare json strings."""
-    remove = string.whitespace
-    mapping = {ord(c): None for c in remove}
-    return s1.translate(mapping) == s2.translate(mapping)
