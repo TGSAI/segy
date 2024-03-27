@@ -28,6 +28,7 @@ def get_endianness(data: NDArray[Any]) -> Endianness:
 
 
 def _extract_nested_dtype(dtype: np.dtype[Any]) -> np.dtype[Any] | dict[str, Any]:
+    """Extract nested dtype information from struct dtype."""
     if dtype.fields is None:
         return dtype
 
