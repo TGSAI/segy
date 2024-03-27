@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from segy.arrays import HeaderNDArray
 from segy.ibm import ibm2ieee
 from segy.ibm import ieee2ibm
 from segy.schema import Endianness
@@ -231,20 +230,6 @@ class IbmFloatTransform(Transform):
         return self.ibm_func_map[self.direction](data)  # type: ignore
 
 
-class HeaderArrayTransform(Transform):
-    """Cast struct array to header array."""
-
-    def __init__(self) -> None:
-        super().__init__()
-
-    def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        if data.dtype.names is None:
-            msg = "The array to transform is not a struct array."
-            raise ValueError(msg)
-
-        return HeaderNDArray(data)
-
-
 class TransformFactory:
     """Factory class to generate transformation strategies."""
 
@@ -253,7 +238,6 @@ class TransformFactory:
         "byte_swap": ByteSwapTransform,
         "ibm_float": IbmFloatTransform,
         "cast": CastTypeTransform,
-        "header_array": HeaderArrayTransform,
     }
 
     @classmethod
