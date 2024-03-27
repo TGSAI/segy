@@ -6,6 +6,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from pydantic import Field
+from pydantic import model_validator
 
 from segy.schema.base import CamelCaseModel
 
@@ -48,6 +49,14 @@ class SegyDescriptor(CamelCaseModel):
     endianness: Endianness | None = Field(
         default=None, description="Endianness of SEG-Y file."
     )
+
+    @model_validator(mode="after")
+    def update_submodel_endianness(self) -> SegyDescriptor:
+        """Ensure that submodel endianness matches the SEG-Y endianness."""
+        self.binary_file_header.endianness = self.endianness
+        self.trace.endianness = self.endianness
+
+        return self
 
     def customize(  # noqa: PLR0913
         self: SegyDescriptor,
