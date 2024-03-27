@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from fsspec.core import url_to_fs
 
+from segy.arrays import HeaderArray
 from segy.config import SegyFileSettings
 from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
@@ -175,9 +176,8 @@ class SegyFile:
         transforms.add_transform(
             TransformFactory.create("byte_swap", Endianness.LITTLE),
         )
-        transforms.add_transform(TransformFactory.create("header_array"))
 
-        return transforms.apply(bin_hdr)
+        return HeaderArray(transforms.apply(bin_hdr))
 
     def _parse_binary_header(self) -> None:
         """Parse the binary header and apply some rules."""
@@ -216,11 +216,10 @@ class SegyFile:
         )
 
     @property
-    def header(self) -> AbstractIndexer:
+    def header(self) -> HeaderIndexer:
         """Way to access the file to fetch trace headers only."""
         transforms = [
             TransformFactory.create("byte_swap", Endianness.LITTLE),
-            TransformFactory.create("header_array"),
         ]
 
         return HeaderIndexer(
@@ -234,7 +233,7 @@ class SegyFile:
         )
 
     @property
-    def trace(self) -> AbstractIndexer:
+    def trace(self) -> TraceIndexer:
         """Way to access the file to fetch full traces (headers + data)."""
         transforms = [
             TransformFactory.create("byte_swap", Endianness.LITTLE),
