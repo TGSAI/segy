@@ -68,13 +68,13 @@ class DataTypeDescriptor(BaseTypeDescriptor):
     """A class representing a descriptor for a data type.
 
     Examples:
-        A big endian float:
+        A float32:
 
         >>> data_type = DataTypeDescriptor(format="float32")
         >>> data_type.dtype
         dtype('float32')
 
-        A little endian (native in x86/arm64) 16-bit unsigned integer:
+        A 16-bit unsigned integer:
 
         >>> data_type = DataTypeDescriptor(format="uint16")
         >>> data_type.dtype
@@ -93,7 +93,7 @@ class StructuredFieldDescriptor(DataTypeDescriptor):
     """A class representing a descriptor for a structured data-type field.
 
     Examples:
-        A named little endian float at offset 8-bytes:
+        A named float at offset 8-bytes:
 
         >>> data_type = StructuredFieldDescriptor(
         >>>     name="my_var",
@@ -161,7 +161,7 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
         Now let's look at its data type:
 
         >>> struct_dtype.dtype
-        dtype({'names': ['foo', 'bar', 'fizz'], 'formats': ['>i4', '>i2', '>i4'], 'offsets': [0, 4, 16], 'itemsize': 20})
+        dtype({'names': ['foo', 'bar', 'fizz'], 'formats': ['<i4', '<i2', '<i4'], 'offsets': [0, 4, 16], 'itemsize': 20})
 
         If we wanted to pad the end of the struct (to fit a specific byte range),
         we would provide the item_size in the descriptor. If we set it to 30,
@@ -175,13 +175,13 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
         Now let's look at its data type:
 
         >>> struct_dtype.dtype
-        dtype({'names': ['foo', 'bar', 'fizz'], 'formats': ['>i4', '>i2', '>i4'], 'offsets': [0, 4, 16], 'itemsize': 30})
+        dtype({'names': ['foo', 'bar', 'fizz'], 'formats': ['<i4', '<i2', '<i4'], 'offsets': [0, 4, 16], 'itemsize': 30})
 
         To see what's going under the hood, we can look at a lower level numpy
         description of the `dtype`. Here we observe all the gaps (void types).
 
         >>> struct_dtype.dtype.descr
-        [('foo', '>i4'), ('bar', '>i2'), ('', '|V10'), ('fizz', '>i4'), ('', '|V10')]
+        [('foo', '<i4'), ('bar', '<i2'), ('', '|V10'), ('fizz', '<i4'), ('', '|V10')]
     """  # noqa: E501
 
     fields: list[StructuredFieldDescriptor] = Field(
