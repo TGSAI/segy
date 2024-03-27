@@ -15,8 +15,8 @@ if TYPE_CHECKING:
     from segy.schema.data_type import StructuredDataTypeDescriptor
     from segy.schema.data_type import StructuredFieldDescriptor
     from segy.schema.header import TextHeaderDescriptor
-    from segy.schema.trace import TraceDataDescriptor
     from segy.schema.trace import TraceDescriptor
+    from segy.schema.trace import TraceSampleDescriptor
 
 
 class SegyStandard(Enum):
@@ -64,7 +64,7 @@ class SegyDescriptor(CamelCaseModel):
         binary_header_fields: list[StructuredFieldDescriptor] | None = None,
         extended_text_spec: TextHeaderDescriptor | None = None,
         trace_header_fields: list[StructuredFieldDescriptor] | None = None,
-        trace_data_spec: TraceDataDescriptor | None = None,
+        trace_data_spec: TraceSampleDescriptor | None = None,
     ) -> SegyDescriptor:
         """Customize an existing SEG-Y descriptor.
 

@@ -199,22 +199,18 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
     @property
     def dtype(self) -> np.dtype[Any]:
         """Converts the names, data types, and offsets of the object into a NumPy dtype."""
-        names = [field.name for field in self.fields]
-        offsets = [field.offset for field in self.fields]
-        formats = [field.dtype for field in self.fields]
-
         dtype_conf = {
-            "names": names,
-            "formats": formats,
-            "offsets": offsets,
+            "names": [field.name for field in self.fields],
+            "formats": [field.dtype for field in self.fields],
+            "offsets": [field.offset for field in self.fields],
         }
 
         if self.item_size is not None:
             dtype_conf["itemsize"] = self.item_size
 
-        struct_dtype = np.dtype(dtype_conf)
+        struct_dtype = np.dtype(dtype_conf)  # type: ignore[call-overload]
 
         if self.endianness is not None:
             struct_dtype = struct_dtype.newbyteorder(self.endianness.symbol)
 
-        return struct_dtype  # type: ignore
+        return struct_dtype  # type: ignore[no-any-return]
