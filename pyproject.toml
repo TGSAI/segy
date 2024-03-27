@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "segy"
-version = "0.0.12"
+version = "0.0.13"
 description = "The Ultimate Python SEG-Y I/O with Cloud Support and Schemas"
 authors = ["TGS <sys-opensource@tgs.com>"]
 maintainers = [
