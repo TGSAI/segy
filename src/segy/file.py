@@ -218,8 +218,14 @@ class SegyFile:
     @property
     def header(self) -> HeaderIndexer:
         """Way to access the file to fetch trace headers only."""
+        ibm_header_keys = [
+            field.name
+            for field in self.spec.trace.header_descriptor.fields
+            if field.dtype == ScalarType.IBM32
+        ]
         transforms = [
             TransformFactory.create("byte_swap", Endianness.LITTLE),
+            TransformFactory.create("ibm_float", "to_ieee", keys=ibm_header_keys),
         ]
 
         return HeaderIndexer(
