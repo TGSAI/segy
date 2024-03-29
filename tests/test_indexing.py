@@ -1,4 +1,8 @@
-"""Tests for indexing."""
+"""Tests for indexing.
+
+The indexer classes are tested via the `SegyFile` tests so no
+need to test it here.
+"""
 
 from __future__ import annotations
 
