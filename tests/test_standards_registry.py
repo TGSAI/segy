@@ -11,14 +11,14 @@ from segy.standards.registry import register_spec
 
 
 @pytest.mark.parametrize(
-    ("standard_enum", "base_spec"),
+    ("standard_enum", "standard_spec"),
     [(SegyStandard.REV0, rev0_segy), (SegyStandard.REV1, rev1_segy)],
 )
-def test_get_spec(standard_enum: SegyStandard, base_spec: SegyDescriptor) -> None:
+def test_get_spec(standard_enum: SegyStandard, standard_spec: SegyDescriptor) -> None:
     """Test retrieving SegyStandard from registry."""
     spec_copy = get_spec(SegyStandard(standard_enum))
-    assert spec_copy == base_spec
-    assert id(spec_copy) != id(base_spec)
+    assert spec_copy == standard_spec
+    assert id(spec_copy) != id(standard_spec)
 
 
 def test_get_nonexistent_spec_error() -> None:
