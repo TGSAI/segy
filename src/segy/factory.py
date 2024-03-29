@@ -113,11 +113,12 @@ class SegyFactory:
         if fill is True:
             header_template.fill(0)
 
-        field_names: tuple[str, ...] = header_template.dtype.names
-        if "sample_interval" in field_names:
+        # 'names' assumed not None by data structure (type ignores).
+        field_names = header_template.dtype.names
+        if "sample_interval" in field_names:  # type: ignore[operator]
             header_template["sample_interval"] = self.sample_interval
 
-        if "samples_per_trace" in field_names:
+        if "samples_per_trace" in field_names:  # type: ignore[operator]
             header_template["samples_per_trace"] = self.samples_per_trace
 
         return header_template
