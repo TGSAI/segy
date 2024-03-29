@@ -1,4 +1,9 @@
-"""Tests for data types defined for SegyFile components."""
+"""Tests for IBM and IEEE floating point conversions.
+
+Some references for test values
+https://en.wikipedia.org/wiki/IBM_hexadecimal_floating-point
+https://www.crewes.org/Documents/ResearchReports/2017/CRR201725.pdf
+"""
 
 import numpy as np
 import pytest
