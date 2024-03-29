@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from segy.schema import Endianness
+from segy.schema import ScalarType
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
@@ -185,17 +186,20 @@ class SegyFactory:
             msg = "Header array must have the same number of rows as data array."
             raise ValueError(msg)
 
-        target_endian = trace_descriptor.endianness
-
         header_pipeline = TransformPipeline()
         data_pipeline = TransformPipeline()
 
-        byte_swap = TransformFactory.create("byte_swap", target_endian)
-        ibm_float = TransformFactory.create("ibm_float", "to_ibm")
+        target_endian = trace_descriptor.endianness
+        target_format = trace_descriptor.sample_descriptor.format
 
-        header_pipeline.add_transform(byte_swap)
-        data_pipeline.add_transform(ibm_float)
-        data_pipeline.add_transform(byte_swap)
+        if target_endian == Endianness.BIG:
+            byte_swap = TransformFactory.create("byte_swap", target_endian)
+            header_pipeline.add_transform(byte_swap)
+            data_pipeline.add_transform(byte_swap)
+
+        if target_format == ScalarType.IBM32:
+            ibm_float = TransformFactory.create("ibm_float", "to_ibm")
+            data_pipeline.add_transform(ibm_float)
 
         trace = np.empty(shape=len(samples), dtype=trace_descriptor.dtype)
         trace["header"] = header_pipeline.apply(headers)
