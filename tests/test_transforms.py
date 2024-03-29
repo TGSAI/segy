@@ -40,12 +40,12 @@ def mock_header_big(mock_header_little: NDArray[Any]) -> NDArray[Any]:
 @pytest.fixture()
 def mock_header_ibm() -> NDArray[Any]:
     """Generate a mock structured array to test IBM float field transform."""
-    names = ["u4_field", "ibm_field", "u2_field"]
-    formats = ["<u4", "<u4", "<u2"]
+    names = ["u4_field", "ibm_field", "u2_field", "ibm_field2"]
+    formats = ["<u4", "<u4", "<u2", "<u4"]
 
     dtype = np.dtype({"names": names, "formats": formats})
     arr = np.empty(shape=1, dtype=dtype)
-    arr[:] = (256, 0x4276A000, 8)
+    arr[:] = (256, 0x4276A000, 8, 0x413243F7)
 
     return arr
 
@@ -167,12 +167,20 @@ class TestIbmFloat:
 
     def test_ibm_float_field(self, mock_header_ibm: NDArray[Any]) -> None:
         """Test array scaling."""
-        expected = (256, 118.625, 8)
+        expected_dtype = [
+            ("", "uint32"),
+            ("", "float32"),
+            ("", "uint16"),
+            ("", "float32"),
+        ]
+        expected = np.asarray((256, 118.625, 8, 3.141593), dtype=expected_dtype)
 
-        transform = TransformFactory.create("ibm_float", "to_ieee", keys=["ibm_field"])
+        transform = TransformFactory.create(
+            "ibm_float", "to_ieee", keys=["ibm_field", "ibm_field2"]
+        )
         transformed_header = transform.apply(mock_header_ibm)
 
-        assert transformed_header.item() == expected
+        assert transformed_header[0].item() == expected.item()
 
 
 @pytest.mark.parametrize(
