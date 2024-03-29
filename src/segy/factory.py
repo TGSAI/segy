@@ -13,6 +13,7 @@ from segy.transforms import TransformPipeline
 if TYPE_CHECKING:
     from typing import Any
 
+    from numpy._typing._dtype_like import _DTypeDict
     from numpy.typing import NDArray
 
     from segy.schema import SegyDescriptor
@@ -113,7 +114,7 @@ class SegyFactory:
         if fill is True:
             header_template.fill(0)
 
-        field_names = header_template.dtype.names
+        field_names: tuple[str, ...] = header_template.dtype.names
         if "sample_interval" in field_names:
             header_template["sample_interval"] = self.sample_interval
 
