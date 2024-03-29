@@ -13,7 +13,6 @@ from segy.transforms import TransformPipeline
 if TYPE_CHECKING:
     from typing import Any
 
-    from numpy._typing._dtype_like import _DTypeDict
     from numpy.typing import NDArray
 
     from segy.schema import SegyDescriptor
