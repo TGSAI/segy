@@ -2,174 +2,248 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 import pytest
-from fsspec import filesystem
+from numpy.testing import assert_array_equal
 
-from segy import SegyFile
+from segy.factory import DEFAULT_TEXT_HEADER
+from segy.factory import SEGY_FORMAT_MAP
 from segy.factory import SegyFactory
+from segy.ibm import ieee2ibm
 from segy.schema import Endianness
 from segy.schema import ScalarType
-from segy.schema import SegyDescriptor
 from segy.schema import SegyStandard
-from segy.schema import StructuredDataTypeDescriptor
 from segy.schema import StructuredFieldDescriptor
-from segy.schema import TextHeaderDescriptor
 from segy.schema import TextHeaderEncoding
-from segy.schema import TraceDescriptor
-from segy.schema import TraceSampleDescriptor
+from segy.standards import registry
 
 
-@pytest.fixture()
-def mock_segy_spec() -> SegyDescriptor:
-    """Create a fixture for the mock SegyDescriptor class."""
-    return SegyDescriptor(
-        endianness=Endianness.BIG,
-        segy_standard=SegyStandard.REV0,
-        text_file_header=TextHeaderDescriptor(
-            rows=2,
-            cols=20,
-            offset=0,
-            encoding=TextHeaderEncoding.EBCDIC,
-            format=ScalarType.UINT8,  # noqa: A003
-        ),
-        binary_file_header=StructuredDataTypeDescriptor(
-            fields=[
-                StructuredFieldDescriptor(
-                    name="seg_y_revision",
-                    offset=0,
-                    format=ScalarType.UINT16,
-                ),
-                StructuredFieldDescriptor(
-                    name="sample_interval",
-                    offset=4,
-                    format=ScalarType.UINT16,
-                ),
-                StructuredFieldDescriptor(
-                    name="sample_interval_orig",
-                    offset=6,
-                    format=ScalarType.UINT16,
-                ),
-                StructuredFieldDescriptor(
-                    name="samples_per_trace",
-                    offset=8,
-                    format=ScalarType.UINT16,
-                ),
-                StructuredFieldDescriptor(
-                    name="samples_per_trace_orig",
-                    offset=10,
-                    format=ScalarType.UINT16,
-                ),
-            ],
-            item_size=16,
-            offset=40,
-        ),
-        trace=TraceDescriptor(
-            header_descriptor=StructuredDataTypeDescriptor(
-                fields=[
-                    StructuredFieldDescriptor(
-                        name="samples_per_trace",
-                        offset=4,
-                        format=ScalarType.INT32,
-                    ),
-                    StructuredFieldDescriptor(
-                        name="sample_interval",
-                        offset=8,
-                        format=ScalarType.INT32,
-                    ),
-                    StructuredFieldDescriptor(
-                        name="custom_header",
-                        offset=12,
-                        format=ScalarType.INT16,
-                    ),
-                ],
-                item_size=16,
-            ),
-            sample_descriptor=TraceSampleDescriptor(
-                format=ScalarType.IBM32,  # noqa: A003
-            ),
-        ),
+@dataclass
+class TestConfig:
+    """Dataclass to configure common test patterns."""
+
+    segy_standard: SegyStandard
+    endianness: Endianness
+    text_encoding: TextHeaderEncoding
+    sample_interval: int
+    samples_per_trace: int
+
+
+SEGY_FACTORY_TEST_CONFIGS = [
+    TestConfig(SegyStandard.REV0, Endianness.BIG, TextHeaderEncoding.EBCDIC, 2000, 51),
+    TestConfig(SegyStandard.REV1, Endianness.LITTLE, TextHeaderEncoding.ASCII, 3000, 1),
+    TestConfig(SegyStandard.REV0, Endianness.BIG, TextHeaderEncoding.EBCDIC, 5000, 10),
+]
+
+
+@pytest.fixture(params=SEGY_FACTORY_TEST_CONFIGS)
+def mock_segy_factory(request: pytest.FixtureRequest) -> SegyFactory:
+    """Generates the test cases for SegyFactory.
+
+    We start with a minimal SEG-Y spec and modify its properties to generate various
+    files parametrically. `SEGY_FACTORY_TEST_CONFIGS` defines the base configuration.
+    """
+    test_config = request.param
+    spec = registry.get_spec(SegyStandard.MINIMAL)
+
+    # Set file wide attributes
+    spec.endianness = test_config.endianness
+    spec.segy_standard = test_config.segy_standard
+
+    # Modify textual file header descriptor
+    spec.text_file_header.encoding = test_config.text_encoding
+
+    # Shrink trace headers to 16-bytes and add a few fields
+    spec.trace.header_descriptor.item_size = 16
+    spec.trace.header_descriptor.fields = [
+        StructuredFieldDescriptor(name="field1", format=ScalarType.INT8, offset=2),
+        StructuredFieldDescriptor(name="field2", format=ScalarType.INT32, offset=4),
+        StructuredFieldDescriptor(name="field3", format=ScalarType.UINT8, offset=10),
+    ]
+
+    return SegyFactory(
+        spec,
+        sample_interval=test_config.sample_interval,
+        samples_per_trace=test_config.samples_per_trace,
     )
 
 
-text_header_expected = "C01 Test header     \nC02 This is line 2  "
+@pytest.mark.parametrize(
+    "encoding", [TextHeaderEncoding.EBCDIC, TextHeaderEncoding.ASCII]
+)
+def test_textual_file_header(encoding: TextHeaderEncoding) -> None:
+    """Tests that the textual file header is written correctly."""
+    spec = registry.get_spec(SegyStandard.MINIMAL)
+    spec.text_file_header.encoding = encoding
+    factory = SegyFactory(spec)
+
+    text_bytes = factory.create_textual_header()
+
+    text_descr = factory.spec.text_file_header
+    text_actual = text_descr._decode(text_bytes)
+    text_actual = text_descr._wrap(text_actual)
+    assert text_actual == DEFAULT_TEXT_HEADER
 
 
-@pytest.fixture()
-def mock_segy_file(mock_segy_spec: SegyDescriptor) -> SegyFile:
-    """Create a mock file in memory and open it with SegyFile and return fixture."""
-    factory = SegyFactory(mock_segy_spec, sample_interval=2000, samples_per_trace=11)
-    fs = filesystem("memory")
-    file = fs._open("test.sgy", mode="wb")
+@pytest.mark.parametrize(
+    "sample_format", [ScalarType.FLOAT32, ScalarType.IBM32, ScalarType.INT16]
+)
+def test_binary_file_header(
+    mock_segy_factory: SegyFactory, sample_format: ScalarType
+) -> None:
+    """Ensure the binary header is properly encoded and serialized."""
+    mock_segy_factory.spec.trace.sample_descriptor.format = sample_format
 
-    file.write(factory.create_textual_header(text_header_expected))
-    file.write(factory.create_binary_header())
+    binary_bytes = mock_segy_factory.create_binary_header()
 
-    num_traces = 15
-    headers = factory.create_trace_header_template(num_traces)
-    headers["custom_header"] = np.arange(num_traces)
+    bin_spec = mock_segy_factory.spec.binary_file_header
+    binary_actual = np.frombuffer(binary_bytes, dtype=bin_spec.dtype)
+    binary_expected = (
+        mock_segy_factory.sample_interval,
+        mock_segy_factory.sample_interval,
+        mock_segy_factory.samples_per_trace,
+        mock_segy_factory.samples_per_trace,
+        SEGY_FORMAT_MAP[mock_segy_factory.trace_sample_format],
+        mock_segy_factory.segy_revision.value * 256,
+        0,  # fixed length trace flag
+        0,  # extended text headers
+    )
+    assert binary_actual.item() == binary_expected
 
-    data = factory.create_trace_data_template(num_traces)
-    data[:] = np.arange(num_traces)[..., None]
 
-    file.write(factory.create_traces(headers, data))
+@pytest.mark.parametrize("num_traces", [1, 100])
+class TestSegyFactoryTraces:
+    """Ensure the trace headers are properly encoded and serialized."""
 
-    return SegyFile("memory://test.sgy", mock_segy_spec)
+    def test_trace_header_template(
+        self, mock_segy_factory: SegyFactory, num_traces: int
+    ) -> None:
+        """Test if the trace header template is correct."""
+        headers = mock_segy_factory.create_trace_header_template(num_traces)
 
+        header_descr = mock_segy_factory.spec.trace.header_descriptor
+        assert headers.size == num_traces
+        assert headers.dtype == header_descr.dtype.newbyteorder("<")
 
-class TestSegyFactoryFile:
-    """Test if file created with SegyFactory has correct values."""
+    def test_trace_header_template_with_sample_info(
+        self, mock_segy_factory: SegyFactory, num_traces: int
+    ) -> None:
+        """Test if the trace header template is correct with sample info."""
+        mock_segy_factory.spec.trace.header_descriptor.item_size = 26
+        # fmt: off
+        mock_segy_factory.spec.trace.header_descriptor.fields += [
+            StructuredFieldDescriptor(name="sample_interval", format=ScalarType.INT16, offset=12),
+            StructuredFieldDescriptor(name="samples_per_trace", format=ScalarType.INT16, offset=24),
+        ]
+        # fmt: on
 
-    def test_text_header(self, mock_segy_file: SegyFile) -> None:
-        """Check that the text header is correct."""
-        assert mock_segy_file.text_header == text_header_expected
+        headers = mock_segy_factory.create_trace_header_template(num_traces)
 
-    def test_binary_header(self, mock_segy_file: SegyFile) -> None:
-        """Check that the binary header is correct."""
-        assert mock_segy_file.binary_header.item() == (0, 2000, 2000, 11, 11)
+        header_descr = mock_segy_factory.spec.trace.header_descriptor
+        expected_sample_info = mock_segy_factory.sample_interval
+        expected_samples_per_trace = mock_segy_factory.samples_per_trace
+        assert headers.size == num_traces
+        assert headers.dtype == header_descr.dtype.newbyteorder("<")
+        assert_array_equal(headers["sample_interval"], expected_sample_info)
+        assert_array_equal(headers["samples_per_trace"], expected_samples_per_trace)
 
-    def test_trace_header(self, mock_segy_file: SegyFile) -> None:
-        """Check that the trace header is correct."""
-        assert mock_segy_file.header[7].item() == (11, 2000, 7)
+    @pytest.mark.parametrize(
+        "sample_format", [ScalarType.FLOAT32, ScalarType.IBM32, ScalarType.INT16]
+    )
+    def test_trace_sample_template(
+        self, mock_segy_factory: SegyFactory, num_traces: int, sample_format: ScalarType
+    ) -> None:
+        """Test if the trace sample template is correct."""
+        mock_segy_factory.spec.trace.sample_descriptor.format = sample_format
 
-    @pytest.mark.parametrize("trace_idx", [0, 5, 11])
-    def test_trace_data(self, mock_segy_file: SegyFile, trace_idx: int) -> None:
-        """Check that the trace data is correct."""
-        assert (mock_segy_file.sample[trace_idx] == trace_idx).all()
+        samples = mock_segy_factory.create_trace_sample_template(num_traces)
 
-    @pytest.mark.parametrize("trace_idx", [0, 5, 11])
-    def test_trace(self, mock_segy_file: SegyFile, trace_idx: int) -> None:
-        """Check that the trace header + data accessor is correct."""
-        assert mock_segy_file.trace[trace_idx].header.item() == (11, 2000, trace_idx)
-        assert (mock_segy_file.trace[trace_idx].sample == trace_idx).all()
+        n_samples = mock_segy_factory.samples_per_trace
+
+        if mock_segy_factory.trace_sample_format == ScalarType.IBM32:
+            expected_dtype = np.dtype("float32")
+        else:
+            expected_dtype = np.dtype(mock_segy_factory.trace_sample_format.char)
+
+        expected_shape = (num_traces, n_samples)
+        assert samples.dtype == expected_dtype
+        assert samples.shape == expected_shape
+
+    @pytest.mark.parametrize(
+        "sample_format", [ScalarType.FLOAT32, ScalarType.IBM32, ScalarType.INT16]
+    )
+    def test_trace_serialize(
+        self, mock_segy_factory: SegyFactory, num_traces: int, sample_format: ScalarType
+    ) -> None:
+        """Test if the trace serialization is correct."""
+        mock_segy_factory.spec.trace.sample_descriptor.format = sample_format
+
+        rng = np.random.default_rng()
+        samples_per_trace = mock_segy_factory.samples_per_trace
+        shape = (num_traces, samples_per_trace)
+        rand_samples = np.float32(255 * rng.random(size=shape))
+        rand_fields = {}
+        for field in mock_segy_factory.spec.trace.header_descriptor.fields:
+            field_data = rng.integers(-100, 100, dtype="int8", size=num_traces)
+            rand_fields[field.name] = field_data
+
+        headers = mock_segy_factory.create_trace_header_template(num_traces)
+        samples = mock_segy_factory.create_trace_sample_template(num_traces)
+
+        trace_dtype_little = mock_segy_factory.spec.trace.dtype.newbyteorder("<")
+        expected_traces = np.zeros(shape=num_traces, dtype=trace_dtype_little)
+        for field, values in rand_fields.items():
+            headers[field] = values
+            expected_traces["header"][field] = values
+
+        samples[:] = rand_samples
+        if mock_segy_factory.trace_sample_format == ScalarType.IBM32:
+            expected_traces["sample"] = ieee2ibm(rand_samples).squeeze()
+        else:
+            expected_traces["sample"] = rand_samples.squeeze()
+
+        if mock_segy_factory.spec.endianness == Endianness.BIG:
+            expected_traces = expected_traces.byteswap(inplace=True).newbyteorder(">")
+
+        trace_bytes = mock_segy_factory.create_traces(headers, samples)
+        expected_trace_bytes = expected_traces.tobytes()
+        assert trace_bytes == expected_trace_bytes
 
 
 class TestSegyFactoryExceptions:
     """Test the exceptions to SegyFactory creation methods."""
 
-    def test_create_trace_incorrect_ndim(self, mock_segy_spec: SegyDescriptor) -> None:
+    def test_create_trace_incorrect_ndim(self) -> None:
         """Check if trace dimensions are wrong."""
-        factory = SegyFactory(mock_segy_spec, sample_interval=2, samples_per_trace=5)
-        header_1d = factory.create_trace_header_template(5, fill=False)
+        spec = registry.get_spec(SegyStandard.MINIMAL)
+        factory = SegyFactory(spec, sample_interval=2, samples_per_trace=5)
+
+        header_1d = factory.create_trace_header_template(5)
         array_4d = np.empty(shape=(5, 5, 5, 5))
 
         with pytest.raises(AttributeError, match="Data array must be 2-dimensional"):
             factory.create_traces(header_1d, array_4d)
 
-    def test_create_data_nsamp_mismatch(self, mock_segy_spec: SegyDescriptor) -> None:
+    def test_create_sample_num_samples_mismatch(self) -> None:
         """Check if trace number of samples are wrong."""
-        factory = SegyFactory(mock_segy_spec, sample_interval=2, samples_per_trace=5)
-        header_1d = factory.create_trace_header_template(size=5, fill=False)
+        spec = registry.get_spec(SegyStandard.MINIMAL)
+        factory = SegyFactory(spec, sample_interval=2, samples_per_trace=5)
+
+        header_1d = factory.create_trace_header_template(size=5)
         array_2d = np.empty(shape=(5, 11))
 
         with pytest.raises(ValueError, match="Trace length must be"):
             factory.create_traces(header_1d, array_2d)
 
-    def test_create_header_data_mismatch(self, mock_segy_spec: SegyDescriptor) -> None:
+    def test_create_header_sample_mismatch(self) -> None:
         """Check if headers and traces are different sizes."""
-        factory = SegyFactory(mock_segy_spec, sample_interval=2, samples_per_trace=11)
-        header_1d = factory.create_trace_header_template(size=5, fill=False)
-        array_2d = factory.create_trace_data_template(size=7, fill=False)
+        spec = registry.get_spec(SegyStandard.MINIMAL)
+        factory = SegyFactory(spec, sample_interval=2, samples_per_trace=11)
+
+        header_1d = factory.create_trace_header_template(size=5)
+        array_2d = factory.create_trace_sample_template(size=7)
 
         with pytest.raises(ValueError, match="same number of rows as data array"):
             factory.create_traces(header_1d, array_2d)
