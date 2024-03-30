@@ -26,15 +26,14 @@ class TestConfig:
 
     segy_standard: SegyStandard
     endianness: Endianness
-    text_encoding: TextHeaderEncoding
     sample_interval: int
     samples_per_trace: int
 
 
 SEGY_FACTORY_TEST_CONFIGS = [
-    TestConfig(SegyStandard.REV0, Endianness.BIG, TextHeaderEncoding.EBCDIC, 2000, 51),
-    TestConfig(SegyStandard.REV1, Endianness.LITTLE, TextHeaderEncoding.ASCII, 3000, 1),
-    TestConfig(SegyStandard.REV0, Endianness.BIG, TextHeaderEncoding.EBCDIC, 5000, 10),
+    TestConfig(SegyStandard.REV0, Endianness.BIG, 2000, 51),
+    TestConfig(SegyStandard.REV1, Endianness.LITTLE, 3000, 1),
+    TestConfig(SegyStandard.REV0, Endianness.BIG, 5000, 10),
 ]
 
 
@@ -51,9 +50,6 @@ def mock_segy_factory(request: pytest.FixtureRequest) -> SegyFactory:
     # Set file wide attributes
     spec.endianness = test_config.endianness
     spec.segy_standard = test_config.segy_standard
-
-    # Modify textual file header descriptor
-    spec.text_file_header.encoding = test_config.text_encoding
 
     # Shrink trace headers to 16-bytes and add a few fields
     spec.trace.header_descriptor.item_size = 16
