@@ -151,7 +151,7 @@ class SegyFactory:
 
         return header_template
 
-    def create_trace_data_template(
+    def create_trace_sample_template(
         self,
         size: int = 1,
         fill: bool = True,
@@ -168,12 +168,12 @@ class SegyFactory:
         descriptor = self.spec.trace.sample_descriptor
         dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
 
-        data_template = np.empty(shape=size, dtype=dtype)
+        sample_template = np.empty(shape=size, dtype=dtype)
 
         if fill is True:
-            data_template.fill(0)
+            sample_template.fill(0)
 
-        return data_template
+        return sample_template
 
     def create_traces(self, headers: NDArray[Any], samples: NDArray[Any]) -> bytes:
         """Convert trace data and header to bytes conforming to SEG-Y spec.
@@ -181,7 +181,7 @@ class SegyFactory:
         The rows (length) of the headers and traces must match. The headers
         must be a (num_traces,) shape array and data must be a
         (num_traces, num_samples) shape array. They can be created via the
-        `create_trace_header_template` and `create_trace_data_template` methods.
+        `create_trace_header_template` and `create_trace_sample_template` methods.
 
         Args:
             headers: Header array.
