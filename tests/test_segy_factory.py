@@ -176,6 +176,7 @@ class TestSegyFactoryTraces:
         """Test if the trace serialization is correct."""
         mock_segy_factory.spec.trace.sample_descriptor.format = sample_format
 
+        # Generate random data
         rng = np.random.default_rng()
         samples_per_trace = mock_segy_factory.samples_per_trace
         shape = (num_traces, samples_per_trace)
@@ -185,27 +186,29 @@ class TestSegyFactoryTraces:
             field_data = rng.integers(-100, 100, dtype="int8", size=num_traces)
             rand_fields[field.name] = field_data
 
+        # Fill in actual and generate bytes
         headers = mock_segy_factory.create_trace_header_template(num_traces)
         samples = mock_segy_factory.create_trace_sample_template(num_traces)
-
-        trace_dtype_little = mock_segy_factory.spec.trace.dtype.newbyteorder("<")
-        expected_traces = np.zeros(shape=num_traces, dtype=trace_dtype_little)
+        samples[:] = rand_samples
         for field, values in rand_fields.items():
             headers[field] = values
-            expected_traces["header"][field] = values
+        trace_bytes = mock_segy_factory.create_traces(headers, samples)
 
-        samples[:] = rand_samples
+        # Fill in expected and assertions
+        # 1. handle ibm float
+        # 2. fill in trace struct
+        # 3. handle endianness
         if mock_segy_factory.trace_sample_format == ScalarType.IBM32:
-            expected_traces["sample"] = ieee2ibm(rand_samples).squeeze()
-        else:
-            expected_traces["sample"] = rand_samples.squeeze()
-
+            rand_samples = ieee2ibm(rand_samples)
+        trace_dtype_native = mock_segy_factory.spec.trace.dtype.newbyteorder("=")
+        expected_traces = np.zeros(shape=num_traces, dtype=trace_dtype_native)
+        expected_traces["sample"] = rand_samples.squeeze()
+        for field, values in rand_fields.items():
+            expected_traces["header"][field] = values
         if mock_segy_factory.spec.endianness == Endianness.BIG:
             expected_traces = expected_traces.byteswap(inplace=True).newbyteorder(">")
 
-        trace_bytes = mock_segy_factory.create_traces(headers, samples)
-        expected_trace_bytes = expected_traces.tobytes()
-        assert trace_bytes == expected_trace_bytes
+        assert trace_bytes == expected_traces.tobytes()
 
 
 class TestSegyFactoryExceptions:
