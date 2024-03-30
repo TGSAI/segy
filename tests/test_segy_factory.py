@@ -109,7 +109,7 @@ def test_binary_file_header(
     assert binary_actual.item() == binary_expected
 
 
-@pytest.mark.parametrize("num_traces", [1, 100])
+@pytest.mark.parametrize("num_traces", [1, 42])
 class TestSegyFactoryTraces:
     """Ensure the trace headers are properly encoded and serialized."""
 
