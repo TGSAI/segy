@@ -8,6 +8,7 @@ import numpy as np
 
 from segy.schema import Endianness
 from segy.schema import ScalarType
+from segy.schema import SegyStandard
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
@@ -32,6 +33,21 @@ DEFAULT_TEXT_HEADER_LINES = [line.ljust(80) for line in DEFAULT_TEXT_HEADER_LINE
 DEFAULT_TEXT_HEADER = "\n".join(DEFAULT_TEXT_HEADER_LINES)
 
 
+SEGY_FORMAT_MAP = {
+    ScalarType.IBM32: 1,
+    ScalarType.INT32: 2,
+    ScalarType.INT16: 3,
+    ScalarType.FLOAT32: 5,
+    ScalarType.FLOAT64: 6,
+    ScalarType.INT8: 8,
+    ScalarType.INT64: 9,
+    ScalarType.UINT32: 10,
+    ScalarType.UINT16: 11,
+    ScalarType.UINT64: 12,
+    ScalarType.UINT8: 16,
+}
+
+
 class SegyFactory:
     """Factory class for composing SEG-Y by components.
 
@@ -53,6 +69,16 @@ class SegyFactory:
         self.samples_per_trace = samples_per_trace
 
         self.spec.trace.sample_descriptor.samples = samples_per_trace
+
+    @property
+    def trace_sample_format(self) -> ScalarType:
+        """Trace sample format of the SEG-Y file."""
+        return self.spec.trace.sample_descriptor.format
+
+    @property
+    def segy_revision(self) -> SegyStandard:
+        """Revision of the SEG-Y file."""
+        return self.spec.segy_standard
 
     def create_textual_header(self, text: str | None = None) -> bytes:
         """Create a textual header for the SEG-Y file.
@@ -84,11 +110,12 @@ class SegyFactory:
         binary_descriptor = self.spec.binary_file_header
         bin_header = np.zeros(shape=1, dtype=binary_descriptor.dtype)
 
-        bin_header["seg_y_revision"] = self.spec.segy_standard.value * 256
+        bin_header["seg_y_revision"] = self.segy_revision.value * 256
         bin_header["sample_interval"] = self.sample_interval
         bin_header["sample_interval_orig"] = self.sample_interval
         bin_header["samples_per_trace"] = self.samples_per_trace
         bin_header["samples_per_trace_orig"] = self.samples_per_trace
+        bin_header["data_sample_format"] = SEGY_FORMAT_MAP[self.trace_sample_format]
 
         return bin_header.tobytes()
 
