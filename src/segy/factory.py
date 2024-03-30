@@ -170,6 +170,10 @@ class SegyFactory:
 
         sample_template = np.empty(shape=size, dtype=dtype)
 
+        # Add dimension in-case where 1 num_samp; very rare.
+        if sample_template.ndim == 1:
+            sample_template = sample_template[..., None]
+
         if fill is True:
             sample_template.fill(0)
 
