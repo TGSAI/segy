@@ -202,7 +202,7 @@ class TestSegyFactoryTraces:
             rand_samples = ieee2ibm(rand_samples)
         trace_dtype_native = mock_segy_factory.spec.trace.dtype.newbyteorder("=")
         expected_traces = np.zeros(shape=num_traces, dtype=trace_dtype_native)
-        expected_traces["sample"] = rand_samples.squeeze()
+        expected_traces["sample"] = rand_samples
         for field_name, values in rand_fields.items():
             expected_traces["header"][field_name] = values
         if mock_segy_factory.spec.endianness == Endianness.BIG:

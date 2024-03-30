@@ -159,15 +159,12 @@ class SegyFactory:
             Array containing the trace data template.
         """
         descriptor = self.spec.trace.sample_descriptor
+        dtype = descriptor.dtype
 
         if self.trace_sample_format == ScalarType.IBM32:
-            dtype = np.dtype("float32")
-        else:
-            dtype = descriptor.dtype
-            dtype = dtype if dtype.subdtype is None else dtype.subdtype[0]
+            dtype = np.dtype(("float32", (self.samples_per_trace,)))
 
-        shape = (size, self.samples_per_trace)
-        return np.zeros(shape=shape, dtype=dtype)
+        return np.zeros(shape=size, dtype=dtype)
 
     def create_traces(self, headers: NDArray[Any], samples: NDArray[Any]) -> bytes:
         """Convert trace data and header to bytes conforming to SEG-Y spec.
@@ -221,14 +218,6 @@ class SegyFactory:
         if target_format == ScalarType.IBM32:
             ibm_float = TransformFactory.create("ibm_float", "to_ibm")
             data_pipeline.add_transform(ibm_float)
-
-        # Handle edge cases where there's 1 trace
-        if samples.shape[0] == 1:
-            samples = samples.squeeze(axis=0)
-
-        # Handle edge cases where there's 1 sample per trace
-        if samples.ndim == 2 and samples.shape[1] == 1:  # noqa: PLR2004
-            samples = samples.squeeze(axis=1)
 
         trace = np.zeros(shape=headers.size, dtype=trace_descriptor.dtype)
         trace["header"] = header_pipeline.apply(headers)
