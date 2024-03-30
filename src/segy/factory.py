@@ -122,13 +122,11 @@ class SegyFactory:
     def create_trace_header_template(
         self,
         size: int = 1,
-        fill: bool = True,
     ) -> NDArray[Any]:
         """Create a trace header template array that conforms to the SEG-Y spec.
 
         Args:
             size: Number of headers for the template.
-            fill: Optional, fill with zeros. Default is True.
 
         Returns:
             Array containing the trace header template.
@@ -136,10 +134,7 @@ class SegyFactory:
         descriptor = self.spec.trace.header_descriptor
         dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
 
-        header_template = np.empty(shape=size, dtype=dtype)
-
-        if fill is True:
-            header_template.fill(0)
+        header_template = np.zeros(shape=size, dtype=dtype)
 
         # 'names' assumed not None by data structure (type ignores).
         field_names = header_template.dtype.names
@@ -154,13 +149,11 @@ class SegyFactory:
     def create_trace_sample_template(
         self,
         size: int = 1,
-        fill: bool = True,
     ) -> NDArray[Any]:
         """Create a trace data template array that conforms to the SEG-Y spec.
 
         Args:
             size: Number of traces for the template.
-            fill: Optional, fill with zeros. Default is True.
 
         Returns:
             Array containing the trace data template.
@@ -168,14 +161,11 @@ class SegyFactory:
         descriptor = self.spec.trace.sample_descriptor
         dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
 
-        sample_template = np.empty(shape=size, dtype=dtype)
+        sample_template = np.zeros(shape=size, dtype=dtype)
 
         # Add dimension in-case where 1 num_samp; very rare.
         if sample_template.ndim == 1:
             sample_template = sample_template[..., None]
-
-        if fill is True:
-            sample_template.fill(0)
 
         return sample_template
 
@@ -232,7 +222,7 @@ class SegyFactory:
             ibm_float = TransformFactory.create("ibm_float", "to_ibm")
             data_pipeline.add_transform(ibm_float)
 
-        trace = np.empty(shape=len(samples), dtype=trace_descriptor.dtype)
+        trace = np.zeros(shape=len(samples), dtype=trace_descriptor.dtype)
         trace["header"] = header_pipeline.apply(headers)
         trace["sample"] = data_pipeline.apply(samples)
 
