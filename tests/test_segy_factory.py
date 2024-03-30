@@ -190,8 +190,8 @@ class TestSegyFactoryTraces:
         headers = mock_segy_factory.create_trace_header_template(num_traces)
         samples = mock_segy_factory.create_trace_sample_template(num_traces)
         samples[:] = rand_samples
-        for field, values in rand_fields.items():
-            headers[field] = values
+        for field_name, values in rand_fields.items():
+            headers[field_name] = values
         trace_bytes = mock_segy_factory.create_traces(headers, samples)
 
         # Fill in expected and assertions
@@ -203,8 +203,8 @@ class TestSegyFactoryTraces:
         trace_dtype_native = mock_segy_factory.spec.trace.dtype.newbyteorder("=")
         expected_traces = np.zeros(shape=num_traces, dtype=trace_dtype_native)
         expected_traces["sample"] = rand_samples.squeeze()
-        for field, values in rand_fields.items():
-            expected_traces["header"][field] = values
+        for field_name, values in rand_fields.items():
+            expected_traces["header"][field_name] = values
         if mock_segy_factory.spec.endianness == Endianness.BIG:
             expected_traces = expected_traces.byteswap(inplace=True).newbyteorder(">")
 
