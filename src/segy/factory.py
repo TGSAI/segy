@@ -228,7 +228,15 @@ class SegyFactory:
             ibm_float = TransformFactory.create("ibm_float", "to_ibm")
             data_pipeline.add_transform(ibm_float)
 
-        trace = np.zeros(shape=len(samples), dtype=trace_descriptor.dtype)
+        # Handle edge cases where there's 1 trace
+        if samples.shape[0] == 1:
+            samples = samples.squeeze(axis=0)
+
+        # Handle edge cases where there's 1 sample per trace
+        if samples.ndim == 2 and samples.shape[1] == 1:  # noqa: PLR2004
+            samples = samples.squeeze(axis=1)
+
+        trace = np.zeros(shape=headers.size, dtype=trace_descriptor.dtype)
         trace["header"] = header_pipeline.apply(headers)
         trace["sample"] = data_pipeline.apply(samples)
 
