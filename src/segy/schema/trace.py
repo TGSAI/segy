@@ -32,9 +32,8 @@ class TraceSampleDescriptor(BaseTypeDescriptor):
     @property
     def dtype(self) -> np.dtype[Any]:
         """Get numpy dtype."""
-        format_char = self.format.char
-        dtype_str = f"{self.samples}{format_char}"
-        return np.dtype(dtype_str)
+        dtype = (self.format.char, (self.samples,))
+        return np.dtype(dtype)
 
 
 class TraceDescriptor(BaseTypeDescriptor):
