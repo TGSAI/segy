@@ -161,19 +161,13 @@ class SegyFactory:
         descriptor = self.spec.trace.sample_descriptor
 
         if self.trace_sample_format == ScalarType.IBM32:
-            subdtype = descriptor.dtype.subdtype
-            subdtype = ("float32", subdtype[1])
-            dtype = np.dtype(subdtype)
+            dtype = np.dtype("float32")
         else:
-            dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
+            dtype = descriptor.dtype
+            dtype = dtype if dtype.subdtype is None else dtype.subdtype[0]
 
-        sample_template = np.zeros(shape=size, dtype=dtype)
-
-        # Add dimension in-case where 1 num_samp; very rare.
-        if sample_template.ndim == 1:
-            sample_template = sample_template[..., None]
-
-        return sample_template
+        shape = (size, self.samples_per_trace)
+        return np.zeros(shape=shape, dtype=dtype)
 
     def create_traces(self, headers: NDArray[Any], samples: NDArray[Any]) -> bytes:
         """Convert trace data and header to bytes conforming to SEG-Y spec.
