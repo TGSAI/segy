@@ -159,7 +159,13 @@ class SegyFactory:
             Array containing the trace data template.
         """
         descriptor = self.spec.trace.sample_descriptor
-        dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
+
+        if self.trace_sample_format == ScalarType.IBM32:
+            subdtype = descriptor.dtype.subdtype
+            subdtype = ("float32", subdtype[1])
+            dtype = np.dtype(subdtype)
+        else:
+            dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
 
         sample_template = np.zeros(shape=size, dtype=dtype)
 
