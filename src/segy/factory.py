@@ -9,6 +9,7 @@ import numpy as np
 from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.schema import SegyStandard
+from segy.standards.mapping import SEGY_FORMAT_MAP
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
@@ -31,21 +32,6 @@ DEFAULT_TEXT_HEADER_LINES += [f"C{line_no:02}" for line_no in range(5, 40)]
 DEFAULT_TEXT_HEADER_LINES += ["C40 END TEXTUAL HEADER"]
 DEFAULT_TEXT_HEADER_LINES = [line.ljust(80) for line in DEFAULT_TEXT_HEADER_LINES]
 DEFAULT_TEXT_HEADER = "\n".join(DEFAULT_TEXT_HEADER_LINES)
-
-
-SEGY_FORMAT_MAP = {
-    ScalarType.IBM32: 1,
-    ScalarType.INT32: 2,
-    ScalarType.INT16: 3,
-    ScalarType.FLOAT32: 5,
-    ScalarType.FLOAT64: 6,
-    ScalarType.INT8: 8,
-    ScalarType.INT64: 9,
-    ScalarType.UINT32: 10,
-    ScalarType.UINT16: 11,
-    ScalarType.UINT64: 12,
-    ScalarType.UINT8: 16,
-}
 
 
 class SegyFactory:
