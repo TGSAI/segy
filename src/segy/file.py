@@ -86,7 +86,7 @@ def infer_spec_from_binary_header(buffer: bytes) -> SegyDescriptor:
         unpacked = unpack_binary_header(buffer, endianness)
         sample_increment, revision, sample_format_int = unpacked
 
-        # Validate the inferred values. Adjust conditions based on your criteria.
+        # Validate the inferred values.
         in_spec = revision in {0.0, 1.0}
         increment_is_positive = sample_increment > 0
         format_is_valid = sample_format_int in SEGY_FORMAT_MAP
