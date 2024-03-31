@@ -17,6 +17,7 @@ from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.schema import SegyStandard
 from segy.standards import registry
+from segy.standards.mapping import SEGY_FORMAT_MAP
 from segy.standards.rev1 import rev1_binary_file_header
 from segy.standards.rev1 import rev1_extended_text_header
 from segy.transforms import TransformFactory
@@ -30,12 +31,19 @@ if TYPE_CHECKING:
     from segy.schema import SegyDescriptor
 
 
-def create_spec(standard: SegyStandard, endian: Endianness | None) -> SegyDescriptor:
-    """Create a SegyDescriptor from a SegyStandard with given Endianness."""
+def create_spec(
+    standard: SegyStandard,
+    endian: Endianness | None = None,
+    sample_format: ScalarType | None = None,
+) -> SegyDescriptor:
+    """Create SegyDescriptor from SegyStandard, Endianness, and ScalarType."""
     spec = registry.get_spec(standard)
 
     if endian is not None:
         spec.endianness = endian
+
+    if sample_format is not None:
+        spec.trace.sample_descriptor.format = sample_format
 
     return spec
 
@@ -55,25 +63,38 @@ def read_default_binary_file_header_buffer(fs: AbstractFileSystem, url: str) -> 
     )
 
 
-def unpack_binary_header(buffer: bytes, endianness: Endianness) -> tuple[int, float]:
+def unpack_binary_header(
+    buffer: bytes, endianness: Endianness
+) -> tuple[int, float, int]:
     """Unpack binary header sample rate and revision."""
     kwargs = {"dtype": f"{endianness.symbol}i2", "count": 1}
-    increment = np.frombuffer(buffer, offset=16, **kwargs).item()
-    # Per SEG-Y standard, there is a Q-point between the bytes. Dividing
-    # by 2^8 to get the floating-point value of the revision.
-    rev = np.frombuffer(buffer, offset=300, **kwargs).item() / 256.0
-    return increment, rev
+    sample_increment = np.frombuffer(buffer, offset=16, **kwargs).item()
+
+    # # Get revision. Per SEG-Y standard, there is a Q-point between the
+    # bytes. Dividing by 2^8 to get the floating-point value of the revision.
+    revision = np.frombuffer(buffer, offset=300, **kwargs).item() / 256.0
+
+    # Get sample format
+    sample_format = np.frombuffer(buffer, offset=24, **kwargs).item()
+
+    return sample_increment, revision, sample_format
 
 
 def infer_spec_from_binary_header(buffer: bytes) -> SegyDescriptor:
     """Try to infer SEG-Y file revision and endianness to build a SegyDescriptor."""
     for endianness in [Endianness.BIG, Endianness.LITTLE]:
-        sample_increment, revision = unpack_binary_header(buffer, endianness)
+        unpacked = unpack_binary_header(buffer, endianness)
+        sample_increment, revision, sample_format_int = unpacked
 
         # Validate the inferred values. Adjust conditions based on your criteria.
-        if revision in {0.0, 1.0} and sample_increment > 0:
+        in_spec = revision in {0.0, 1.0}
+        increment_is_positive = sample_increment > 0
+        format_is_valid = sample_format_int in SEGY_FORMAT_MAP
+
+        if in_spec and increment_is_positive and format_is_valid:
             standard = SegyStandard(revision)
-            return create_spec(standard, endianness)
+            sample_format = SEGY_FORMAT_MAP.inverse(sample_format_int)
+            return create_spec(standard, endianness, sample_format)
 
     # If both fail, raise error.
     msg = "Could not infer SEG-Y standard. Please provide spec."
