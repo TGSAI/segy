@@ -5,7 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal
 from numpy.testing import assert_array_equal
 
 from segy import SegyFactory
@@ -18,8 +20,11 @@ from segy.standards import registry
 from segy.standards.mapping import SEGY_FORMAT_MAP
 
 if TYPE_CHECKING:
-    from fsspec.implementations.memory import MemoryFileSystem
+    from typing import Any
 
+    from fsspec.implementations.memory import MemoryFileSystem
+    from numpy.dtypes import VoidDType
+    from numpy.typing import NDArray
 
 SAMPLE_INTERVAL = 2000
 SAMPLES_PER_TRACE = 21
@@ -40,7 +45,7 @@ def segy_standard(request: pytest.FixtureRequest) -> SegyStandard:
     return request.param
 
 
-@pytest.fixture(params=[ScalarType.IBM32, ScalarType.FLOAT32])
+@pytest.fixture(params=[ScalarType.IBM32, ScalarType.FLOAT32, ScalarType.INT32])
 def sample_format(request: pytest.FixtureRequest) -> ScalarType:
     """Fixture for testing different sample formats."""
     return request.param
@@ -54,6 +59,36 @@ class SegyFileTestConfig:
     segy_standard: SegyStandard
     endianness: Endianness
     sample_format: ScalarType
+    expected_headers: NDArray[Any]
+    expected_samples: NDArray[Any]
+
+
+def generate_test_trace_data(
+    factory: SegyFactory,
+    num_traces: int,
+) -> tuple[NDArray[VoidDType], NDArray[Any]]:
+    """Generate random header and sample data for testing."""
+    rng = np.random.default_rng()
+    header_spec = factory.spec.trace.header_descriptor
+    sample_spec = factory.spec.trace.sample_descriptor
+
+    header_dtype = header_spec.dtype.newbyteorder("=")
+    header_arr = np.empty(num_traces, dtype=header_dtype)
+    for field in header_spec.fields:
+        random_field_data = rng.uniform(-128, 127, size=num_traces)
+        header_arr[field.name] = random_field_data.astype(field.format)
+
+    # Cast to float32 if IBM.
+    if sample_spec.format == ScalarType.IBM32:
+        sample_dtype = np.dtype("float32")
+    else:
+        sample_dtype = np.dtype(sample_spec.format)
+    sample_shape = (num_traces, SAMPLES_PER_TRACE)
+    sample_arr = np.empty(shape=sample_shape, dtype=sample_dtype)
+    random_sample_data = rng.normal(size=sample_shape)
+    sample_arr[:] = random_sample_data.astype("float32")
+
+    return header_arr, sample_arr
 
 
 @pytest.fixture()
@@ -79,16 +114,23 @@ def test_config(
 
     headers = factory.create_trace_header_template(NUM_TRACES)
     samples = factory.create_trace_sample_template(NUM_TRACES)
+
+    header_data, sample_data = generate_test_trace_data(factory, NUM_TRACES)
+    headers[:] = header_data
+    samples[:] = sample_data
+
     trace_bytes = factory.create_traces(headers, samples)
 
-    uri = f"memory://segyfile_{segy_standard.name}_{endianness.value}"
+    uri = f"memory://{segy_standard.name}_{endianness.value}_{sample_format.value}.segy"
     fp = mock_filesystem.open(uri, mode="wb")
 
     fp.write(text_file_hdr_bytes)
     fp.write(bin_file_hdr_bytes)
     fp.write(trace_bytes)
 
-    return SegyFileTestConfig(uri, segy_standard, endianness, sample_format)
+    return SegyFileTestConfig(
+        uri, segy_standard, endianness, sample_format, header_data, sample_data
+    )
 
 
 class TestSegyFile:
@@ -127,3 +169,20 @@ class TestSegyFile:
         assert binary_header["samples_per_trace"] == SAMPLES_PER_TRACE
         assert binary_header["samples_per_trace_orig"] == SAMPLES_PER_TRACE
         assert binary_header["data_sample_format"] == expected_sample_format
+
+    def test_trace_header_accessor(self, test_config: SegyFileTestConfig) -> None:
+        """Test trace header accessor and values."""
+        segy_file = SegyFile(test_config.uri)
+        assert_array_equal(segy_file.header[:], test_config.expected_headers)
+
+    def test_trace_sample_accessor(self, test_config: SegyFileTestConfig) -> None:
+        """Test trace sample accessor and values."""
+        segy_file = SegyFile(test_config.uri)
+        assert_array_almost_equal(segy_file.sample[:], test_config.expected_samples)
+
+    def test_trace_accessor(self, test_config: SegyFileTestConfig) -> None:
+        """Test trace accessor and values."""
+        segy_file = SegyFile(test_config.uri)
+        traces = segy_file.trace[:]
+        assert_array_equal(traces.header, test_config.expected_headers)
+        assert_array_almost_equal(traces.sample, test_config.expected_samples)
