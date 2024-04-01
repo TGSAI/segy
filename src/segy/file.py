@@ -129,13 +129,7 @@ class SegyFile:
         self.spec = self._infer_spec() if spec is None else spec
 
         self._info = self.fs.info(self.url)
-        self._update_spec_endianness()
         self._parse_binary_header()
-
-    def _update_spec_endianness(self) -> None:
-        """If spec has no endianness, get it from settings."""
-        if self.spec.endianness is None:
-            self.spec.endianness = self.settings.endianness
 
     @property
     def file_size(self) -> int:
@@ -146,7 +140,7 @@ class SegyFile:
     @property
     def num_ext_text(self) -> int:
         """Return number of extended text headers."""
-        if self.spec.segy_standard in {SegyStandard.REV0, SegyStandard.CUSTOM}:
+        if self.spec.segy_standard == SegyStandard.REV0:
             return 0
 
         # Overriding from settings
@@ -159,22 +153,12 @@ class SegyFile:
     @property
     def samples_per_trace(self) -> int:
         """Return samples per trace in file based on spec."""
-        # Overriding from settings
-        if self.settings.binary.samples_per_trace.value is not None:
-            return self.settings.binary.samples_per_trace.value
-
-        header_key = self.settings.binary.samples_per_trace.key
-        return int(self.binary_header[header_key].item())
+        return int(self.binary_header["samples_per_trace"].item())
 
     @property
     def sample_interval(self) -> int:
         """Return samples interval in file based on spec."""
-        # Overriding from settings
-        if self.settings.binary.sample_interval.value is not None:
-            return self.settings.binary.sample_interval.value
-
-        header_key = self.settings.binary.sample_interval.key
-        return int(self.binary_header[header_key].item())
+        return int(self.binary_header["sample_interval"].item())
 
     @property
     def sample_labels(self) -> NDArray[np.int32]:
