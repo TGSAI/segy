@@ -105,9 +105,6 @@ def generate_test_segy(
 
     trace_bytes = factory.create_traces(headers, samples)
 
-    if endianness is None:
-        endianness = Endianness.BIG
-
     uri = f"memory://{segy_standard.name}_{endianness.value}_{sample_format.value}.segy"
     fp = filesystem.open(uri, mode="wb")
 
