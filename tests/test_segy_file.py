@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import struct
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -22,6 +23,7 @@ from segy.standards.mapping import SEGY_FORMAT_MAP
 if TYPE_CHECKING:
     from typing import Any
 
+    from fsspec import AbstractFileSystem
     from fsspec.implementations.memory import MemoryFileSystem
     from numpy.dtypes import VoidDType
     from numpy.typing import NDArray
@@ -33,27 +35,9 @@ NUM_TRACES = 15
 EXPECTED_SAMPLE_LABELS = range(0, SAMPLES_PER_TRACE * SAMPLE_INTERVAL, SAMPLE_INTERVAL)
 
 
-@pytest.fixture(params=[Endianness.BIG, Endianness.LITTLE])
-def endianness(request: pytest.FixtureRequest) -> Endianness:
-    """Fixture for testing endianness."""
-    return request.param
-
-
-@pytest.fixture(params=[SegyStandard.REV0, SegyStandard.REV1])
-def segy_standard(request: pytest.FixtureRequest) -> SegyStandard:
-    """Fixture for testing different SEG-Y standards."""
-    return request.param
-
-
-@pytest.fixture(params=[ScalarType.IBM32, ScalarType.FLOAT32, ScalarType.INT32])
-def sample_format(request: pytest.FixtureRequest) -> ScalarType:
-    """Fixture for testing different sample formats."""
-    return request.param
-
-
 @dataclass
 class SegyFileTestConfig:
-    """Configuration for testing SegyFile class."""
+    """Configuration container for testing SegyFile class."""
 
     uri: str
     segy_standard: SegyStandard
@@ -91,14 +75,13 @@ def generate_test_trace_data(
     return header_arr, sample_arr
 
 
-@pytest.fixture()
-def test_config(
-    mock_filesystem: MemoryFileSystem,
-    segy_standard: SegyStandard,
-    endianness: Endianness,
-    sample_format: ScalarType,
+def generate_test_segy(
+    filesystem: AbstractFileSystem,
+    segy_standard: SegyStandard = SegyStandard.REV0,
+    endianness: Endianness = Endianness.BIG,
+    sample_format: ScalarType = ScalarType.IBM32,
 ) -> SegyFileTestConfig:
-    """Fixture for mocking a SEG-Y file at a in memory URI."""
+    """Function for mocking a SEG-Y file with in memory URI."""
     spec = registry.get_spec(segy_standard)
     spec.endianness = endianness
     spec.trace.sample_descriptor.format = sample_format
@@ -122,7 +105,7 @@ def test_config(
     trace_bytes = factory.create_traces(headers, samples)
 
     uri = f"memory://{segy_standard.name}_{endianness.value}_{sample_format.value}.segy"
-    fp = mock_filesystem.open(uri, mode="wb")
+    fp = filesystem.open(uri, mode="wb")
 
     fp.write(text_file_hdr_bytes)
     fp.write(bin_file_hdr_bytes)
@@ -136,8 +119,24 @@ def test_config(
 class TestSegyFile:
     """Test the usage of SegyFile class."""
 
-    def test_infer_spec(self, test_config: SegyFileTestConfig) -> None:
+    @pytest.mark.parametrize("standard", [SegyStandard.REV0, SegyStandard.REV1])
+    @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
+    @pytest.mark.parametrize("sample_format", [ScalarType.IBM32, ScalarType.FLOAT32])
+    def test_infer_spec(
+        self,
+        mock_filesystem: MemoryFileSystem,
+        endianness: Endianness,
+        standard: SegyStandard,
+        sample_format: ScalarType,
+    ) -> None:
         """Tests various attributes and methods of a SegyFile with Rev 0 specs."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem,
+            segy_standard=standard,
+            endianness=endianness,
+            sample_format=sample_format,
+        )
+
         segy_file = SegyFile(test_config.uri)
 
         # Assert spec
@@ -152,14 +151,32 @@ class TestSegyFile:
         assert segy_file.num_ext_text == 0
         assert_array_equal(segy_file.sample_labels, EXPECTED_SAMPLE_LABELS)
 
-    def test_text_file_header(self, test_config: SegyFileTestConfig) -> None:
+    def test_text_file_header(self, mock_filesystem: MemoryFileSystem) -> None:
         """Test text file header attribute."""
+        test_config = generate_test_segy(mock_filesystem)
+
         segy_file = SegyFile(test_config.uri)
 
         assert segy_file.text_header == DEFAULT_TEXT_HEADER
 
-    def test_binary_file_header(self, test_config: SegyFileTestConfig) -> None:
+    @pytest.mark.parametrize("standard", [SegyStandard.REV0, SegyStandard.REV1])
+    @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
+    @pytest.mark.parametrize("sample_format", [ScalarType.IBM32, ScalarType.INT32])
+    def test_binary_file_header(
+        self,
+        mock_filesystem: MemoryFileSystem,
+        endianness: Endianness,
+        standard: SegyStandard,
+        sample_format: ScalarType,
+    ) -> None:
         """Test binary file header values."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem,
+            segy_standard=standard,
+            endianness=endianness,
+            sample_format=sample_format,
+        )
+
         segy_file = SegyFile(test_config.uri)
         binary_header = segy_file.binary_header
 
@@ -170,19 +187,98 @@ class TestSegyFile:
         assert binary_header["samples_per_trace_orig"] == SAMPLES_PER_TRACE
         assert binary_header["data_sample_format"] == expected_sample_format
 
-    def test_trace_header_accessor(self, test_config: SegyFileTestConfig) -> None:
+    @pytest.mark.parametrize("standard", [SegyStandard.REV0, SegyStandard.REV1])
+    @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
+    def test_trace_header_accessor(
+        self,
+        mock_filesystem: MemoryFileSystem,
+        endianness: Endianness,
+        standard: SegyStandard,
+    ) -> None:
         """Test trace header accessor and values."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem,
+            segy_standard=standard,
+            endianness=endianness,
+        )
+
         segy_file = SegyFile(test_config.uri)
+
         assert_array_equal(segy_file.header[:], test_config.expected_headers)
 
-    def test_trace_sample_accessor(self, test_config: SegyFileTestConfig) -> None:
+    @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
+    @pytest.mark.parametrize("sample_format", [ScalarType.IBM32, ScalarType.FLOAT32])
+    def test_trace_sample_accessor(
+        self,
+        mock_filesystem: MemoryFileSystem,
+        endianness: Endianness,
+        sample_format: ScalarType,
+    ) -> None:
         """Test trace sample accessor and values."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem,
+            endianness=endianness,
+            sample_format=sample_format,
+        )
+
         segy_file = SegyFile(test_config.uri)
+
         assert_array_almost_equal(segy_file.sample[:], test_config.expected_samples)
 
-    def test_trace_accessor(self, test_config: SegyFileTestConfig) -> None:
+    @pytest.mark.parametrize("standard", [SegyStandard.REV0, SegyStandard.REV1])
+    @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
+    @pytest.mark.parametrize("sample_format", [ScalarType.FLOAT64, ScalarType.UINT8])
+    def test_trace_accessor(
+        self,
+        mock_filesystem: MemoryFileSystem,
+        endianness: Endianness,
+        standard: SegyStandard,
+        sample_format: ScalarType,
+    ) -> None:
         """Test trace accessor and values."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem,
+            segy_standard=standard,
+            endianness=endianness,
+            sample_format=sample_format,
+        )
+
         segy_file = SegyFile(test_config.uri)
         traces = segy_file.trace[:]
+
         assert_array_equal(traces.header, test_config.expected_headers)
         assert_array_almost_equal(traces.sample, test_config.expected_samples)
+
+
+class TestSegyFileExceptions:
+    """Test exceptions for SegyFile."""
+
+    @pytest.mark.parametrize(
+        ("standard_override", "sample_increment_override", "sample_format_override"),
+        [
+            (0.5, 2000, 1),  # bad revision, ok increment, ok format
+            (1.0, -100, 1),  # ok revision, bad increment, ok format
+            (1.0, 2000, 100),  # ok revision, ok increment, bad format
+        ],
+    )
+    def test_spec_inference_failure(
+        self,
+        mock_filesystem: MemoryFileSystem,
+        standard_override: float,
+        sample_format_override: int,
+        sample_increment_override: int,
+    ) -> None:
+        """Test bad values in binary header triggering spec inference error."""
+        test_config = generate_test_segy(filesystem=mock_filesystem)
+
+        fp = mock_filesystem.open(test_config.uri, mode="r+b")
+        fp.seek(3216)
+        fp.write(struct.pack(">h", sample_increment_override))
+        fp.seek(3224)
+        fp.write(struct.pack(">h", sample_format_override))
+        fp.seek(3500)
+        fp.write(struct.pack(">h", int(standard_override * 256)))
+        fp.close()
+
+        with pytest.raises(ValueError, match="Could not infer SEG-Y standard"):
+            SegyFile(test_config.uri)
