@@ -70,12 +70,12 @@ def unpack_binary_header(
     kwargs = {"dtype": f"{endianness.symbol}i2", "count": 1}
     sample_increment = np.frombuffer(buffer, offset=16, **kwargs).item()
 
+    # Get sample format
+    sample_format = np.frombuffer(buffer, offset=24, **kwargs).item()
+
     # # Get revision. Per SEG-Y standard, there is a Q-point between the
     # bytes. Dividing by 2^8 to get the floating-point value of the revision.
     revision = np.frombuffer(buffer, offset=300, **kwargs).item() / 256.0
-
-    # Get sample format
-    sample_format = np.frombuffer(buffer, offset=24, **kwargs).item()
 
     return sample_increment, revision, sample_format
 
