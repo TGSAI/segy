@@ -13,6 +13,7 @@ from numpy.testing import assert_array_equal
 
 from segy import SegyFactory
 from segy import SegyFile
+from segy.config import SegyFileSettings
 from segy.factory import DEFAULT_TEXT_HEADER
 from segy.schema import Endianness
 from segy.schema import ScalarType
@@ -78,7 +79,7 @@ def generate_test_trace_data(
 def generate_test_segy(
     filesystem: AbstractFileSystem,
     segy_standard: SegyStandard = SegyStandard.REV0,
-    endianness: Endianness = Endianness.BIG,
+    endianness: Endianness | None = Endianness.BIG,
     sample_format: ScalarType = ScalarType.IBM32,
 ) -> SegyFileTestConfig:
     """Function for mocking a SEG-Y file with in memory URI."""
@@ -103,6 +104,9 @@ def generate_test_segy(
     samples[:] = sample_data
 
     trace_bytes = factory.create_traces(headers, samples)
+
+    if endianness is None:
+        endianness = Endianness.BIG
 
     uri = f"memory://{segy_standard.name}_{endianness.value}_{sample_format.value}.segy"
     fp = filesystem.open(uri, mode="wb")
@@ -227,7 +231,7 @@ class TestSegyFile:
 
     @pytest.mark.parametrize("standard", [SegyStandard.REV0, SegyStandard.REV1])
     @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
-    @pytest.mark.parametrize("sample_format", [ScalarType.FLOAT64, ScalarType.UINT8])
+    @pytest.mark.parametrize("sample_format", [ScalarType.IBM32, ScalarType.UINT8])
     def test_trace_accessor(
         self,
         mock_filesystem: MemoryFileSystem,
@@ -282,3 +286,54 @@ class TestSegyFileExceptions:
 
         with pytest.raises(ValueError, match="Could not infer SEG-Y standard"):
             SegyFile(test_config.uri)
+
+
+class TestSegyFileSettingsOverride:
+    """Test if settings overrides work fine for SegyFile."""
+
+    def test_revision_override(self, mock_filesystem: MemoryFileSystem) -> None:
+        """Test if settings override for revision work for SegyFile."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem, segy_standard=SegyStandard.REV0
+        )
+
+        settings = SegyFileSettings(revision=SegyStandard.REV1)
+        segy_file = SegyFile(test_config.uri, settings=settings)
+
+        assert segy_file.spec.segy_standard == SegyStandard.REV1
+
+    def test_revision_endian_override(self, mock_filesystem: MemoryFileSystem) -> None:
+        """Test if settings override for endianness work for SegyFile."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem,
+            segy_standard=SegyStandard.REV0,
+            endianness=Endianness.BIG,
+        )
+
+        settings = SegyFileSettings(
+            revision=SegyStandard.REV1, endianness=Endianness.LITTLE
+        )
+        segy_file = SegyFile(test_config.uri, settings=settings)
+
+        assert segy_file.spec.segy_standard == SegyStandard.REV1
+        assert segy_file.spec.endianness == Endianness.LITTLE
+        # Rev1 should have below field, but the value will be zero
+        assert "seg_y_revision" in segy_file.binary_header.dtype.names
+        assert segy_file.binary_header["seg_y_revision"] == 0
+
+    @pytest.mark.parametrize("num_ext_text", [2])
+    def test_ext_text_header_override(
+        self, mock_filesystem: MemoryFileSystem, num_ext_text: int
+    ) -> None:
+        """Test if settings override for extended header count work for SegyFile."""
+        test_config = generate_test_segy(
+            mock_filesystem,
+            segy_standard=SegyStandard.REV1,
+        )
+
+        settings = SegyFileSettings.model_validate(
+            {"binary": {"extended_text_header": {"value": num_ext_text}}}
+        )
+        segy_file = SegyFile(test_config.uri, settings=settings)
+
+        assert segy_file.num_ext_text == num_ext_text
