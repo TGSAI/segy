@@ -289,7 +289,7 @@ class TestSegyFileSettingsOverride:
     """Test if settings overrides work fine for SegyFile."""
 
     def test_revision_override(self, mock_filesystem: MemoryFileSystem) -> None:
-        """Test if settings override for revision work for SegyFile."""
+        """Make rev0 file and open it as rev1 from settings override."""
         test_config = generate_test_segy(
             filesystem=mock_filesystem, segy_standard=SegyStandard.REV0
         )
@@ -300,7 +300,7 @@ class TestSegyFileSettingsOverride:
         assert segy_file.spec.segy_standard == SegyStandard.REV1
 
     def test_revision_endian_override(self, mock_filesystem: MemoryFileSystem) -> None:
-        """Test if settings override for endianness work for SegyFile."""
+        """Make big-rev0 file and open it as little-rev1 from settings override."""
         test_config = generate_test_segy(
             filesystem=mock_filesystem,
             segy_standard=SegyStandard.REV0,
