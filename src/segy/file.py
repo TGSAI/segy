@@ -33,14 +33,12 @@ if TYPE_CHECKING:
 
 def create_spec(
     standard: SegyStandard,
-    endian: Endianness | None = None,
+    endian: Endianness,
     sample_format: ScalarType | None = None,
 ) -> SegyDescriptor:
     """Create SegyDescriptor from SegyStandard, Endianness, and ScalarType."""
     spec = registry.get_spec(standard)
-
-    if endian is not None:
-        spec.endianness = endian
+    spec.endianness = endian
 
     if sample_format is not None:
         spec.trace.sample_descriptor.format = sample_format
