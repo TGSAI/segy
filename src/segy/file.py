@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import struct
 from functools import cached_property
 from typing import TYPE_CHECKING
 
@@ -54,26 +55,27 @@ def get_spec_from_settings(settings: SegyFileSettings) -> SegyDescriptor:
 
 def read_default_binary_file_header_buffer(fs: AbstractFileSystem, url: str) -> bytes:
     """Read a binary file header from a URL."""
-    return fs.read_block(
+    data: bytes = fs.read_block(
         fn=url,
         offset=rev1_binary_file_header.offset,
         length=rev1_binary_file_header.itemsize,
     )
+    return data
 
 
 def unpack_binary_header(
     buffer: bytes, endianness: Endianness
 ) -> tuple[int, float, int]:
     """Unpack binary header sample rate and revision."""
-    kwargs = {"dtype": f"{endianness.symbol}i2", "count": 1}
-    sample_increment = np.frombuffer(buffer, offset=16, **kwargs).item()
+    format_ = f"{endianness.symbol}h"
+    sample_increment = struct.unpack_from(format_, buffer, offset=16)[0]
 
     # Get sample format
-    sample_format = np.frombuffer(buffer, offset=24, **kwargs).item()
+    sample_format = struct.unpack_from(format_, buffer, offset=24)[0]
 
     # # Get revision. Per SEG-Y standard, there is a Q-point between the
     # bytes. Dividing by 2^8 to get the floating-point value of the revision.
-    revision = np.frombuffer(buffer, offset=300, **kwargs).item() / 256.0
+    revision = struct.unpack_from(format_, buffer, offset=300)[0] / 256.0
 
     return sample_increment, revision, sample_format
 
@@ -87,11 +89,11 @@ def infer_spec_from_binary_header(buffer: bytes) -> SegyDescriptor:
         # Validate the inferred values.
         in_spec = revision in {0.0, 1.0}
         increment_is_positive = sample_increment > 0
-        format_is_valid = sample_format_int in SEGY_FORMAT_MAP
+        format_is_valid = sample_format_int in SEGY_FORMAT_MAP.values()
 
         if in_spec and increment_is_positive and format_is_valid:
             standard = SegyStandard(revision)
-            sample_format = SEGY_FORMAT_MAP.inverse(sample_format_int)
+            sample_format: ScalarType = SEGY_FORMAT_MAP.inverse[sample_format_int]
             return create_spec(standard, endianness, sample_format)
 
     # If both fail, raise error.
