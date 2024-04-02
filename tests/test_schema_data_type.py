@@ -34,9 +34,9 @@ class TestBaseDataTypes:
     @pytest.mark.parametrize(
         ("names", "offsets", "formats", "itemsize"),
         [
-            (["f1"], [0], ["int32"], None),
-            (["f1", "f2"], [0, 8], ["uint8", "int32"], None),
-            (["f1", "f2"], [0, 12], ["uint8", "int16"], 20),
+            (["f1"], [0], [ScalarType.INT32], None),
+            (["f1", "f2"], [0, 8], [ScalarType.UINT8, ScalarType.INT32], None),
+            (["f1", "f2"], [0, 12], [ScalarType.UINT8, ScalarType.INT16], 20),
         ],
     )
     def test_structured_data_type_descriptor(  # noqa: PLR0913
@@ -44,7 +44,7 @@ class TestBaseDataTypes:
         endianness: Endianness,
         names: list[str],
         offsets: list[int],
-        formats: list[int],
+        formats: list[ScalarType],
         itemsize: int,
     ) -> None:
         """Test StructuredDataTypeDescriptor and its dtype attribute."""

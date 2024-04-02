@@ -26,7 +26,6 @@ if TYPE_CHECKING:
 
     from fsspec import AbstractFileSystem
     from fsspec.implementations.memory import MemoryFileSystem
-    from numpy.dtypes import VoidDType
     from numpy.typing import NDArray
 
 SAMPLE_INTERVAL = 2000
@@ -51,7 +50,7 @@ class SegyFileTestConfig:
 def generate_test_trace_data(
     factory: SegyFactory,
     num_traces: int,
-) -> tuple[NDArray[VoidDType], NDArray[Any]]:
+) -> tuple[NDArray[np.void], NDArray[Any]]:
     """Generate random header and sample data for testing."""
     rng = np.random.default_rng()
     header_spec = factory.spec.trace.header_descriptor
@@ -79,7 +78,7 @@ def generate_test_trace_data(
 def generate_test_segy(
     filesystem: AbstractFileSystem,
     segy_standard: SegyStandard = SegyStandard.REV0,
-    endianness: Endianness | None = Endianness.BIG,
+    endianness: Endianness = Endianness.BIG,
     sample_format: ScalarType = ScalarType.IBM32,
 ) -> SegyFileTestConfig:
     """Function for mocking a SEG-Y file with in memory URI."""
@@ -294,7 +293,7 @@ class TestSegyFileSettingsOverride:
             filesystem=mock_filesystem, segy_standard=SegyStandard.REV0
         )
 
-        settings = SegyFileSettings(revision=SegyStandard.REV1)
+        settings = SegyFileSettings(revision=1.0)
         segy_file = SegyFile(test_config.uri, settings=settings)
 
         assert segy_file.spec.segy_standard == SegyStandard.REV1
@@ -307,9 +306,7 @@ class TestSegyFileSettingsOverride:
             endianness=Endianness.BIG,
         )
 
-        settings = SegyFileSettings(
-            revision=SegyStandard.REV1, endianness=Endianness.LITTLE
-        )
+        settings = SegyFileSettings(revision=1.0, endianness=Endianness.LITTLE)
         segy_file = SegyFile(test_config.uri, settings=settings)
 
         assert segy_file.spec.segy_standard == SegyStandard.REV1

@@ -9,7 +9,6 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from segy.factory import DEFAULT_TEXT_HEADER
-from segy.factory import SEGY_FORMAT_MAP
 from segy.factory import SegyFactory
 from segy.ibm import ieee2ibm
 from segy.schema import Endianness
@@ -18,10 +17,11 @@ from segy.schema import SegyStandard
 from segy.schema import StructuredFieldDescriptor
 from segy.schema import TextHeaderEncoding
 from segy.standards import registry
+from segy.standards.mapping import SEGY_FORMAT_MAP
 
 
 @dataclass
-class TestConfig:
+class SegyFactoryTestConfig:
     """Dataclass to configure common test patterns."""
 
     segy_standard: SegyStandard
@@ -31,9 +31,9 @@ class TestConfig:
 
 
 SEGY_FACTORY_TEST_CONFIGS = [
-    TestConfig(SegyStandard.REV0, Endianness.BIG, 2000, 51),
-    TestConfig(SegyStandard.REV1, Endianness.LITTLE, 3000, 1),
-    TestConfig(SegyStandard.REV0, Endianness.BIG, 5000, 10),
+    SegyFactoryTestConfig(SegyStandard.REV0, Endianness.BIG, 2000, 51),
+    SegyFactoryTestConfig(SegyStandard.REV1, Endianness.LITTLE, 3000, 1),
+    SegyFactoryTestConfig(SegyStandard.REV0, Endianness.BIG, 5000, 10),
 ]
 
 
