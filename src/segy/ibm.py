@@ -27,6 +27,7 @@ IBM32_FRACTION = np.uint32(0xFFFFFF)
 
 @nb.njit(  # type: ignore
     "uint32(float32)",
+    nogil=True,
     cache=True,
     locals={
         "sign": nb.uint32,
@@ -36,7 +37,7 @@ IBM32_FRACTION = np.uint32(0xFFFFFF)
         "ibm_mantissa": nb.int32,
     },
 )
-def ieee2ibm_single(ieee: np.float32) -> np.uint32:
+def ieee2ibm_single(ieee):  # noqa: ANN201,ANN001,DOC106,DOC107
     """IEEE Float to IBM Float conversion.
 
     Modified from here:
@@ -91,6 +92,7 @@ def ieee2ibm_single(ieee: np.float32) -> np.uint32:
 @nb.njit(  # type: ignore
     "float32(uint32)",
     cache=True,
+    nogil=True,
     locals={
         "sign_bit": nb.boolean,
         "sign": nb.int8,
@@ -99,7 +101,7 @@ def ieee2ibm_single(ieee: np.float32) -> np.uint32:
         "ieee": nb.float32,
     },
 )
-def ibm2ieee_single(ibm: np.uint32) -> np.float32:
+def ibm2ieee_single(ibm):  # noqa: ANN201,ANN001,DOC106,DOC107
     """Converts a 32-bit IBM floating point number into 32-bit IEEE format.
 
     https://en.wikipedia.org/wiki/IBM_hexadecimal_floating-point
