@@ -103,7 +103,10 @@ def _modify_structured_field(
 
     # If the field size hasn't changed we can do it in-place with view magic, no copy.
     # Example: uint32 scaled by a negative integer, result fits into output: int32.
-    if new_struct_dtype.itemsize == data.dtype.itemsize:
+    # If this is the first transform in the pipeline, the memory for this array will
+    # be bytes (immutable). In that case we have to skip and continue to copy.
+    is_writable = data[key].flags.writeable is True
+    if new_struct_dtype.itemsize == data.dtype.itemsize and is_writable:
         data[key] = transformed.view(old_field_dtype)
         return data.view(new_struct_dtype)
 

@@ -32,12 +32,6 @@ BINARY_FILE_HEADER_FIELDS_REV1 = BINARY_FILE_HEADER_FIELDS_REV0 + [
         format=ScalarType.INT16,
         description="Number of 3200-byte, Extended Textual File Header Records Following the Binary Header",  # noqa: E501
     ),
-    StructuredFieldDescriptor(
-        name="additional_trace_headers",
-        offset=306,
-        format=ScalarType.INT16,
-        description="Maximum Number of Additional Trace Headers",
-    ),
 ]
 
 

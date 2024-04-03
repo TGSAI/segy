@@ -27,6 +27,7 @@ class SegyStandard(Enum):
     REV2 = 2.0
     REV21 = 2.1
     CUSTOM = "custom"
+    MINIMAL = "minimal"
 
 
 class SegyDescriptor(CamelCaseModel):

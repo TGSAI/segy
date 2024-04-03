@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import struct
 from functools import cached_property
 from typing import TYPE_CHECKING
 
@@ -16,7 +17,8 @@ from segy.indexing import TraceIndexer
 from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.schema import SegyStandard
-from segy.standards.registry import get_spec
+from segy.standards import registry
+from segy.standards.mapping import SEGY_FORMAT_MAP
 from segy.standards.rev1 import rev1_binary_file_header
 from segy.standards.rev1 import rev1_extended_text_header
 from segy.transforms import TransformFactory
@@ -28,6 +30,75 @@ if TYPE_CHECKING:
 
     from segy.indexing import AbstractIndexer
     from segy.schema import SegyDescriptor
+
+
+def create_spec(
+    standard: SegyStandard,
+    endian: Endianness,
+    sample_format: ScalarType | None = None,
+) -> SegyDescriptor:
+    """Create SegyDescriptor from SegyStandard, Endianness, and ScalarType."""
+    spec = registry.get_spec(standard)
+    spec.endianness = endian
+
+    if sample_format is not None:
+        spec.trace.sample_descriptor.format = sample_format
+
+    return spec
+
+
+def get_spec_from_settings(settings: SegyFileSettings) -> SegyDescriptor:
+    """Get the SEG-Y spec from the settings instance."""
+    standard = SegyStandard(settings.revision)
+    return create_spec(standard, settings.endianness)
+
+
+def read_default_binary_file_header_buffer(fs: AbstractFileSystem, url: str) -> bytes:
+    """Read a binary file header from a URL."""
+    data: bytes = fs.read_block(
+        fn=url,
+        offset=rev1_binary_file_header.offset,
+        length=rev1_binary_file_header.itemsize,
+    )
+    return data
+
+
+def unpack_binary_header(
+    buffer: bytes, endianness: Endianness
+) -> tuple[int, float, int]:
+    """Unpack binary header sample rate and revision."""
+    format_ = f"{endianness.symbol}h"
+    sample_increment = struct.unpack_from(format_, buffer, offset=16)[0]
+
+    # Get sample format
+    sample_format = struct.unpack_from(format_, buffer, offset=24)[0]
+
+    # # Get revision. Per SEG-Y standard, there is a Q-point between the
+    # bytes. Dividing by 2^8 to get the floating-point value of the revision.
+    revision = struct.unpack_from(format_, buffer, offset=300)[0] / 256.0
+
+    return sample_increment, revision, sample_format
+
+
+def infer_spec_from_binary_header(buffer: bytes) -> SegyDescriptor:
+    """Try to infer SEG-Y file revision and endianness to build a SegyDescriptor."""
+    for endianness in [Endianness.BIG, Endianness.LITTLE]:
+        unpacked = unpack_binary_header(buffer, endianness)
+        sample_increment, revision, sample_format_int = unpacked
+
+        # Validate the inferred values.
+        in_spec = revision in {0.0, 1.0}
+        increment_is_positive = sample_increment > 0
+        format_is_valid = sample_format_int in SEGY_FORMAT_MAP.values()
+
+        if in_spec and increment_is_positive and format_is_valid:
+            standard = SegyStandard(revision)
+            sample_format: ScalarType = SEGY_FORMAT_MAP.inverse[sample_format_int]
+            return create_spec(standard, endianness, sample_format)
+
+    # If both fail, raise error.
+    msg = "Could not infer SEG-Y standard. Please provide spec."
+    raise ValueError(msg)
 
 
 class SegyFile:
@@ -55,16 +126,10 @@ class SegyFile:
 
         self.fs, self.url = url_to_fs(url, **self.settings.storage_options)
 
-        self.spec = self._infer_standard() if spec is None else spec
+        self.spec = self._infer_spec() if spec is None else spec
 
         self._info = self.fs.info(self.url)
-        self._update_spec_endianness()
         self._parse_binary_header()
-
-    def _update_spec_endianness(self) -> None:
-        """If spec has no endianness, get it from settings."""
-        if self.spec.endianness is None:
-            self.spec.endianness = self.settings.endianness
 
     @property
     def file_size(self) -> int:
@@ -75,7 +140,7 @@ class SegyFile:
     @property
     def num_ext_text(self) -> int:
         """Return number of extended text headers."""
-        if self.spec.segy_standard in {SegyStandard.REV0, SegyStandard.CUSTOM}:
+        if self.spec.segy_standard == SegyStandard.REV0:
             return 0
 
         # Overriding from settings
@@ -88,22 +153,12 @@ class SegyFile:
     @property
     def samples_per_trace(self) -> int:
         """Return samples per trace in file based on spec."""
-        # Overriding from settings
-        if self.settings.binary.samples_per_trace.value is not None:
-            return self.settings.binary.samples_per_trace.value
-
-        header_key = self.settings.binary.samples_per_trace.key
-        return int(self.binary_header[header_key].item())
+        return int(self.binary_header["samples_per_trace"].item())
 
     @property
     def sample_interval(self) -> int:
         """Return samples interval in file based on spec."""
-        # Overriding from settings
-        if self.settings.binary.sample_interval.value is not None:
-            return self.settings.binary.sample_interval.value
-
-        header_key = self.settings.binary.sample_interval.key
-        return int(self.binary_header[header_key].item())
+        return int(self.binary_header["sample_interval"].item())
 
     @property
     def sample_labels(self) -> NDArray[np.int32]:
@@ -142,24 +197,13 @@ class SegyFile:
         text_header = text_hdr_desc._decode(buffer)
         return text_hdr_desc._wrap(text_header)
 
-    def _infer_standard(self) -> SegyDescriptor:
-        if self.settings.revision is None:
-            buffer = self.fs.read_block(
-                fn=self.url,
-                offset=rev1_binary_file_header.offset,
-                length=rev1_binary_file_header.item_size,
-            )
-            revision = np.frombuffer(buffer, offset=300, dtype=">i2", count=1).item()
+    def _infer_spec(self) -> SegyDescriptor:
+        """Infer the SEG-Y specification for the file."""
+        if self.settings.revision is not None:
+            return get_spec_from_settings(self.settings)
 
-            # Per SEG-Y standard, there is a Q-point between the bytes. Dividing
-            # by 2^8 to get the floating-point value of the revision.
-            revision = revision / 256.0
-
-        else:
-            revision = self.settings.revision
-
-        standard = SegyStandard(revision)
-        return get_spec(standard)
+        binary_header_buffer = read_default_binary_file_header_buffer(self.fs, self.url)
+        return infer_spec_from_binary_header(binary_header_buffer)
 
     @cached_property
     def binary_header(self) -> HeaderArray:
@@ -173,9 +217,10 @@ class SegyFile:
         bin_hdr = np.frombuffer(buffer, dtype=self.spec.binary_file_header.dtype)
 
         transforms = TransformPipeline()
-        transforms.add_transform(
-            TransformFactory.create("byte_swap", Endianness.LITTLE),
-        )
+
+        if self.spec.endianness == Endianness.BIG:
+            little_endian = TransformFactory.create("byte_swap", Endianness.LITTLE)
+            transforms.add_transform(little_endian)
 
         return HeaderArray(transforms.apply(bin_hdr))
 

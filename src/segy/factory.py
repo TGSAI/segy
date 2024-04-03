@@ -7,6 +7,9 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from segy.schema import Endianness
+from segy.schema import ScalarType
+from segy.schema import SegyStandard
+from segy.standards.mapping import SEGY_FORMAT_MAP
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
@@ -53,6 +56,16 @@ class SegyFactory:
 
         self.spec.trace.sample_descriptor.samples = samples_per_trace
 
+    @property
+    def trace_sample_format(self) -> ScalarType:
+        """Trace sample format of the SEG-Y file."""
+        return self.spec.trace.sample_descriptor.format
+
+    @property
+    def segy_revision(self) -> SegyStandard:
+        """Revision of the SEG-Y file."""
+        return self.spec.segy_standard
+
     def create_textual_header(self, text: str | None = None) -> bytes:
         """Create a textual header for the SEG-Y file.
 
@@ -83,24 +96,25 @@ class SegyFactory:
         binary_descriptor = self.spec.binary_file_header
         bin_header = np.zeros(shape=1, dtype=binary_descriptor.dtype)
 
-        bin_header["seg_y_revision"] = self.spec.segy_standard.value * 256
+        if self.segy_revision != SegyStandard.REV0:
+            bin_header["seg_y_revision"] = self.segy_revision.value * 256
+
         bin_header["sample_interval"] = self.sample_interval
         bin_header["sample_interval_orig"] = self.sample_interval
         bin_header["samples_per_trace"] = self.samples_per_trace
         bin_header["samples_per_trace_orig"] = self.samples_per_trace
+        bin_header["data_sample_format"] = SEGY_FORMAT_MAP[self.trace_sample_format]
 
         return bin_header.tobytes()
 
     def create_trace_header_template(
         self,
         size: int = 1,
-        fill: bool = True,
     ) -> NDArray[Any]:
         """Create a trace header template array that conforms to the SEG-Y spec.
 
         Args:
             size: Number of headers for the template.
-            fill: Optional, fill with zeros. Default is True.
 
         Returns:
             Array containing the trace header template.
@@ -108,10 +122,7 @@ class SegyFactory:
         descriptor = self.spec.trace.header_descriptor
         dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
 
-        header_template = np.empty(shape=size, dtype=dtype)
-
-        if fill is True:
-            header_template.fill(0)
+        header_template = np.zeros(shape=size, dtype=dtype)
 
         # 'names' assumed not None by data structure (type ignores).
         field_names = header_template.dtype.names
@@ -123,29 +134,25 @@ class SegyFactory:
 
         return header_template
 
-    def create_trace_data_template(
+    def create_trace_sample_template(
         self,
         size: int = 1,
-        fill: bool = True,
     ) -> NDArray[Any]:
         """Create a trace data template array that conforms to the SEG-Y spec.
 
         Args:
             size: Number of traces for the template.
-            fill: Optional, fill with zeros. Default is True.
 
         Returns:
             Array containing the trace data template.
         """
         descriptor = self.spec.trace.sample_descriptor
-        dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
+        dtype = descriptor.dtype
 
-        data_template = np.empty(shape=size, dtype=dtype)
+        if self.trace_sample_format == ScalarType.IBM32:
+            dtype = np.dtype(("float32", (self.samples_per_trace,)))
 
-        if fill is True:
-            data_template.fill(0)
-
-        return data_template
+        return np.zeros(shape=size, dtype=dtype)
 
     def create_traces(self, headers: NDArray[Any], samples: NDArray[Any]) -> bytes:
         """Convert trace data and header to bytes conforming to SEG-Y spec.
@@ -153,7 +160,7 @@ class SegyFactory:
         The rows (length) of the headers and traces must match. The headers
         must be a (num_traces,) shape array and data must be a
         (num_traces, num_samples) shape array. They can be created via the
-        `create_trace_header_template` and `create_trace_data_template` methods.
+        `create_trace_header_template` and `create_trace_sample_template` methods.
 
         Args:
             headers: Header array.
@@ -185,19 +192,22 @@ class SegyFactory:
             msg = "Header array must have the same number of rows as data array."
             raise ValueError(msg)
 
-        target_endian = trace_descriptor.endianness
-
         header_pipeline = TransformPipeline()
         data_pipeline = TransformPipeline()
 
-        byte_swap = TransformFactory.create("byte_swap", target_endian)
-        ibm_float = TransformFactory.create("ibm_float", "to_ibm")
+        target_endian = trace_descriptor.endianness
+        target_format = trace_descriptor.sample_descriptor.format
 
-        header_pipeline.add_transform(byte_swap)
-        data_pipeline.add_transform(ibm_float)
-        data_pipeline.add_transform(byte_swap)
+        if target_endian == Endianness.BIG:
+            byte_swap = TransformFactory.create("byte_swap", target_endian)
+            header_pipeline.add_transform(byte_swap)
+            data_pipeline.add_transform(byte_swap)
 
-        trace = np.empty(shape=len(samples), dtype=trace_descriptor.dtype)
+        if target_format == ScalarType.IBM32:
+            ibm_float = TransformFactory.create("ibm_float", "to_ibm")
+            data_pipeline.add_transform(ibm_float)
+
+        trace = np.zeros(shape=headers.size, dtype=trace_descriptor.dtype)
         trace["header"] = header_pipeline.apply(headers)
         trace["sample"] = data_pipeline.apply(samples)
 

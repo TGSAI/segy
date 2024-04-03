@@ -5,6 +5,7 @@ from __future__ import annotations
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
+from typing import Any
 
 import numpy as np
 from fsspec.utils import merge_offset_ranges
@@ -17,7 +18,6 @@ from segy.transforms import TransformPipeline
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from typing import Any
 
     from fsspec import AbstractFileSystem
     from numpy.typing import NDArray
@@ -32,7 +32,7 @@ def merge_cat_file(
     starts: list[int],
     ends: list[int],
     block_size: int = 8_388_608,
-) -> bytearray:
+) -> bytes:
     """Merge sequential byte start/ends and fetch from store.
 
     Args:
@@ -62,7 +62,7 @@ def merge_cat_file(
         ends=ends,
     )
 
-    return bytearray(b"".join(buffer_bytes))
+    return b"".join(buffer_bytes)
 
 
 def bounds_check(indices: list[int], max_: int, type_: str) -> None:
@@ -137,7 +137,7 @@ class AbstractIndexer(ABC):
         """Logic to calculate start/end bytes."""
 
     @abstractmethod
-    def decode(self, buffer: bytearray) -> NDArray[Any]:
+    def decode(self, buffer: bytes) -> NDArray[Any]:
         """How to decode the bytes after reading."""
 
     def post_process(self, data: NDArray[Any]) -> NDArray[Any]:
@@ -219,7 +219,7 @@ class TraceIndexer(AbstractIndexer):
 
         return starts, ends
 
-    def decode(self, buffer: bytearray) -> TraceArray:
+    def decode(self, buffer: bytes) -> TraceArray:
         """Decode whole traces (header + data)."""
         data = np.frombuffer(buffer, dtype=self.spec.dtype)
         return TraceArray(data)
@@ -251,7 +251,7 @@ class HeaderIndexer(AbstractIndexer):
 
         return starts, ends
 
-    def decode(self, buffer: bytearray) -> HeaderArray:
+    def decode(self, buffer: bytes) -> HeaderArray:
         """Decode headers only."""
         data = np.frombuffer(buffer, dtype=self.spec.dtype["header"])
         return HeaderArray(data)
@@ -283,6 +283,6 @@ class SampleIndexer(AbstractIndexer):
 
         return starts, ends
 
-    def decode(self, buffer: bytearray) -> NDArray[Any]:
+    def decode(self, buffer: bytes) -> NDArray[Any]:
         """Decode trace samples only."""
         return np.frombuffer(buffer, dtype=self.spec.dtype["sample"])
