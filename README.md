@@ -4,7 +4,7 @@
 [![Status](https://img.shields.io/pypi/status/segy.svg)][status]
 [![License](https://img.shields.io/pypi/l/segy)][apache 2.0 license]
 
-[![Tests](https://github.com/TGSAI/segy/workflows/Tests/badge.svg)][tests]
+[![Tests](https://github.com/TGSAI/segy/actions/workflows/tests.yaml/badge.svg?branch=main)][tests]
 [![Codecov](https://codecov.io/gh/TGSAI/segy/branch/main/graph/badge.svg)][codecov]
 [![Read the documentation at https://segy.readthedocs.io/](https://img.shields.io/readthedocs/segy/stable.svg?label=Read%20the%20Docs)][read the docs]
 
@@ -19,7 +19,7 @@
 [status]: https://pypi.org/project/segy/
 [python version]: https://pypi.org/project/segy
 [read the docs]: https://segy.readthedocs.io/
-[tests]: https://github.com/TGSAI/segy/actions?workflow=Tests
+[tests]: https://github.com/TGSAI/segy/actions/workflows/tests.yaml
 [codecov]: https://app.codecov.io/gh/TGSAI/segy
 [pre-commit]: https://github.com/pre-commit/pre-commit
 [ruff]: https://github.com/astral-sh/ruff
