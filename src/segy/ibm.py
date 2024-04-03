@@ -62,8 +62,8 @@ def ieee2ibm_single(ieee):  # noqa: ANN201,ANN001,DOC106,DOC107
         return np.uint32(0)
 
     # Get IEEE's sign and exponent
-    sign = ieee & IEEE32_SIGN  # type: ignore
-    exponent = ((ieee & IEEE32_EXPONENT) >> 23) - 127  # type: ignore
+    sign = ieee & IEEE32_SIGN
+    exponent = ((ieee & IEEE32_EXPONENT) >> 23) - 127
     # The IBM 7-bit exponent is to the base 16 and the mantissa is presumed to
     # be entirely to the right of the radix point. In contrast, the IEEE
     # exponent is to the base 2 and there is an assumed 1-bit to the left of
@@ -84,9 +84,9 @@ def ieee2ibm_single(ieee):  # noqa: ANN201,ANN001,DOC106,DOC107
     # Add the implicit initial 1-bit to the 23-bit IEEE mantissa to get the
     # 24-bit IBM mantissa. Downshift it by the remainder from the exponent's
     # division by 4. It is allowed to have up to 3 leading 0s.
-    ibm_mantissa = ((ieee & IEEE32_FRACTION) | 0x800000) >> downshift  # type: ignore
+    ibm_mantissa = ((ieee & IEEE32_FRACTION) | 0x800000) >> downshift
 
-    return sign | exponent | ibm_mantissa  # type: ignore
+    return sign | exponent | ibm_mantissa
 
 
 @nb.njit(  # type: ignore
@@ -129,7 +129,7 @@ def ibm2ieee_single(ibm):  # noqa: ANN201,ANN001,DOC106,DOC107
     # This 16.0 (instead of just 16) is super important.
     # If the base is not a float, it won't work for negative
     # exponents, and fail silently and return zero.
-    return sign * mantissa * 16.0 ** (exponent - 64)  # type: ignore
+    return sign * mantissa * 16.0 ** (exponent - 64)
 
 
 @nb.vectorize("uint32(float32)", cache=True)  # type: ignore

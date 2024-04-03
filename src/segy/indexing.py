@@ -5,6 +5,7 @@ from __future__ import annotations
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
+from typing import Any
 
 import numpy as np
 from fsspec.utils import merge_offset_ranges
@@ -17,7 +18,6 @@ from segy.transforms import TransformPipeline
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from typing import Any
 
     from fsspec import AbstractFileSystem
     from numpy.typing import NDArray
