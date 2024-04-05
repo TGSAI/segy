@@ -46,8 +46,8 @@ class SegyArray(np.ndarray):  # type: ignore[type-arg]
         data preservation is crucial.
         """
         void_view = self.view("V")
-        final_copy = np.copy(void_view, order=order, subok=True).view(self.dtype)
-        return final_copy.view(type(self))  # Ensure return type is SegyArray
+        void_copy = np.copy(void_view, order=order, subok=True)
+        return void_copy.view(self.dtype)  # type: ignore[no-any-return]
 
 
 class HeaderArray(SegyArray):
