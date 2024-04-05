@@ -163,27 +163,6 @@ class Transform:
         return data
 
 
-class ScaleTransform(Transform):
-    """Scales numeric data by a specified factor.
-
-    Args:
-        scalar: Scalar to apply to the data.
-        keys: Optional list of keys to apply the transform.
-    """
-
-    def __init__(self, scalar: float, keys: list[str] | None = None) -> None:
-        super().__init__(keys)
-        self.scalar = scalar
-
-    def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        orig_endian = get_endianness(data)
-        data = data * self.scalar
-        new_endian = get_endianness(data)
-        if new_endian is not orig_endian:
-            data = data.byteswap().newbyteorder()
-        return data
-
-
 class ByteSwapTransform(Transform):
     """Byte swaps numeric data by based on target order.
 
@@ -202,22 +181,6 @@ class ByteSwapTransform(Transform):
             data = data.newbyteorder(self.target_order.symbol).byteswap()
 
         return data
-
-
-class CastTypeTransform(Transform):
-    """Casts numeric data based on target type.
-
-    Args:
-        target_type: Desired data type to cast.
-        keys: Optional list of keys to apply the transform.
-    """
-
-    def __init__(self, target_type: DTypeLike, keys: list[str] | None = None) -> None:
-        super().__init__(keys=keys)
-        self.target_type = np.dtype(target_type)
-
-    def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        return data.astype(self.target_type)
 
 
 class IbmFloatTransform(Transform):
@@ -245,10 +208,8 @@ class TransformFactory:
     """Factory class to generate transformation strategies."""
 
     transform_map: dict[str, type[Transform]] = {
-        "scale": ScaleTransform,
         "byte_swap": ByteSwapTransform,
         "ibm_float": IbmFloatTransform,
-        "cast": CastTypeTransform,
     }
 
     @classmethod
