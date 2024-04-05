@@ -60,23 +60,12 @@ def _modify_dtype_field(
     key_index = dtype_info["names"].index(key)
     key_to_modify = dtype_info["formats"][key_index]
 
+    # Handle the case where field to modify is a struct
+    # For example; a Trace struct with "header" amd "sample" fields.
     if key_to_modify.kind == "V":
         new_type = np.dtype((new_type.str,) + key_to_modify.subdtype[1:])
 
     dtype_info["formats"][key_index] = new_type  # type: ignore[index]
-
-    # Check if field size changed
-    old_size = key_to_modify.itemsize
-    new_size = new_type.itemsize
-    diff_size = new_size - old_size
-
-    if diff_size != 0:
-        offsets = dtype_info["offsets"]
-        itemsize = dtype_info["itemsize"]
-        dtype_info["offsets"] = [
-            x + (diff_size if i > key_index else 0) for i, x in enumerate(offsets)
-        ]
-        dtype_info["itemsize"] = itemsize + diff_size
 
     return np.dtype(dtype_info)
 
@@ -102,26 +91,9 @@ def _modify_structured_field(
     new_struct_dtype = _modify_dtype_field(data.dtype, key, new_field_dtype)
 
     # If the field size hasn't changed we can do it in-place with view magic, no copy.
-    # Example: uint32 scaled by a negative integer, result fits into output: int32.
-    # If this is the first transform in the pipeline, the memory for this array will
-    # be bytes (immutable). In that case we have to skip and continue to copy.
-    is_writable = data[key].flags.writeable is True
-    if new_struct_dtype.itemsize == data.dtype.itemsize and is_writable:
-        data[key] = transformed.view(old_field_dtype)
-        return data.view(new_struct_dtype)
-
-    # Worst case scenario, field size changes. We need to initialize a new
-    # array and copy all the old data and the new data to appropriate fields.
-    # Example: int32 field scaled by float32 scalar, resulting in float64 output.
-    new_data = np.empty_like(data, dtype=new_struct_dtype)
-    for orig_key in data.dtype.names:
-        if orig_key == key:  # skip transformed key
-            continue
-        new_data[orig_key] = data[orig_key]
-
-    new_data[key] = transformed
-
-    return new_data
+    # Example: ibm32 to float32 still fits in the same 32-bits.
+    data[key] = transformed.view(old_field_dtype)
+    return data.view(new_struct_dtype)
 
 
 class Transform:
