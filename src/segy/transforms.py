@@ -193,7 +193,7 @@ class ByteSwapTransform(Transform):
         source_order = get_endianness(data)
 
         if source_order != self.target_order:
-            data = data.newbyteorder(self.target_order.symbol).byteswap()
+            data = data.byteswap(inplace=True).newbyteorder(self.target_order.symbol)
 
         return data
 
