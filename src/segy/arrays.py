@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     from numpy.typing import NDArray
 
-    OrderKACF = Literal["K", "A", "C", "F"]
+    OrderKACF = Literal[None, "K", "A", "C", "F"]
 
 
 class SegyArray(np.ndarray):  # type: ignore[type-arg]
@@ -37,7 +37,7 @@ class SegyArray(np.ndarray):  # type: ignore[type-arg]
         if obj is None:
             return
 
-    def copy(self, order: OrderKACF = "K") -> TraceArray:
+    def copy(self, order: OrderKACF = "K") -> SegyArray:
         """Copy structured array preserving the padded bytes as is.
 
         This method ensures that the copy includes raw binary data and any padding
@@ -45,7 +45,10 @@ class SegyArray(np.ndarray):  # type: ignore[type-arg]
         for working with SEG-Y data where not all fields are parsed, but raw binary
         data preservation is crucial.
         """
-        return np.copy(self.view("V"), order=order, subok=True).view(self.dtype)
+        void_view = self.view("V")
+        void_view_copy = np.copy(void_view, order=order, subok=True)
+        copy_with_dtype = void_view_copy.astype(self.dtype)
+        return copy_with_dtype.view(type(self))  # Ensure type is SegyArray
 
 
 class HeaderArray(SegyArray):
