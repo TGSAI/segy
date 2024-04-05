@@ -127,11 +127,26 @@ def _modify_structured_field(
 class Transform:
     """Base class for header transformation strategies."""
 
-    def __init__(self, keys: list[str] | None = None) -> None:
+    def __init__(self, keys: list[str] | None = None, copy: bool = False) -> None:
         self.keys = keys
+        self.copy = copy
 
     def apply(self, data: NDArray[Any]) -> NDArray[Any]:
-        """Applies transformation based on ndarray or struct array."""
+        """Applies transformation based on ndarray or struct array.
+
+        For memory efficiency, by default, the transforms are applied to input array.
+        This could cause mutation of input array depending on the transform. Set the
+        `copy` option to `True` if you want to ensure input data isn't modified.
+
+        Args:
+            data: The array to be transformed.
+
+        Returns:
+            Modified array or copy of array.
+        """
+        if self.copy:
+            data = data.copy()
+
         if self.keys is None:
             return self._transform(data)
 
