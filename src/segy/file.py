@@ -53,18 +53,21 @@ def get_spec_from_settings(settings: SegyFileSettings) -> SegyDescriptor:
     return create_spec(standard, settings.endianness)
 
 
-def read_default_binary_file_header_buffer(fs: AbstractFileSystem, url: str) -> bytes:
+def read_default_binary_file_header_buffer(
+    fs: AbstractFileSystem, url: str
+) -> bytearray:
     """Read a binary file header from a URL."""
-    data: bytes = fs.read_block(
+    buffer = fs.read_block(
         fn=url,
         offset=rev1_binary_file_header.offset,
         length=rev1_binary_file_header.itemsize,
     )
-    return data
+
+    return bytearray(buffer)
 
 
 def unpack_binary_header(
-    buffer: bytes, endianness: Endianness
+    buffer: bytearray, endianness: Endianness
 ) -> tuple[int, float, int]:
     """Unpack binary header sample rate and revision."""
     format_ = f"{endianness.symbol}h"
@@ -80,7 +83,7 @@ def unpack_binary_header(
     return sample_increment, revision, sample_format
 
 
-def infer_spec_from_binary_header(buffer: bytes) -> SegyDescriptor:
+def infer_spec_from_binary_header(buffer: bytearray) -> SegyDescriptor:
     """Try to infer SEG-Y file revision and endianness to build a SegyDescriptor."""
     for endianness in [Endianness.BIG, Endianness.LITTLE]:
         unpacked = unpack_binary_header(buffer, endianness)
@@ -208,11 +211,12 @@ class SegyFile:
     @cached_property
     def binary_header(self) -> HeaderArray:
         """Read binary header from store, based on spec."""
-        buffer = self.fs.read_block(
+        buffer_bytes = self.fs.read_block(
             fn=self.url,
             offset=self.spec.binary_file_header.offset,
             length=self.spec.binary_file_header.itemsize,
         )
+        buffer = bytearray(buffer_bytes)
 
         bin_hdr = np.frombuffer(buffer, dtype=self.spec.binary_file_header.dtype)
 
