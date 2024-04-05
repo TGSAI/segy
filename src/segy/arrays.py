@@ -18,7 +18,11 @@ import numpy as np
 from pandas import DataFrame
 
 if TYPE_CHECKING:
+    from typing import Literal
+
     from numpy.typing import NDArray
+
+    OrderKACF = Literal["K", "A", "C", "F"]
 
 
 class SegyArray(np.ndarray):  # type: ignore[type-arg]
@@ -32,6 +36,16 @@ class SegyArray(np.ndarray):  # type: ignore[type-arg]
         """Numpy subclass logic."""
         if obj is None:
             return
+
+    def copy(self, order: OrderKACF = "K") -> TraceArray:
+        """Copy structured array preserving the padded bytes as is.
+
+        This method ensures that the copy includes raw binary data and any padding
+        bytes, preserving the entire memory layout of the array. This is necessary
+        for working with SEG-Y data where not all fields are parsed, but raw binary
+        data preservation is crucial.
+        """
+        return np.copy(self.view("V"), order=order, subok=True).view(self.dtype)
 
 
 class HeaderArray(SegyArray):
