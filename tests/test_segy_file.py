@@ -18,7 +18,7 @@ from segy.factory import DEFAULT_TEXT_HEADER
 from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.schema import SegyStandard
-from segy.standards import registry
+from segy.standards import get_segy_standard
 from segy.standards.mapping import SEGY_FORMAT_MAP
 
 if TYPE_CHECKING:
@@ -82,7 +82,7 @@ def generate_test_segy(
     sample_format: ScalarType = ScalarType.IBM32,
 ) -> SegyFileTestConfig:
     """Function for mocking a SEG-Y file with in memory URI."""
-    spec = registry.get_spec(segy_standard)
+    spec = get_segy_standard(segy_standard)
     spec.endianness = endianness
     spec.trace.sample_descriptor.format = sample_format
 

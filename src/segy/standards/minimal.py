@@ -2,7 +2,6 @@
 
 from segy.schema import ScalarType
 from segy.schema import SegyDescriptor
-from segy.schema import SegyStandard
 from segy.schema import TextHeaderDescriptor
 from segy.schema import TextHeaderEncoding
 from segy.schema import TraceDescriptor
@@ -79,7 +78,7 @@ trace_data = TraceSampleDescriptor(format=ScalarType.IBM32)
 trace = TraceDescriptor(header_descriptor=trace_header, sample_descriptor=trace_data)
 
 minimal_segy = SegyDescriptor(
-    segy_standard=SegyStandard.MINIMAL,
+    segy_standard=None,
     text_file_header=textual_file_header,
     binary_file_header=binary_file_header,
     trace=trace,

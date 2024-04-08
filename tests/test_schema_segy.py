@@ -10,14 +10,14 @@ from segy.schema import TextHeaderDescriptor
 from segy.schema import TextHeaderEncoding
 from segy.schema import TraceSampleDescriptor
 from segy.standards import SegyStandard
-from segy.standards import registry
+from segy.standards import get_segy_standard
 
 
 @pytest.fixture(params=[SegyStandard.REV0, SegyStandard.REV1])
 def segy_descriptor(request: pytest.FixtureRequest) -> SegyDescriptor:
     """Fixture for creating known SegyDescriptor instances for customizing."""
     standard = request.param
-    return registry.get_spec(standard)
+    return get_segy_standard(standard)
 
 
 class TestSegyDescriptorCustomize:
@@ -34,7 +34,7 @@ class TestSegyDescriptorCustomize:
 
         custom_spec = segy_descriptor.customize(text_header_spec=custom_text_descr)
 
-        assert custom_spec.segy_standard == SegyStandard.CUSTOM
+        assert custom_spec.segy_standard is None
         assert custom_spec.text_file_header == custom_text_descr
 
     def test_custom_binary_file_headers(self, segy_descriptor: SegyDescriptor) -> None:
@@ -48,7 +48,7 @@ class TestSegyDescriptorCustomize:
         custom_spec = segy_descriptor.customize(binary_header_fields=custom_fields)
 
         expected_itemsize = segy_descriptor.binary_file_header.dtype.itemsize
-        assert custom_spec.segy_standard == SegyStandard.CUSTOM
+        assert custom_spec.segy_standard is None
         assert len(custom_spec.binary_file_header.fields) == len(custom_fields)
         assert custom_spec.binary_file_header.dtype.names == ("f1", "f2", "f3")
         assert custom_spec.binary_file_header.dtype.itemsize == expected_itemsize
@@ -63,7 +63,7 @@ class TestSegyDescriptorCustomize:
         custom_spec = segy_descriptor.customize(trace_header_fields=custom_fields)
 
         expected_itemsize = segy_descriptor.trace.header_descriptor.dtype.itemsize
-        assert custom_spec.segy_standard == SegyStandard.CUSTOM
+        assert custom_spec.segy_standard is None
         assert len(custom_spec.trace.header_descriptor.fields) == len(custom_fields)
         assert custom_spec.trace.header_descriptor.dtype.names == ("f1", "f2")
         assert custom_spec.trace.header_descriptor.dtype.itemsize == expected_itemsize
@@ -79,7 +79,7 @@ class TestSegyDescriptorCustomize:
 
         custom_spec = segy_descriptor.customize(extended_text_spec=custom_text_descr)
 
-        assert custom_spec.segy_standard == SegyStandard.CUSTOM
+        assert custom_spec.segy_standard is None
         assert custom_spec.extended_text_header == custom_text_descr
 
     def test_custom_trace_samples(self, segy_descriptor: SegyDescriptor) -> None:
@@ -89,7 +89,7 @@ class TestSegyDescriptorCustomize:
         custom_spec = segy_descriptor.customize(trace_data_spec=custom_samples)
 
         expected_subdtype = (np.dtype("uint16"), (3,))
-        assert custom_spec.segy_standard == SegyStandard.CUSTOM
+        assert custom_spec.segy_standard is None
         assert custom_spec.trace.dtype.itemsize == 246  # noqa: PLR2004
         assert custom_spec.trace.sample_descriptor.dtype.itemsize == 6  # noqa: PLR2004
         assert custom_spec.trace.sample_descriptor.dtype.subdtype == expected_subdtype

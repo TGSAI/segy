@@ -16,8 +16,8 @@ from segy.schema import ScalarType
 from segy.schema import SegyStandard
 from segy.schema import StructuredFieldDescriptor
 from segy.schema import TextHeaderEncoding
-from segy.standards import registry
 from segy.standards.mapping import SEGY_FORMAT_MAP
+from segy.standards.minimal import minimal_segy
 
 
 @dataclass
@@ -45,7 +45,7 @@ def mock_segy_factory(request: pytest.FixtureRequest) -> SegyFactory:
     files parametrically. `SEGY_FACTORY_TEST_CONFIGS` defines the base configuration.
     """
     test_config = request.param
-    spec = registry.get_spec(SegyStandard.MINIMAL)
+    spec = minimal_segy
 
     # Set file wide attributes
     spec.endianness = test_config.endianness
@@ -71,7 +71,7 @@ def mock_segy_factory(request: pytest.FixtureRequest) -> SegyFactory:
 )
 def test_textual_file_header(encoding: TextHeaderEncoding) -> None:
     """Tests that the textual file header is written correctly."""
-    spec = registry.get_spec(SegyStandard.MINIMAL)
+    spec = minimal_segy
     spec.text_file_header.encoding = encoding
     factory = SegyFactory(spec)
 
@@ -102,7 +102,7 @@ def test_binary_file_header(
         mock_segy_factory.samples_per_trace,
         mock_segy_factory.samples_per_trace,
         SEGY_FORMAT_MAP[mock_segy_factory.trace_sample_format],
-        mock_segy_factory.segy_revision.value * 256,
+        mock_segy_factory.segy_revision.value * 256,  # type: ignore[union-attr]
         0,  # fixed length trace flag
         0,  # extended text headers
     )
@@ -216,7 +216,7 @@ class TestSegyFactoryExceptions:
 
     def test_create_trace_incorrect_ndim(self) -> None:
         """Check if trace dimensions are wrong."""
-        spec = registry.get_spec(SegyStandard.MINIMAL)
+        spec = minimal_segy
         factory = SegyFactory(spec, sample_interval=2, samples_per_trace=5)
 
         header_1d = factory.create_trace_header_template(5)
@@ -227,7 +227,7 @@ class TestSegyFactoryExceptions:
 
     def test_create_sample_num_samples_mismatch(self) -> None:
         """Check if trace number of samples are wrong."""
-        spec = registry.get_spec(SegyStandard.MINIMAL)
+        spec = minimal_segy
         factory = SegyFactory(spec, sample_interval=2, samples_per_trace=5)
 
         header_1d = factory.create_trace_header_template(size=5)
@@ -238,7 +238,7 @@ class TestSegyFactoryExceptions:
 
     def test_create_header_sample_mismatch(self) -> None:
         """Check if headers and traces are different sizes."""
-        spec = registry.get_spec(SegyStandard.MINIMAL)
+        spec = minimal_segy
         factory = SegyFactory(spec, sample_interval=2, samples_per_trace=11)
 
         header_1d = factory.create_trace_header_template(size=5)
