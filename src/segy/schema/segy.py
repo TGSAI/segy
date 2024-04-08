@@ -26,14 +26,12 @@ class SegyStandard(Enum):
     REV1 = 1.0
     REV2 = 2.0
     REV21 = 2.1
-    CUSTOM = "custom"
-    MINIMAL = "minimal"
 
 
 class SegyDescriptor(CamelCaseModel):
     """A descriptor class for a SEG-Y file."""
 
-    segy_standard: SegyStandard = Field(
+    segy_standard: SegyStandard | None = Field(
         ..., description="SEG-Y Revision / Standard. Can also be custom."
     )
     text_file_header: TextHeaderDescriptor = Field(
@@ -80,7 +78,7 @@ class SegyDescriptor(CamelCaseModel):
             A modified SEG-Y descriptor with "custom" segy standard.
         """
         new_descr = self.model_copy(deep=True)
-        new_descr.segy_standard = SegyStandard.CUSTOM
+        new_descr.segy_standard = None
 
         if text_header_spec:
             new_descr.text_file_header = text_header_spec

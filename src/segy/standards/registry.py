@@ -8,17 +8,17 @@ if TYPE_CHECKING:
     from segy.schema.segy import SegyDescriptor
     from segy.schema.segy import SegyStandard
 
-registry = {}
+segy_standard_registry = {}
 
 
-def register_spec(spec_type: SegyStandard, spec: SegyDescriptor) -> None:
+def register_segy_standard(spec_type: SegyStandard, spec: SegyDescriptor) -> None:
     """Register a SEG-Y standard with its descriptor."""
-    registry[spec_type] = spec
+    segy_standard_registry[spec_type] = spec
 
 
-def get_spec(spec_type: SegyStandard) -> SegyDescriptor:
+def get_segy_standard(spec_type: SegyStandard) -> SegyDescriptor:
     """Get a registered SEG-Y standard's descriptor."""
-    spec = registry.get(spec_type)
+    spec = segy_standard_registry.get(spec_type)
 
     if spec is None:
         msg = (
