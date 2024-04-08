@@ -17,7 +17,7 @@ from segy.indexing import TraceIndexer
 from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.schema import SegyStandard
-from segy.standards import registry
+from segy.standards import get_segy_standard
 from segy.standards.mapping import SEGY_FORMAT_MAP
 from segy.standards.rev1 import rev1_binary_file_header
 from segy.standards.rev1 import rev1_extended_text_header
@@ -38,7 +38,7 @@ def create_spec(
     sample_format: ScalarType | None = None,
 ) -> SegyDescriptor:
     """Create SegyDescriptor from SegyStandard, Endianness, and ScalarType."""
-    spec = registry.get_spec(standard)
+    spec = get_segy_standard(standard)
     spec.endianness = endian
 
     if sample_format is not None:
