@@ -190,6 +190,7 @@ class IbmFloatTransform(Transform):
     def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
         return self.ibm_func_map[self.direction](data)  # type: ignore
 
+
 class TraceIbmFloatTransform(Transform):
     """IBM float convert a header+array.
 
@@ -198,16 +199,30 @@ class TraceIbmFloatTransform(Transform):
         data: TraceArray to convert.
         type_to_convert: string of dtype to convert.
     """
-    def __init__(self,direction:str,type_to_convert:str, keys: list[str] | None = None, copy: TYPE_CHECKING = False) -> None:
-        super().__init__(keys, copy)
-        self.direction=direction
-        self.type_to_convert=type_to_convert
 
-    def _transform(self,data:NDArray[Any]):
-        ibm_header_keys=[name for name,field in data["header"].fields.items() if field[0].str == self.type_to_convert]
-        data.header = IbmFloatTransform(self.direction,ibm_header_keys).apply(data.header)
-        data.sample= IbmFloatTransform(self.direction,["sample"]).apply(data.sample)
+    def __init__(
+        self,
+        direction: str,
+        type_to_convert: str,
+        keys: list[str] | None = None,
+        copy: TYPE_CHECKING = False,
+    ) -> None:
+        super().__init__(keys, copy)
+        self.direction = direction
+        self.type_to_convert = type_to_convert
+
+    def _transform(self, data: NDArray[Any]):
+        ibm_header_keys = [
+            name
+            for name, field in data["header"].fields.items()
+            if field[0].str == self.type_to_convert
+        ]
+        data.header = IbmFloatTransform(self.direction, ibm_header_keys).apply(
+            data.header
+        )
+        data.sample = IbmFloatTransform(self.direction, ["sample"]).apply(data.sample)
         return data
+
 
 class TransformFactory:
     """Factory class to generate transformation strategies."""
@@ -247,5 +262,3 @@ class TransformPipeline:
         for transform in self.transforms:
             data = transform.apply(data)
         return data
-
-        
