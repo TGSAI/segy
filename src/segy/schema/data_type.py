@@ -54,6 +54,7 @@ class ScalarType(StrEnum):
     FLOAT64 = "float64"
     FLOAT32 = "float32"
     FLOAT16 = "float16"
+    STRING8 = "S8"
 
     @property
     def char(self) -> str:

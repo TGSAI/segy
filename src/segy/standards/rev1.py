@@ -15,10 +15,16 @@ from segy.standards.rev0 import TRACE_HEADER_FIELDS_REV0
 
 BINARY_FILE_HEADER_FIELDS_REV1 = BINARY_FILE_HEADER_FIELDS_REV0 + [
     StructuredFieldDescriptor(
-        name="seg_y_revision",
+        name="seg_y_revision_major",
         byte=301,
-        format=ScalarType.INT16,
-        description="SEG Y Format Revision Number",
+        format=ScalarType.UINT8,
+        description="SEG Y Format Revision Major Number",
+    ),
+    StructuredFieldDescriptor(
+        name="seg_y_revision_minor",
+        byte=302,
+        format=ScalarType.UINT8,
+        description="SEG Y Format Revision Minor Number",
     ),
     StructuredFieldDescriptor(
         name="fixed_length_trace_flag",
