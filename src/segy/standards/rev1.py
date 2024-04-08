@@ -37,37 +37,37 @@ BINARY_FILE_HEADER_FIELDS_REV1 = BINARY_FILE_HEADER_FIELDS_REV0 + [
 
 TRACE_HEADER_FIELDS_REV1 = TRACE_HEADER_FIELDS_REV0 + [
     StructuredFieldDescriptor(
-        name="x_coordinate",
+        name="cdp_x",
         offset=180,
         format=ScalarType.INT32,
         description="X coordinate of ensemble (CDP) position",
     ),
     StructuredFieldDescriptor(
-        name="y_coordinate",
+        name="cdp_y",
         offset=184,
         format=ScalarType.INT32,
         description="Y coordinate of ensemble (CDP) position",
     ),
     StructuredFieldDescriptor(
-        name="inline_no",
+        name="inline",
         offset=188,
         format=ScalarType.INT32,
         description="Inline number",
     ),
     StructuredFieldDescriptor(
-        name="crossline_no",
+        name="crossline",
         offset=192,
         format=ScalarType.INT32,
         description="Crossline number",
     ),
     StructuredFieldDescriptor(
-        name="shotpoint_no",
+        name="shot_point",
         offset=196,
         format=ScalarType.INT32,
         description="Shotpoint number",
     ),
     StructuredFieldDescriptor(
-        name="scalar_apply_shotpoint",
+        name="shot_point_scalar",
         offset=200,
         format=ScalarType.INT16,
         description="Scalar to be applied to the shotpoint number",
