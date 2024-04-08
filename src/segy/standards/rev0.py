@@ -209,7 +209,7 @@ TRACE_HEADER_FIELDS_REV0 = [
         description="Energy Source Point Number",
     ),
     StructuredFieldDescriptor(
-        name="cdp_ens_no",
+        name="ensemble_no",
         offset=20,
         format=ScalarType.INT32,
         description="Ensemble Number (CDP, CMP, etc.)",
@@ -227,7 +227,7 @@ TRACE_HEADER_FIELDS_REV0 = [
         description="Trace Identification Code",
     ),
     StructuredFieldDescriptor(
-        name="vert_sum",
+        name="vertical_sum",
         offset=30,
         format=ScalarType.INT16,
         description="Number of Vertically Stacked Traces",
