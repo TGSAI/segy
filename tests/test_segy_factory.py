@@ -102,7 +102,7 @@ def test_binary_file_header(
         mock_segy_factory.samples_per_trace,
         mock_segy_factory.samples_per_trace,
         SEGY_FORMAT_MAP[mock_segy_factory.trace_sample_format],
-        mock_segy_factory.segy_revision.value * 256,
+        mock_segy_factory.segy_revision.value * 256,  # type: ignore[union-attr]
         0,  # fixed length trace flag
         0,  # extended text headers
     )

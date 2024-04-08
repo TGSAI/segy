@@ -62,7 +62,7 @@ class SegyFactory:
         return self.spec.trace.sample_descriptor.format
 
     @property
-    def segy_revision(self) -> SegyStandard:
+    def segy_revision(self) -> SegyStandard | None:
         """Revision of the SEG-Y file."""
         return self.spec.segy_standard
 
@@ -96,7 +96,8 @@ class SegyFactory:
         binary_descriptor = self.spec.binary_file_header
         bin_header = np.zeros(shape=1, dtype=binary_descriptor.dtype)
 
-        if self.segy_revision != SegyStandard.REV0:
+        rev0 = self.segy_revision == SegyStandard.REV0
+        if self.segy_revision is not None and not rev0:
             bin_header["seg_y_revision"] = self.segy_revision.value * 256
 
         bin_header["sample_interval"] = self.sample_interval

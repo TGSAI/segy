@@ -28,7 +28,7 @@ def info(uri: UriArgument, output: JsonFileOutOption = None) -> None:
 
     info = SegyInfo(
         uri=uri,
-        segy_standard=spec.segy_standard.value,
+        segy_standard=spec.segy_standard,
         num_traces=segy.num_traces,
         samples_per_trace=segy.samples_per_trace,
         sample_interval=segy.sample_interval,

@@ -107,7 +107,7 @@ class SegyInfo(CamelCaseModel):
 
     uri: str = Field(..., description="URI of the SEG-Y file.")
 
-    segy_standard: SegyStandard = Field(
+    segy_standard: SegyStandard | None = Field(
         ..., description="SEG-Y Revision / Standard. Can also be custom."
     )
 
