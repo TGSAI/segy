@@ -196,31 +196,28 @@ class TraceIbmFloatTransform(Transform):
 
     Args:
         direction: IBM Float convertsion direction.
-        data: TraceArray to convert.
-        type_to_convert: string of dtype to convert.
+        header_keys: list of keys for the header fields to convert.
+        copy: flag for copying data before converting.
     """
 
     def __init__(
         self,
         direction: str,
-        type_to_convert: str,
-        keys: list[str] | None = None,
-        copy: TYPE_CHECKING = False,
+        header_keys: list[str],
+        copy: bool = False,
     ) -> None:
-        super().__init__(keys, copy)
+        super().__init__(copy=copy)
         self.direction = direction
-        self.type_to_convert = type_to_convert
+        self.header_keys = header_keys
+        self.copy = copy
 
-    def _transform(self, data: NDArray[Any]):
-        ibm_header_keys = [
-            name
-            for name, field in data["header"].fields.items()
-            if field[0].str == self.type_to_convert
-        ]
-        data.header = IbmFloatTransform(self.direction, ibm_header_keys).apply(
-            data.header
-        )
-        data.sample = IbmFloatTransform(self.direction, ["sample"]).apply(data.sample)
+    def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        data.header = TransformFactory.create(
+            "ibm_float", self.direction, self.header_keys, copy=self.copy
+        ).apply(data.header)
+        data = TransformFactory.create(
+            "ibm_float", self.direction, ["sample"], copy=self.copy
+        ).apply(data)
         return data
 
 
@@ -230,6 +227,7 @@ class TransformFactory:
     transform_map: dict[str, type[Transform]] = {
         "byte_swap": ByteSwapTransform,
         "ibm_float": IbmFloatTransform,
+        "trace_ibm_float": TraceIbmFloatTransform,
     }
 
     @classmethod
