@@ -24,7 +24,7 @@ class TraceAccessor:
         self.header_ibm_keys = [
             field.name
             for field in self.trace_spec.header_descriptor.fields
-            if field.dtype == ScalarType.IBM32
+            if field.format == ScalarType.IBM32
         ]
         self.header_decode_transforms: list[Transform] = []
         self.sample_decode_transforms: list[Transform] = []
