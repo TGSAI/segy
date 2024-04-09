@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
 from typing import Literal
 from typing import cast
 
 import numpy as np
 from pydantic import Field
+from pydantic import field_validator
+from pydantic import model_validator
 
 from segy.compat import StrEnum
 from segy.schema.base import BaseTypeDescriptor
@@ -208,9 +211,9 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
     def dtype(self) -> np.dtype[Any]:
         """Converts the names, data types, and offsets of the object into a NumPy dtype."""
         dtype_conf = {
-            "names": [field.name for field in self.fields],
-            "formats": [field.dtype for field in self.fields],
-            "offsets": [field.offset for field in self.fields],
+            "names": self.names,
+            "formats": self.formats,
+            "offsets": self.offsets,
         }
 
         if self.item_size is not None:
@@ -222,3 +225,74 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
             struct_dtype = struct_dtype.newbyteorder(self.endianness.symbol)
 
         return struct_dtype  # type: ignore[no-any-return]
+
+    @property
+    def names(self) -> list[str]:
+        """Get the names of the fields."""
+        return [field.name for field in self.fields]
+
+    @property
+    def formats(self) -> list[str]:
+        """Get the formats of the fields."""
+        return [field.format for field in self.fields]
+
+    @property
+    def offsets(self) -> list[int]:
+        """Get the offsets the fields."""
+        return [field.offset for field in self.fields]
+
+    @field_validator("fields")
+    @classmethod
+    def ensure_no_duplicate_fields(
+        cls: StructuredDataTypeDescriptor, fields: list[StructuredFieldDescriptor]
+    ) -> list[StructuredFieldDescriptor]:
+        """Check if fields are unique and error out if not."""
+        name_counter = Counter(field.name for field in fields)
+        duplicates = [name for name, count in name_counter.items() if count > 1]
+
+        if duplicates:
+            msg = f"Duplicate header fields detected: {', '.join(duplicates)}."
+            raise ValueError(msg)
+
+        return fields
+
+    @model_validator(mode="after")
+    def ensure_offsets_in_itemsize_bounds(self) -> StructuredDataTypeDescriptor:
+        """Ensure fields don't go above the allowed itemsize."""
+        max_field = max(self.fields, key=lambda field: field.offset)
+
+        if max_field.offset + max_field.dtype.itemsize > self.item_size:
+            msg = "Offsets exceed allowed header size."
+            raise ValueError(msg)
+
+        return self
+
+    def add_field(
+        self, field: StructuredFieldDescriptor, overwrite: bool = False
+    ) -> None:
+        """Add a field to the structured data type."""
+        if field.name in self.names and overwrite is False:
+            msg = (
+                f"Field named {field.name} already exists. If you wish to "
+                "overwrite an existing field, pass `overwrite=True`."
+            )
+            raise KeyError(msg)
+
+        if field.name not in self.names:
+            self.fields.append(field)
+        else:
+            field_idx = self.names.index(field.name)
+            self.fields[field_idx] = field
+
+        # Trigger validation
+        self.fields = self.fields
+
+    def remove_field(self, name: str) -> None:
+        """Remove a field from the structured data type by name."""
+        try:
+            field_idx = self.names.index(name)
+        except ValueError as err:
+            msg = f"Field named {name} does not exist."
+            raise KeyError(msg) from err
+
+        del self.fields[field_idx]
