@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from fsspec.core import url_to_fs
 
+from segy.accessors import TraceAccessor
 from segy.arrays import HeaderArray
 from segy.config import SegyFileSettings
 from segy.indexing import HeaderIndexer
@@ -133,6 +134,7 @@ class SegyFile:
 
         self._info = self.fs.info(self.url)
         self._parse_binary_header()
+        self.accessors = TraceAccessor(self.spec.trace)
 
     @property
     def file_size(self) -> int:
@@ -247,13 +249,6 @@ class SegyFile:
     @property
     def sample(self) -> AbstractIndexer:
         """Way to access the file to fetch trace data only."""
-        transforms = [
-            TransformFactory.create("byte_swap", Endianness.LITTLE),
-        ]
-
-        if self.spec.trace.sample_descriptor.format == ScalarType.IBM32:
-            transforms.append(TransformFactory.create("ibm_float", "to_ieee"))
-
         return SampleIndexer(
             self.fs,
             self.url,
@@ -261,22 +256,12 @@ class SegyFile:
             self.num_traces,
             kind="sample",
             settings=self.settings,
-            transforms=transforms,
+            transforms=self.accessors.sample_decode_transforms,
         )
 
     @property
     def header(self) -> HeaderIndexer:
         """Way to access the file to fetch trace headers only."""
-        ibm_header_keys = [
-            field.name
-            for field in self.spec.trace.header_descriptor.fields
-            if field.dtype == ScalarType.IBM32
-        ]
-        transforms = [
-            TransformFactory.create("byte_swap", Endianness.LITTLE),
-            TransformFactory.create("ibm_float", "to_ieee", keys=ibm_header_keys),
-        ]
-
         return HeaderIndexer(
             self.fs,
             self.url,
@@ -284,21 +269,12 @@ class SegyFile:
             self.num_traces,
             kind="header",
             settings=self.settings,
-            transforms=transforms,
+            transforms=self.accessors.header_decode_transforms,
         )
 
     @property
     def trace(self) -> TraceIndexer:
         """Way to access the file to fetch full traces (headers + data)."""
-        transforms = [
-            TransformFactory.create("byte_swap", Endianness.LITTLE),
-        ]
-
-        if self.spec.trace.sample_descriptor.format == ScalarType.IBM32:
-            transforms.append(
-                TransformFactory.create("ibm_float", "to_ieee", keys=["sample"])
-            )
-
         return TraceIndexer(
             self.fs,
             self.url,
@@ -306,5 +282,5 @@ class SegyFile:
             self.num_traces,
             kind="trace",
             settings=self.settings,
-            transforms=transforms,
+            transforms=self.accessors.trace_decode_transforms,
         )

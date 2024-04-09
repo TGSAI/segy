@@ -191,43 +191,12 @@ class IbmFloatTransform(Transform):
         return self.ibm_func_map[self.direction](data)  # type: ignore
 
 
-class TraceIbmFloatTransform(Transform):
-    """IBM float convert a header+array.
-
-    Args:
-        direction: IBM Float convertsion direction.
-        header_keys: list of keys for the header fields to convert.
-        copy: flag for copying data before converting.
-    """
-
-    def __init__(
-        self,
-        direction: str,
-        header_keys: list[str],
-        copy: bool = False,
-    ) -> None:
-        super().__init__(copy=copy)
-        self.direction = direction
-        self.header_keys = header_keys
-        self.copy = copy
-
-    def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        data.header = TransformFactory.create(
-            "ibm_float", self.direction, self.header_keys, copy=self.copy
-        ).apply(data.header)
-        data = TransformFactory.create(
-            "ibm_float", self.direction, ["sample"], copy=self.copy
-        ).apply(data)
-        return data
-
-
 class TransformFactory:
     """Factory class to generate transformation strategies."""
 
     transform_map: dict[str, type[Transform]] = {
         "byte_swap": ByteSwapTransform,
         "ibm_float": IbmFloatTransform,
-        "trace_ibm_float": TraceIbmFloatTransform,
     }
 
     @classmethod
