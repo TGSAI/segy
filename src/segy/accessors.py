@@ -49,7 +49,7 @@ class TraceAccessor:
                 TransformFactory.create("ibm_float", "to_ieee", ["sample"])
             )
 
-        if self.header_ibm_keys:
+        if len(self.header_ibm_keys) != 0:
             self.header_decode_transforms.append(
                 TransformFactory.create(
                     "ibm_float", "to_ieee", keys=self.header_ibm_keys
