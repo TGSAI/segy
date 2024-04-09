@@ -10,6 +10,7 @@ from segy.transforms import TransformFactory
 
 if TYPE_CHECKING:
     from segy.schema import TraceDescriptor
+    from segy.transforms import Transform
 
 
 class TraceAccessor:
@@ -17,6 +18,7 @@ class TraceAccessor:
 
     trace_spec: Descriptor of TraceArray dtype.
     """
+
     def __init__(self, trace_spec: TraceDescriptor) -> None:
         self.trace_spec = trace_spec
         self.header_ibm_keys = [
@@ -24,9 +26,9 @@ class TraceAccessor:
             for field in self.trace_spec.header_descriptor.fields
             if field.dtype == ScalarType.IBM32
         ]
-        self.header_decode_transforms = []
-        self.sample_decode_transforms = []
-        self.trace_decode_transforms = []
+        self.header_decode_transforms: list[Transform] = []
+        self.sample_decode_transforms: list[Transform] = []
+        self.trace_decode_transforms: list[Transform] = []
         self._update_decoders()
 
     def _update_decoders(self) -> None:
