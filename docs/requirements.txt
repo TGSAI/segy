@@ -5,4 +5,4 @@ furo==2024.4.27
 myst-nb==1.1.0
 linkify-it-py==2.0.3
 autodoc-pydantic==2.2.0
-sphinxcontrib-typer==0.2.1
+sphinxcontrib-typer==0.2.5
