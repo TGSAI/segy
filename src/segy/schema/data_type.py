@@ -244,7 +244,7 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
     @field_validator("fields")
     @classmethod
     def ensure_no_duplicate_fields(
-        cls: StructuredDataTypeDescriptor, fields: list[StructuredFieldDescriptor]
+        cls: type[StructuredDataTypeDescriptor], fields: list[StructuredFieldDescriptor]
     ) -> list[StructuredFieldDescriptor]:
         """Check if fields are unique and error out if not."""
         name_counter = Counter(field.name for field in fields)
