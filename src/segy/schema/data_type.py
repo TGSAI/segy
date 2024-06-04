@@ -259,6 +259,9 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
     @model_validator(mode="after")
     def ensure_offsets_in_itemsize_bounds(self) -> StructuredDataTypeDescriptor:
         """Ensure fields don't go above the allowed itemsize."""
+        if len(self.fields) == 0:
+            return self
+
         max_field = max(self.fields, key=lambda field: field.offset)
 
         if max_field.offset + max_field.dtype.itemsize > self.item_size:
