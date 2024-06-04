@@ -77,9 +77,16 @@ def unpack_binary_header(
     # Get sample format
     sample_format = struct.unpack_from(format_, buffer, offset=24)[0]
 
-    # # Get revision. Per SEG-Y standard, there is a Q-point between the
-    # bytes. Dividing by 2^8 to get the floating-point value of the revision.
-    revision = struct.unpack_from(format_, buffer, offset=300)[0] / 256.0
+    # Get revision
+    revision_major = struct.unpack_from("B", buffer, offset=300)[0]
+    revision_minor = struct.unpack_from("B", buffer, offset=301)[0]
+
+    # Handle the case where rev1.0 and little-endian. Flip major/minor. In rev2+
+    # endianness is not applicable in revision fields because they're single byte.
+    if revision_minor == 1 and revision_major == 0:
+        revision_major, revision_minor = 1, 0
+
+    revision = float(f"{revision_major}.{revision_minor}")
 
     return sample_increment, revision, sample_format
 

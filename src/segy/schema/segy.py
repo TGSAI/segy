@@ -27,6 +27,16 @@ class SegyStandard(Enum):
     REV2 = 2.0
     REV21 = 2.1
 
+    @property
+    def major(self) -> int:
+        """Get the major value of the SEG-Y standard."""
+        return int(str(self.value).split(".")[0])
+
+    @property
+    def minor(self) -> int:
+        """Get the minor value of the SEG-Y standard."""
+        return int(str(self.value).split(".")[1])
+
 
 class SegyDescriptor(CamelCaseModel):
     """A descriptor class for a SEG-Y file."""

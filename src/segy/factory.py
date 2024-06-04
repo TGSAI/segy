@@ -98,7 +98,18 @@ class SegyFactory:
 
         rev0 = self.segy_revision == SegyStandard.REV0
         if self.segy_revision is not None and not rev0:
-            bin_header["seg_y_revision"] = self.segy_revision.value * 256
+            major, minor = divmod(self.segy_revision.value * 10, 10)
+
+            # Handle the case where rev1.0 and little-endian. Flip major/minor.
+            # In rev2+ endianness is not applicable in revision fields because
+            # they're single byte.
+            rev1 = self.segy_revision == SegyStandard.REV1
+            little_endian = self.spec.endianness == Endianness.LITTLE
+            if rev1 and little_endian:
+                major, minor = 0, 1
+
+            bin_header["seg_y_revision_major"] = major
+            bin_header["seg_y_revision_minor"] = minor
 
         bin_header["sample_interval"] = self.sample_interval
         bin_header["sample_interval_orig"] = self.sample_interval

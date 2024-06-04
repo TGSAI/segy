@@ -312,8 +312,10 @@ class TestSegyFileSettingsOverride:
         assert segy_file.spec.segy_standard == SegyStandard.REV1
         assert segy_file.spec.endianness == Endianness.LITTLE
         # Rev1 should have below field, but the value will be zero
-        assert "seg_y_revision" in segy_file.binary_header.dtype.names
-        assert segy_file.binary_header["seg_y_revision"] == 0
+        assert "seg_y_revision_major" in segy_file.binary_header.dtype.names
+        assert "seg_y_revision_minor" in segy_file.binary_header.dtype.names
+        assert segy_file.binary_header["seg_y_revision_major"] == 0
+        assert segy_file.binary_header["seg_y_revision_minor"] == 0
 
     @pytest.mark.parametrize("num_ext_text", [2])
     def test_ext_text_header_override(
