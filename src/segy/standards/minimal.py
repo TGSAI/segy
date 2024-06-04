@@ -13,49 +13,49 @@ from segy.schema.data_type import StructuredFieldDescriptor
 BINARY_FILE_HEADER_FIELDS = [
     StructuredFieldDescriptor(
         name="sample_interval",
-        offset=16,
+        byte=17,
         format=ScalarType.INT16,
         description="Sample Interval",
     ),
     StructuredFieldDescriptor(
         name="sample_interval_orig",
-        offset=18,
+        byte=19,
         format=ScalarType.INT16,
         description="Sample Interval of Original Field Recording",
     ),
     StructuredFieldDescriptor(
         name="samples_per_trace",
-        offset=20,
+        byte=21,
         format=ScalarType.INT16,
         description="Number of Samples per Data Trace",
     ),
     StructuredFieldDescriptor(
         name="samples_per_trace_orig",
-        offset=22,
+        byte=13,
         format=ScalarType.INT16,
         description="Number of Samples per Data Trace for Original Field Recording",
     ),
     StructuredFieldDescriptor(
         name="data_sample_format",
-        offset=24,
+        byte=25,
         format=ScalarType.INT16,
         description="Data Sample Format Code",
     ),
     StructuredFieldDescriptor(
         name="seg_y_revision",
-        offset=300,
+        byte=301,
         format=ScalarType.INT16,
         description="SEG Y Format Revision Number",
     ),
     StructuredFieldDescriptor(
         name="fixed_length_trace_flag",
-        offset=302,
+        byte=303,
         format=ScalarType.INT16,
         description="Fixed Length Trace Flag",
     ),
     StructuredFieldDescriptor(
         name="extended_textual_headers",
-        offset=304,
+        byte=305,
         format=ScalarType.INT16,
         description="Number of 3200-byte, Extended Textual File Header Records Following the Binary Header",  # noqa: E501
     ),

@@ -32,25 +32,25 @@ class TestBaseDataTypes:
 
     @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
     @pytest.mark.parametrize(
-        ("names", "offsets", "formats", "itemsize"),
+        ("names", "bytes_", "formats", "itemsize"),
         [
-            (["f1"], [0], [ScalarType.INT32], None),
-            (["f1", "f2"], [0, 8], [ScalarType.UINT8, ScalarType.INT32], None),
-            (["f1", "f2"], [0, 12], [ScalarType.UINT8, ScalarType.INT16], 20),
+            (["f1"], [1], [ScalarType.INT32], None),
+            (["f1", "f2"], [1, 9], [ScalarType.UINT8, ScalarType.INT32], None),
+            (["f1", "f2"], [1, 13], [ScalarType.UINT8, ScalarType.INT16], 20),
         ],
     )
     def test_structured_data_type_descriptor(  # noqa: PLR0913
         self,
         endianness: Endianness,
         names: list[str],
-        offsets: list[int],
+        bytes_: list[int],
         formats: list[ScalarType],
         itemsize: int,
     ) -> None:
         """Test StructuredDataTypeDescriptor and its dtype attribute."""
         fields = [
-            StructuredFieldDescriptor(name=name, offset=offset, format=format_)
-            for name, offset, format_ in zip(names, offsets, formats)
+            StructuredFieldDescriptor(name=name, byte=byte, format=format_)
+            for name, byte, format_ in zip(names, bytes_, formats)
         ]
 
         struct_descriptor = StructuredDataTypeDescriptor(
@@ -72,8 +72,8 @@ def test_structured_data_type_descriptor_json_validate() -> None:
     {
       "description": "dummy description",
       "fields": [
-        {"description": "field1", "format": "int32", "name": "f1", "offset": 0},
-        {"description": "field2", "format": "ibm32", "name": "f2", "offset": 4}
+        {"description": "field1", "format": "int32", "name": "f1", "byte": 1},
+        {"description": "field2", "format": "ibm32", "name": "f2", "byte": 5}
       ],
       "itemSize": 12,
       "offset": 200,

@@ -45,9 +45,7 @@ def mock_trace_spec(
     header_field_type = request.param[0]
     sample_field_type = request.param[1]
     trace_header_spec = StructuredDataTypeDescriptor(
-        fields=[
-            StructuredFieldDescriptor(name="h1", format=header_field_type, offset=0)
-        ],
+        fields=[StructuredFieldDescriptor(name="h1", format=header_field_type, byte=1)],
         item_size=4,
         endianness=Endianness.BIG,
         offset=0,
