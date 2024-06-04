@@ -48,12 +48,12 @@ from segy.schema.data_type import StructuredFieldDescriptor
 trace_header_fields = [
     StructuredFieldDescriptor(
         name="inline",
-        offset=188,
+        byte=189,
         format="int32",
     ),
     StructuredFieldDescriptor(
         name="crossline",
-        offset=192,
+        byte=193,
         format="int32",
     ),
 ]
@@ -129,12 +129,12 @@ the `JSON`.
       {
         "format": "int32",
         "name": "inline",
-        "offset": 188
+        "byte": 189
       },
       {
         "format": "int32",
         "name": "crossline",
-        "offset": 192
+        "byte": 193
       }
     ],
     "itemSize": 240

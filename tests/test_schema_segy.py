@@ -40,9 +40,9 @@ class TestSegyDescriptorCustomize:
     def test_custom_binary_file_headers(self, segy_descriptor: SegyDescriptor) -> None:
         """Test customizing binary file header descriptor."""
         custom_fields = [
-            StructuredFieldDescriptor(name="f1", format=ScalarType.UINT8, offset=16),
-            StructuredFieldDescriptor(name="f2", format=ScalarType.INT16, offset=32),
-            StructuredFieldDescriptor(name="f3", format=ScalarType.UINT32, offset=300),
+            StructuredFieldDescriptor(name="f1", format=ScalarType.UINT8, byte=17),
+            StructuredFieldDescriptor(name="f2", format=ScalarType.INT16, byte=33),
+            StructuredFieldDescriptor(name="f3", format=ScalarType.UINT32, byte=301),
         ]
 
         custom_spec = segy_descriptor.customize(binary_header_fields=custom_fields)
@@ -56,8 +56,8 @@ class TestSegyDescriptorCustomize:
     def test_custom_trace_headers(self, segy_descriptor: SegyDescriptor) -> None:
         """Test customizing trace header descriptor."""
         custom_fields = [
-            StructuredFieldDescriptor(name="f1", format=ScalarType.UINT8, offset=8),
-            StructuredFieldDescriptor(name="f2", format=ScalarType.UINT32, offset=150),
+            StructuredFieldDescriptor(name="f1", format=ScalarType.UINT8, byte=9),
+            StructuredFieldDescriptor(name="f2", format=ScalarType.UINT32, byte=151),
         ]
 
         custom_spec = segy_descriptor.customize(trace_header_fields=custom_fields)

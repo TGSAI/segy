@@ -34,8 +34,8 @@ class TestTraceDescriptors:
         """Testing dtype attribute and contents of TraceDescriptor."""
         header_descr = StructuredDataTypeDescriptor(
             fields=[
-                StructuredFieldDescriptor(name="h1", format=ScalarType.INT16, offset=0),
-                StructuredFieldDescriptor(name="h2", format=ScalarType.INT8, offset=16),
+                StructuredFieldDescriptor(name="h1", format=ScalarType.INT16, byte=1),
+                StructuredFieldDescriptor(name="h2", format=ScalarType.INT8, byte=17),
             ]
         )
         sample_descr = TraceSampleDescriptor(

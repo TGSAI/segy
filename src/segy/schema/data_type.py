@@ -93,19 +93,22 @@ class StructuredFieldDescriptor(DataTypeDescriptor):
     """A class representing a descriptor for a structured data-type field.
 
     Examples:
-        A named float at offset 8-bytes:
+        A named float starting at byte location 9:
 
         >>> data_type = StructuredFieldDescriptor(
         >>>     name="my_var",
         >>>     format="float32",
-        >>>     offset=8,
+        >>>     byte=9,
         >>> )
 
-        The name and offset fields will only be used if the structured
+        The name, byte, and offset fields will only be used if the structured
         field is used within the context of a :class:`StructuredDataTypeDescriptor`.
+        Offset is calculated automatically from byte location.
 
         >>> data_type.name
         my_var
+        >>> data_type.byte
+        9
         >>> data_type.offset
         8
 
@@ -116,7 +119,12 @@ class StructuredFieldDescriptor(DataTypeDescriptor):
     """
 
     name: str = Field(..., description="The short name of the field.")
-    offset: int = Field(..., ge=0, description="Starting byte offset.")
+    byte: int = Field(..., ge=1, description="Field's start byte location.")
+
+    @property
+    def offset(self) -> int:
+        """Return zero based offset from one based byte location."""
+        return self.byte - 1
 
 
 class StructuredDataTypeDescriptor(BaseTypeDescriptor):
@@ -131,17 +139,17 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
         >>> field1 = StructuredFieldDescriptor(
         >>>     name="foo",
         >>>     format="int32",
-        >>>     offset=0,
+        >>>     byte=1,
         >>> )
         >>> field2 = StructuredFieldDescriptor(
         >>>     name="bar",
         >>>     format="int16",
-        >>>     offset=4,
+        >>>     byte=5,
         >>> )
         >>> field3 = StructuredFieldDescriptor(
         >>>     name="fizz",
         >>>     format="int32",
-        >>>     offset=16,
+        >>>     byte=17,
         >>> )
 
         Note that the fields span the following byte ranges:

@@ -54,9 +54,9 @@ def mock_segy_factory(request: pytest.FixtureRequest) -> SegyFactory:
     # Shrink trace headers to 16-bytes and add a few fields
     spec.trace.header_descriptor.item_size = 16
     spec.trace.header_descriptor.fields = [
-        StructuredFieldDescriptor(name="field1", format=ScalarType.INT8, offset=2),
-        StructuredFieldDescriptor(name="field2", format=ScalarType.INT32, offset=4),
-        StructuredFieldDescriptor(name="field3", format=ScalarType.UINT8, offset=10),
+        StructuredFieldDescriptor(name="field1", format=ScalarType.INT8, byte=3),
+        StructuredFieldDescriptor(name="field2", format=ScalarType.INT32, byte=5),
+        StructuredFieldDescriptor(name="field3", format=ScalarType.UINT8, byte=11),
     ]
 
     return SegyFactory(
@@ -130,8 +130,8 @@ class TestSegyFactoryTraces:
         mock_segy_factory.spec.trace.header_descriptor.item_size = 26
         # fmt: off
         mock_segy_factory.spec.trace.header_descriptor.fields += [
-            StructuredFieldDescriptor(name="sample_interval", format=ScalarType.INT16, offset=12),
-            StructuredFieldDescriptor(name="samples_per_trace", format=ScalarType.INT16, offset=24),
+            StructuredFieldDescriptor(name="sample_interval", format=ScalarType.INT16, byte=13),
+            StructuredFieldDescriptor(name="samples_per_trace", format=ScalarType.INT16, byte=25),
         ]
         # fmt: on
 
