@@ -134,7 +134,7 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
         Let's build a structured data type from scratch!
 
         We will define three fields with different names, data-types, and
-        starting offsets.
+        start byte locations.
 
         >>> field1 = StructuredFieldDescriptor(
         >>>     name="foo",
