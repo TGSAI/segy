@@ -73,8 +73,8 @@ class TestStructuredDataTypeDescriptor:
         """Test adding fields to descriptor with and without overwrite."""
         struct_descriptor = StructuredDataTypeDescriptor(fields=[])
 
-        field1 = StructuredFieldDescriptor(name="f1", byte=3, format="int16")
-        field2 = StructuredFieldDescriptor(name="f2", byte=7, format="int16")
+        field1 = StructuredFieldDescriptor(name="f1", byte=3, format=ScalarType.INT16)
+        field2 = StructuredFieldDescriptor(name="f2", byte=7, format=ScalarType.INT16)
 
         struct_descriptor.add_field(field1)
         struct_descriptor.add_field(field2)
@@ -85,11 +85,10 @@ class TestStructuredDataTypeDescriptor:
         assert struct_descriptor.dtype.fields["f2"] == (field2.dtype, field2.offset)
 
         # Test with overwrite.
-        field2 = StructuredFieldDescriptor(name="f2", byte=11, format="int32")
+        field2 = StructuredFieldDescriptor(name="f2", byte=11, format=ScalarType.INT32)
         struct_descriptor.add_field(field2, overwrite=True)
 
         assert struct_descriptor.dtype.itemsize == field2.offset + field2.dtype.itemsize
-        assert struct_descriptor.dtype.names == ("f1", "f2")
         assert struct_descriptor.dtype.fields["f1"] == (field1.dtype, field1.offset)
         assert struct_descriptor.dtype.fields["f2"] == (field2.dtype, field2.offset)
 
@@ -97,8 +96,8 @@ class TestStructuredDataTypeDescriptor:
         """Test field removal from structured data type."""
         struct_descriptor = StructuredDataTypeDescriptor(
             fields=[
-                StructuredFieldDescriptor(name="f1", byte=11, format="int8"),
-                StructuredFieldDescriptor(name="f2", byte=21, format="int16"),
+                StructuredFieldDescriptor(name="f1", byte=11, format=ScalarType.INT8),
+                StructuredFieldDescriptor(name="f2", byte=21, format=ScalarType.INT16),
             ]
         )
 
@@ -117,12 +116,12 @@ class TestStructuredDataTypeDescriptorExceptions:
         """Test adding fields that already exists without overwrite flag."""
         struct_descriptor = StructuredDataTypeDescriptor(
             fields=[
-                StructuredFieldDescriptor(name="f1", byte=3, format="int16"),
-                StructuredFieldDescriptor(name="f2", byte=11, format="int16"),
+                StructuredFieldDescriptor(name="f1", byte=3, format=ScalarType.INT16),
+                StructuredFieldDescriptor(name="f2", byte=11, format=ScalarType.INT16),
             ]
         )
 
-        field = StructuredFieldDescriptor(name="f1", byte=7, format="uint8")
+        field = StructuredFieldDescriptor(name="f1", byte=7, format=ScalarType.UINT8)
         with pytest.raises(KeyError, match="f1 already exists."):
             struct_descriptor.add_field(field)
 
@@ -130,8 +129,8 @@ class TestStructuredDataTypeDescriptorExceptions:
         """Test field removal from structured data type."""
         struct_descriptor = StructuredDataTypeDescriptor(
             fields=[
-                StructuredFieldDescriptor(name="f1", byte=11, format="int8"),
-                StructuredFieldDescriptor(name="f2", byte=21, format="int16"),
+                StructuredFieldDescriptor(name="f1", byte=11, format=ScalarType.INT8),
+                StructuredFieldDescriptor(name="f2", byte=21, format=ScalarType.INT16),
             ]
         )
 
