@@ -232,9 +232,9 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
         return [field.name for field in self.fields]
 
     @property
-    def formats(self) -> list[str]:
+    def formats(self) -> list[np.dtype[Any]]:
         """Get the formats of the fields."""
-        return [field.format for field in self.fields]
+        return [field.dtype for field in self.fields]
 
     @property
     def offsets(self) -> list[int]:
