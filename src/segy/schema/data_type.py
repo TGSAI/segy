@@ -264,6 +264,9 @@ class StructuredDataTypeDescriptor(BaseTypeDescriptor):
 
         max_field = max(self.fields, key=lambda field: field.offset)
 
+        if self.item_size is None:
+            return self
+
         if max_field.offset + max_field.dtype.itemsize > self.item_size:
             msg = "Offsets exceed allowed header size."
             raise ValueError(msg)
