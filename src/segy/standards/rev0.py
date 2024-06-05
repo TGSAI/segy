@@ -185,7 +185,7 @@ TRACE_HEADER_FIELDS_REV0 = [
         description="Trace Sequence Number within Line",
     ),
     HeaderField(
-        name="trace_seq_reel",
+        name="trace_seq_file",
         byte=5,
         format=ScalarType.INT32,
         description="Trace Sequence Number within File",
