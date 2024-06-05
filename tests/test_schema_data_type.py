@@ -79,18 +79,20 @@ class TestStructuredDataTypeDescriptor:
         struct_descriptor.add_field(field1)
         struct_descriptor.add_field(field2)
 
+        actual_fields = dict(struct_descriptor.dtype.fields)  # type: ignore
         assert struct_descriptor.dtype.itemsize == field2.offset + field2.dtype.itemsize
         assert struct_descriptor.dtype.names == ("f1", "f2")
-        assert struct_descriptor.dtype.fields["f1"] == (field1.dtype, field1.offset)
-        assert struct_descriptor.dtype.fields["f2"] == (field2.dtype, field2.offset)
+        assert actual_fields["f1"] == (field1.dtype, field1.offset)
+        assert actual_fields["f2"] == (field2.dtype, field2.offset)
 
         # Test with overwrite.
         field2 = StructuredFieldDescriptor(name="f2", byte=11, format=ScalarType.INT32)
         struct_descriptor.add_field(field2, overwrite=True)
 
+        actual_fields = dict(struct_descriptor.dtype.fields)  # type: ignore
         assert struct_descriptor.dtype.itemsize == field2.offset + field2.dtype.itemsize
-        assert struct_descriptor.dtype.fields["f1"] == (field1.dtype, field1.offset)
-        assert struct_descriptor.dtype.fields["f2"] == (field2.dtype, field2.offset)
+        assert actual_fields["f1"] == (field1.dtype, field1.offset)
+        assert actual_fields["f2"] == (field2.dtype, field2.offset)
 
     def test_remove_structured_field(self) -> None:
         """Test field removal from structured data type."""
