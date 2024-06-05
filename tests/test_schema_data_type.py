@@ -114,6 +114,15 @@ class TestStructuredDataTypeDescriptor:
 class TestStructuredDataTypeDescriptorExceptions:
     """Test exceptions in structured descriptors."""
 
+    def test_duplicate_field_exception(self) -> None:
+        """Test expected failure when multiple keys are provided more than once."""
+        fields_with_duplicate = [
+            StructuredFieldDescriptor(name="f1", byte=3, format=ScalarType.INT16),
+            StructuredFieldDescriptor(name="f1", byte=9, format=ScalarType.INT16),
+        ]
+        with pytest.raises(ValueError, match="Duplicate header fields detected"):
+            StructuredDataTypeDescriptor(fields=fields_with_duplicate)
+
     def test_add_field_exception(self) -> None:
         """Test adding fields that already exists without overwrite flag."""
         struct_descriptor = StructuredDataTypeDescriptor(
