@@ -205,6 +205,9 @@ def docs_build(session: Session) -> None:
         "myst-nb",
         "linkify-it-py",
         "autodoc-pydantic",
+        # for executing notebooks in docs
+        "s3fs",
+        "matplotlib",
     )
 
     build_dir = Path("docs", "_build")
