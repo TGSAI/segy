@@ -1,4 +1,4 @@
-"""Descriptor data model implementations for SEG-Y file(s)."""
+"""Data model implementations for SEG-Y file spec."""
 
 from __future__ import annotations
 
@@ -11,16 +11,16 @@ from pydantic import model_validator
 from segy.schema.base import CamelCaseModel
 
 if TYPE_CHECKING:
-    from segy.schema.data_type import Endianness
-    from segy.schema.data_type import StructuredDataTypeDescriptor
-    from segy.schema.data_type import StructuredFieldDescriptor
-    from segy.schema.header import TextHeaderDescriptor
-    from segy.schema.trace import TraceDescriptor
-    from segy.schema.trace import TraceSampleDescriptor
+    from segy.schema.base import Endianness
+    from segy.schema.header import HeaderField
+    from segy.schema.header import HeaderSpec
+    from segy.schema.text_header import TextHeaderSpec
+    from segy.schema.trace import TraceDataSpec
+    from segy.schema.trace import TraceSpec
 
 
 class SegyStandard(Enum):
-    """Allowed values for SEG-Y standards in SegyDescriptor."""
+    """Allowed values for SEG-Y standards in SegySpec."""
 
     REV0 = 0.0
     REV1 = 1.0
@@ -28,29 +28,27 @@ class SegyStandard(Enum):
     REV21 = 2.1
 
 
-class SegyDescriptor(CamelCaseModel):
-    """A descriptor class for a SEG-Y file."""
+class SegySpec(CamelCaseModel):
+    """A class defining a SEG-Y file spec."""
 
     segy_standard: SegyStandard | None = Field(
         ..., description="SEG-Y Revision / Standard. Can also be custom."
     )
-    text_file_header: TextHeaderDescriptor = Field(
-        ..., description="Textual file header descriptor."
+    text_file_header: TextHeaderSpec = Field(
+        ..., description="Textual file header spec."
     )
-    binary_file_header: StructuredDataTypeDescriptor = Field(
-        ..., description="Binary file header descriptor."
+    binary_file_header: HeaderSpec = Field(..., description="Binary file header spec.")
+    ext_text_header: TextHeaderSpec | None = Field(
+        default=None, description="Extended textual header spec."
     )
-    extended_text_header: TextHeaderDescriptor | None = Field(
-        default=None, description="Extended textual header descriptor."
-    )
-    trace: TraceDescriptor = Field(..., description="Trace header + data descriptor.")
+    trace: TraceSpec = Field(..., description="Trace header + data spec.")
 
     endianness: Endianness | None = Field(
         default=None, description="Endianness of SEG-Y file."
     )
 
     @model_validator(mode="after")
-    def update_submodel_endianness(self) -> SegyDescriptor:
+    def update_submodel_endianness(self) -> SegySpec:
         """Ensure that submodel endianness matches the SEG-Y endianness."""
         self.binary_file_header.endianness = self.endianness
         self.trace.endianness = self.endianness
@@ -58,48 +56,48 @@ class SegyDescriptor(CamelCaseModel):
         return self
 
     def customize(  # noqa: PLR0913
-        self: SegyDescriptor,
-        text_header_spec: TextHeaderDescriptor | None = None,
-        binary_header_fields: list[StructuredFieldDescriptor] | None = None,
-        extended_text_spec: TextHeaderDescriptor | None = None,
-        trace_header_fields: list[StructuredFieldDescriptor] | None = None,
-        trace_data_spec: TraceSampleDescriptor | None = None,
-    ) -> SegyDescriptor:
-        """Customize an existing SEG-Y descriptor.
+        self: SegySpec,
+        text_header_spec: TextHeaderSpec | None = None,
+        binary_header_fields: list[HeaderField] | None = None,
+        ext_text_spec: TextHeaderSpec | None = None,
+        trace_header_fields: list[HeaderField] | None = None,
+        trace_data_spec: TraceDataSpec | None = None,
+    ) -> SegySpec:
+        """Customize an existing SEG-Y spec.
 
         Args:
             text_header_spec: New text header specification.
             binary_header_fields: List of custom binary header fields.
-            extended_text_spec: New extended text header specification.
+            ext_text_spec: New extended text header spec.
             trace_header_fields: List of custom trace header fields.
             trace_data_spec: New trace data specification.
 
         Returns:
-            A modified SEG-Y descriptor with "custom" segy standard.
+            A modified SEG-Y spec with "custom" segy standard.
         """
-        new_descr = self.model_copy(deep=True)
-        new_descr.segy_standard = None
+        new_spec = self.model_copy(deep=True)
+        new_spec.segy_standard = None
 
         if text_header_spec:
-            new_descr.text_file_header = text_header_spec
+            new_spec.text_file_header = text_header_spec
 
         # Update binary header fields if specified; else will revert to default.
         if binary_header_fields:
-            new_descr.binary_file_header.fields = binary_header_fields
+            new_spec.binary_file_header.fields = binary_header_fields
 
         # Update extended text spec if its specified; else will revert to default.
-        if extended_text_spec:
-            new_descr.extended_text_header = extended_text_spec
+        if ext_text_spec:
+            new_spec.ext_text_header = ext_text_spec
 
         # Update trace header spec if its specified; else will revert to default.
         if trace_header_fields:
-            new_descr.trace.header_descriptor.fields = trace_header_fields
+            new_spec.trace.header_spec.fields = trace_header_fields
 
         # Update trace data spec if its specified; else will revert to default.
         if trace_data_spec:
-            new_descr.trace.sample_descriptor = trace_data_spec
+            new_spec.trace.data_spec = trace_data_spec
 
-        return new_descr
+        return new_spec
 
 
 class SegyInfo(CamelCaseModel):

@@ -1,4 +1,4 @@
-"""Tests for trace descriptors."""
+"""Tests for trace spec."""
 
 from __future__ import annotations
 
@@ -6,11 +6,11 @@ import numpy as np
 import pytest
 
 from segy.schema import Endianness
+from segy.schema import HeaderField
+from segy.schema import HeaderSpec
 from segy.schema import ScalarType
-from segy.schema import StructuredDataTypeDescriptor
-from segy.schema import StructuredFieldDescriptor
-from segy.schema import TraceDescriptor
-from segy.schema import TraceSampleDescriptor
+from segy.schema import TraceDataSpec
+from segy.schema import TraceSpec
 
 
 @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
@@ -22,39 +22,37 @@ from segy.schema import TraceSampleDescriptor
         (ScalarType.UINT16, 5),
     ],
 )
-class TestTraceDescriptors:
-    """Tests for trace sample descriptor and its dtype."""
+class TestTraceSpec:
+    """Tests for trace spec and its dtype."""
 
-    def test_trace_descriptor(
+    def test_trace_spec(
         self,
         endianness: Endianness,
         sample_format: ScalarType,
         samples_per_trace: int,
     ) -> None:
-        """Testing dtype attribute and contents of TraceDescriptor."""
-        header_descr = StructuredDataTypeDescriptor(
+        """Testing dtype attribute and contents of TraceSpec."""
+        header_spec = HeaderSpec(
             fields=[
-                StructuredFieldDescriptor(name="h1", format=ScalarType.INT16, byte=1),
-                StructuredFieldDescriptor(name="h2", format=ScalarType.INT8, byte=17),
+                HeaderField(name="h1", format=ScalarType.INT16, byte=1),
+                HeaderField(name="h2", format=ScalarType.INT8, byte=17),
             ]
         )
-        sample_descr = TraceSampleDescriptor(
-            format=sample_format, samples=samples_per_trace
-        )
-        trace_descr = TraceDescriptor(
-            header_descriptor=header_descr,
-            sample_descriptor=sample_descr,
+        data_spec = TraceDataSpec(format=sample_format, samples=samples_per_trace)
+        trace_spec = TraceSpec(
+            header_spec=header_spec,
+            data_spec=data_spec,
             endianness=endianness,
         )
 
-        expected_itemsize = header_descr.dtype.itemsize + sample_descr.dtype.itemsize
-        expected_header_itemsize = header_descr.dtype.itemsize
+        expected_itemsize = header_spec.dtype.itemsize + data_spec.dtype.itemsize
+        expected_header_itemsize = header_spec.dtype.itemsize
         expected_sample_subtype = (np.dtype(sample_format.char), (samples_per_trace,))
-        assert trace_descr.dtype.itemsize == expected_itemsize
-        assert trace_descr.header_descriptor.dtype.names == ("h1", "h2")
-        assert trace_descr.header_descriptor.dtype.itemsize == expected_header_itemsize
-        assert trace_descr.sample_descriptor.dtype.subdtype == expected_sample_subtype
+        assert trace_spec.dtype.itemsize == expected_itemsize
+        assert trace_spec.header_spec.dtype.names == ("h1", "h2")
+        assert trace_spec.header_spec.dtype.itemsize == expected_header_itemsize
+        assert trace_spec.data_spec.dtype.subdtype == expected_sample_subtype
         if endianness == Endianness.LITTLE:
-            assert trace_descr.dtype.isnative
+            assert trace_spec.dtype.isnative
         else:
-            assert not trace_descr.dtype.isnative
+            assert not trace_spec.dtype.isnative

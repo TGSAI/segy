@@ -5,19 +5,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from segy.schema.segy import SegyDescriptor
-    from segy.schema.segy import SegyStandard
+    from segy.schema import SegySpec
+    from segy.schema import SegyStandard
 
 segy_standard_registry = {}
 
 
-def register_segy_standard(spec_type: SegyStandard, spec: SegyDescriptor) -> None:
-    """Register a SEG-Y standard with its descriptor."""
+def register_segy_standard(spec_type: SegyStandard, spec: SegySpec) -> None:
+    """Register a SEG-Y standard with its spec."""
     segy_standard_registry[spec_type] = spec
 
 
-def get_segy_standard(spec_type: SegyStandard) -> SegyDescriptor:
-    """Get a registered SEG-Y standard's descriptor."""
+def get_segy_standard(spec_type: SegyStandard) -> SegySpec:
+    """Get a registered SEG-Y standard's spec."""
     spec = segy_standard_registry.get(spec_type)
 
     if spec is None:

@@ -1,33 +1,33 @@
 """SEG-Y Revision 1 Specification."""
 
 from segy.schema import Endianness
+from segy.schema import HeaderField
+from segy.schema import HeaderSpec
 from segy.schema import ScalarType
-from segy.schema import SegyDescriptor
+from segy.schema import SegySpec
 from segy.schema import SegyStandard
-from segy.schema import TextHeaderDescriptor
 from segy.schema import TextHeaderEncoding
-from segy.schema import TraceDescriptor
-from segy.schema import TraceSampleDescriptor
-from segy.schema.data_type import StructuredDataTypeDescriptor
-from segy.schema.data_type import StructuredFieldDescriptor
+from segy.schema import TextHeaderSpec
+from segy.schema import TraceDataSpec
+from segy.schema import TraceSpec
 from segy.standards.rev0 import BINARY_FILE_HEADER_FIELDS_REV0
 from segy.standards.rev0 import TRACE_HEADER_FIELDS_REV0
 
 BINARY_FILE_HEADER_FIELDS_REV1 = BINARY_FILE_HEADER_FIELDS_REV0 + [
-    StructuredFieldDescriptor(
+    HeaderField(
         name="seg_y_revision",
         byte=301,
         format=ScalarType.INT16,
         description="SEG Y Format Revision Number",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="fixed_length_trace_flag",
         byte=303,
         format=ScalarType.INT16,
         description="Fixed Length Trace Flag",
     ),
-    StructuredFieldDescriptor(
-        name="extended_textual_headers",
+    HeaderField(
+        name="ext_textual_headers",
         byte=305,
         format=ScalarType.INT16,
         description="Number of 3200-byte, Extended Textual File Header Records Following the Binary Header",  # noqa: E501
@@ -36,109 +36,109 @@ BINARY_FILE_HEADER_FIELDS_REV1 = BINARY_FILE_HEADER_FIELDS_REV0 + [
 
 
 TRACE_HEADER_FIELDS_REV1 = TRACE_HEADER_FIELDS_REV0 + [
-    StructuredFieldDescriptor(
+    HeaderField(
         name="cdp_x",
         byte=181,
         format=ScalarType.INT32,
         description="X coordinate of ensemble (CDP) position",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="cdp_y",
         byte=185,
         format=ScalarType.INT32,
         description="Y coordinate of ensemble (CDP) position",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="inline",
         byte=189,
         format=ScalarType.INT32,
         description="Inline number",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="crossline",
         byte=193,
         format=ScalarType.INT32,
         description="Crossline number",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="shot_point",
         byte=197,
         format=ScalarType.INT32,
         description="Shotpoint number",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="shot_point_scalar",
         byte=201,
         format=ScalarType.INT16,
         description="Scalar to be applied to the shotpoint number",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="trace_value_measurement_unit",
         byte=203,
         format=ScalarType.INT16,
         description="Trace value measurement unit",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="transduction_constant_mantissa",
         byte=205,
         format=ScalarType.INT32,
         description="Transduction Constant Mantissa",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="transduction_constant_exponent",
         byte=209,
         format=ScalarType.INT16,
         description="Transduction Constant Exponent",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="transduction_units",
         byte=211,
         format=ScalarType.INT16,
         description="Transduction Units",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="device_trace_id",
         byte=213,
         format=ScalarType.INT16,
         description="Device/Trace Identifier",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="times_scalar",
         byte=215,
         format=ScalarType.INT16,
         description="Scalar to be applied to times",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="source_type_orientation",
         byte=217,
         format=ScalarType.INT16,
         description="Source Type/Orientation",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="source_energy_direction_mantissa",
         byte=219,
         format=ScalarType.INT32,
         description="Source Energy Direction with respect to vertical [Mantissa]",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="source_energy_direction_exponent",
         byte=223,
         format=ScalarType.INT16,
         description="Source Energy Direction with respect to vertical [Exponent]",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="source_measurement_mantissa",
         byte=225,
         format=ScalarType.INT32,
         description="Source Measurement Mantissa",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="source_measurement_exponent",
         byte=229,
         format=ScalarType.INT16,
         description="Source Measurement Exponent",
     ),
-    StructuredFieldDescriptor(
+    HeaderField(
         name="source_measurement_unit",
         byte=231,
         format=ScalarType.INT16,
@@ -147,7 +147,7 @@ TRACE_HEADER_FIELDS_REV1 = TRACE_HEADER_FIELDS_REV0 + [
 ]
 
 
-rev1_textual_file_header = TextHeaderDescriptor(
+rev1_textual_file_header = TextHeaderSpec(
     rows=40,
     cols=80,
     offset=0,
@@ -156,14 +156,14 @@ rev1_textual_file_header = TextHeaderDescriptor(
 )
 
 
-rev1_binary_file_header = StructuredDataTypeDescriptor(
+rev1_binary_file_header = HeaderSpec(
     fields=BINARY_FILE_HEADER_FIELDS_REV1,
     item_size=400,
     offset=3200,
 )
 
 
-rev1_extended_text_header = TextHeaderDescriptor(
+rev1_ext_text_header = TextHeaderSpec(
     rows=40,
     cols=80,
     offset=3600,
@@ -172,28 +172,25 @@ rev1_extended_text_header = TextHeaderDescriptor(
 )
 
 
-rev1_trace_header = StructuredDataTypeDescriptor(
+rev1_trace_header = HeaderSpec(
     fields=TRACE_HEADER_FIELDS_REV1,
     item_size=240,
 )
 
 
-rev1_trace_data = TraceSampleDescriptor(
+rev1_trace_data = TraceDataSpec(
     format=ScalarType.IBM32,  # noqa: A003
 )
 
 
-rev1_trace = TraceDescriptor(
-    header_descriptor=rev1_trace_header,
-    sample_descriptor=rev1_trace_data,
-)
+rev1_trace = TraceSpec(header_spec=rev1_trace_header, data_spec=rev1_trace_data)
 
 
-rev1_segy = SegyDescriptor(
+rev1_segy = SegySpec(
     segy_standard=SegyStandard.REV1,
     text_file_header=rev1_textual_file_header,
     binary_file_header=rev1_binary_file_header,
-    extended_text_header=rev1_extended_text_header,
+    ext_text_header=rev1_ext_text_header,
     trace=rev1_trace,
     endianness=Endianness.BIG,
 )

@@ -2,7 +2,7 @@
 :tocdepth: 3
 ```
 
-```{currentModule} segy.schema.trace
+```{currentModule} segy.schema
 
 ```
 
@@ -17,114 +17,118 @@
 
 ## Defining a Trace
 
-The [TraceDescriptor] is a way to define the structure of a seismic trace
-as stored in SEG-Y files. It is composed of {ref}`trace-header-descriptor`
-and {ref}`trace-data-descriptor`. This information is combined using the
-[TraceDescriptor].
+The [TraceSpec] is a way to define the structure of a seismic trace
+as stored in SEG-Y files. It is composed of {ref}`trace-header-specification`
+and {ref}`trace-data-specification`. This information is combined using the
+[TraceSpec].
 
-The [TraceDescriptor] has fields for trace header, optional extended trace
+The [TraceSpec] has fields for trace header, optional extended trace
 header, and trace data definitions. We also provide an optional [offset]
 field to define the beginning byte-location of the traces within a binary
 file. Most of the time this field gets populated automatically.
 
-A custom trace descriptor can be built programmatically following a simple
-workflow. The same descriptor can be built from `JSON` as well. Navigate to
-[JSON Trace Descriptor](#json-trace-descriptor) below for that.
+A custom trace specification can be built programmatically following a simple
+workflow. The same spec can be built from `JSON` as well. Navigate to
+[JSON Trace Specification](#json-trace-specification) below for that.
 
-(trace-header-descriptor)=
+(trace-header-specification)=
 
-### Trace Header Descriptor
+### Trace Header Specification
 
-Trace headers are defined using [StructuredDataTypeDescriptor]. Each header
-field is a [StructuredFieldDescriptor]. We have an example workflow here. You
+Trace headers are defined using [HeaderSpec]. Each header
+field is a [HeaderField]. We have an example workflow here. You
 can see more examples in the [Data Types](#data_type) documentation.
 
-We first do the required imports and then define header fields. By default,
-endianness is `big`, so we don't have to declare it.
+We first do the required imports and then define header fields. We don't allow setting
+[endianness] for individual fields.
 
 ```python
-from segy.schema.data_type import StructuredFieldDescriptor
+
+from segy.schema import HeaderField
 
 trace_header_fields = [
-    StructuredFieldDescriptor(
-        name="inline",
-        byte=189,
-        format="int32",
-    ),
-    StructuredFieldDescriptor(
-        name="crossline",
-        byte=193,
-        format="int32",
-    ),
+    HeaderField(name="inline", byte=189, format="int32"),
+    HeaderField(name="crossline", byte=193, format="int32"),
 ]
 ```
 
-Then we create [StructuredDataTypeDescriptor] for trace headers. We know trace
-headers must be 240-bytes so we declare it. This will ensure we read/write with
-correct padding.
+Then we create [HeaderSpec] for trace headers. We know trace headers must be
+240-bytes so we declare it. This will ensure we read/write with correct padding.
+
+```{note}
+[Endianness] can be set here but we don't recommend it. By default it will take
+the machine endianness. When the [SegyFile](#SegyFile) is initialized it will
+automatically set this to the correct value. By default its `None`.
+```
 
 ```python
-from segy.schema.data_type import StructuredDataTypeDescriptor
 
-trace_header_descriptor = StructuredDataTypeDescriptor(
+from segy.schema import HeaderSpec
+
+trace_header_spec = HeaderSpec(
     fields=trace_header_fields,
     item_size=240,
 )
 ```
 
-(trace-data-descriptor)=
+(trace-data-specification)=
 
-### Trace Data Descriptor
+### Trace Data Specification
 
-Trace data is described using [TraceDataDescriptor](#TraceDataDescriptor).
-The data is mainly explained by its data type ([endianness] and [format]),
-and number of [samples].
+Trace data is described using [TraceDataSpec](#TraceDataSpec).
+The data is mainly explained by its data [format] and number of [samples].
 
-Continuing our previous example, we build the data descriptor. We assume
-that samples are encoded in 'ibm32' format and and they are big endian
-(again, default).
+Continuing our previous example, we build the trace data spec. We assume that samples
+are encoded in `ibm32` format. [Endianness] can't be set here, because it is assigned
+at [TraceSpec] level.
 
 ```python
 
-from segy.schema.trace import TraceDataDescriptor
+from segy.schema import TraceDataSpec
 
-trace_data_descriptor = TraceDataDescriptor(
+trace_data_spec = TraceDataSpec(
     format="ibm32",
     samples=360
 )
 ```
 
-### Trace Descriptor
+### Trace Specification
 
-Finally, since we have all components, we can create a descriptor for of a trace.
+Finally, since we have all components, we can create a trace specification.
 
 ```python
-from segy.schema.trace import TraceDescriptor
+from segy.schema import TraceSpec
 
-trace_descriptor = TraceDescriptor(
-    header_descriptor=trace_header_descriptor,
-    data_descriptor=trace_data_descriptor,
+trace_spec = TraceSpec(
+    header_spec=trace_header_spec,
+    data_spec=trace_data_spec,
     offset=3600  # just an example of possible offset
 )
+```
+
+```{note}
+[Endianness] can be set here but we don't recommend it. By default it will take
+the machine endianness. When the [SegyFile](#SegyFile) is initialized it will
+automatically set this to the correct value. By default its `None`.
 ```
 
 If we look at the Numpy data type of the trace, we can see how it
 will be decoded from raw bytes:
 
 ```python
->>> trace_descriptor.dtype
-dtype([('header', {'names': ['inline', 'crossline'], 'formats': ['>i4', '>i4'], 'offsets': [188, 192], 'itemsize': 240}), ('data', '>u4', (360,))])
+>>> trace_spec.dtype
+dtype([('header', {'names': ['inline', 'crossline'], 'formats': ['<i4', '<i4'], 'offsets': [188, 192], 'itemsize': 240}), ('data', '<u4', (360,))])
 ```
 
-## JSON Trace Descriptor
+## JSON Trace Specification
 
-We can define the exact same trace descriptor above using `JSON`. This can either
+We can define the exact same trace specification above using `JSON`. This can either
 be defined as a `string` or can be read from a file. Both will work. Let's write
 the `JSON`.
 
 ```json
 {
-  "headerDescriptor": {
+  "headerSpec": {
     "fields": [
       {
         "format": "int32",
@@ -139,7 +143,7 @@ the `JSON`.
     ],
     "itemSize": 240
   },
-  "dataDescriptor": {
+  "dataSpec": {
     "format": "ibm32",
     "samples": 360
   },
@@ -147,30 +151,30 @@ the `JSON`.
 }
 ```
 
-Then if we have our `JSON` as a `string` in the variable `json_str`, we can
-generate the same descriptor, with validation of all fields. If there are any
-errors in the `JSON`, there will be a validation error raised.
+Then if we have our `JSON` as a `string` in the variable `json_str`, we can generate
+the same specification, with validation of all fields. If there are any errors in the
+`JSON`, there will be a validation error raised.
 
 ```python
->>> trace_descriptor_from_json = TraceDescriptor.model_validate_json(json_str)
->>> trace_descriptor_from_json == trace_descriptor
+>>> trace_spec_from_json = TraceSpec.model_validate_json(json_str)
+>>> trace_spec_from_json == trace_spec
 True
 ```
 
-[tracedescriptor]: #TraceDescriptor
-[offset]: #TraceDescriptor.offset
-[structureddatatypedescriptor]: #StructuredDataTypeDescriptor
-[structuredfielddescriptor]: #StructuredFieldDescriptor
+[tracespec]: #TraceSpec
+[offset]: #TraceSpec.offset
+[headerspec]: #HeaderSpec
+[headerfield]: #HeaderField
 [endianness]: #Endianness
-[format]: #TraceDataDescriptor.format
-[samples]: #TraceDataDescriptor.samples
+[format]: #TraceDataSpec.format
+[samples]: #TraceDataSpec.samples
 
 ## Reference
 
 ```{eval-rst}
-.. autopydantic_model:: TraceDescriptor
+.. autopydantic_model:: TraceSpec
 ```
 
 ```{eval-rst}
-.. autopydantic_model:: TraceDataDescriptor
+.. autopydantic_model:: TraceDataSpec
 ```

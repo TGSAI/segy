@@ -21,7 +21,7 @@ from segy.schema import SegyStandard
 from segy.standards import get_segy_standard
 from segy.standards.mapping import SEGY_FORMAT_MAP
 from segy.standards.rev1 import rev1_binary_file_header
-from segy.standards.rev1 import rev1_extended_text_header
+from segy.standards.rev1 import rev1_ext_text_header
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
@@ -30,25 +30,25 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
     from segy.indexing import AbstractIndexer
-    from segy.schema import SegyDescriptor
+    from segy.schema import SegySpec
 
 
 def create_spec(
     standard: SegyStandard,
     endian: Endianness,
     sample_format: ScalarType | None = None,
-) -> SegyDescriptor:
-    """Create SegyDescriptor from SegyStandard, Endianness, and ScalarType."""
+) -> SegySpec:
+    """Create SegySpec from SegyStandard, Endianness, and ScalarType."""
     spec = get_segy_standard(standard)
     spec.endianness = endian
 
     if sample_format is not None:
-        spec.trace.sample_descriptor.format = sample_format
+        spec.trace.data_spec.format = sample_format
 
     return spec
 
 
-def get_spec_from_settings(settings: SegyFileSettings) -> SegyDescriptor:
+def get_spec_from_settings(settings: SegyFileSettings) -> SegySpec:
     """Get the SEG-Y spec from the settings instance."""
     standard = SegyStandard(settings.revision)
     return create_spec(standard, settings.endianness)
@@ -84,8 +84,8 @@ def unpack_binary_header(
     return sample_increment, revision, sample_format
 
 
-def infer_spec_from_binary_header(buffer: bytearray) -> SegyDescriptor:
-    """Try to infer SEG-Y file revision and endianness to build a SegyDescriptor."""
+def infer_spec_from_binary_header(buffer: bytearray) -> SegySpec:
+    """Try to infer SEG-Y file revision and endianness to build a SegySpec."""
     for endianness in [Endianness.BIG, Endianness.LITTLE]:
         unpacked = unpack_binary_header(buffer, endianness)
         sample_increment, revision, sample_format_int = unpacked
@@ -123,7 +123,7 @@ class SegyFile:
     def __init__(
         self,
         url: str,
-        spec: SegyDescriptor | None = None,
+        spec: SegySpec | None = None,
         settings: SegyFileSettings | None = None,
     ):
         self.settings = SegyFileSettings() if settings is None else settings
@@ -149,10 +149,10 @@ class SegyFile:
             return 0
 
         # Overriding from settings
-        if self.settings.binary.extended_text_header.value is not None:
-            return self.settings.binary.extended_text_header.value
+        if self.settings.binary.ext_text_header.value is not None:
+            return self.settings.binary.ext_text_header.value
 
-        header_key = self.settings.binary.extended_text_header.key
+        header_key = self.settings.binary.ext_text_header.key
         return int(self.binary_header[header_key][0])
 
     @property
@@ -181,9 +181,9 @@ class SegyFile:
         file_metadata_size = file_textual_hdr_size + file_bin_hdr_size
 
         if self.num_ext_text > 0:
-            self.spec.extended_text_header = rev1_extended_text_header
+            self.spec.ext_text_header = rev1_ext_text_header
 
-            ext_text_size = self.spec.extended_text_header.itemsize * self.num_ext_text
+            ext_text_size = self.spec.ext_text_header.itemsize * self.num_ext_text
             file_metadata_size = file_metadata_size + ext_text_size
 
         return (self.file_size - file_metadata_size) // trace_size
@@ -191,18 +191,18 @@ class SegyFile:
     @cached_property
     def text_header(self) -> str:
         """Return textual file header."""
-        text_hdr_desc = self.spec.text_file_header
+        text_hdr_spec = self.spec.text_file_header
 
         buffer = self.fs.read_block(
             fn=self.url,
-            offset=text_hdr_desc.offset,
-            length=text_hdr_desc.itemsize,
+            offset=text_hdr_spec.offset,
+            length=text_hdr_spec.itemsize,
         )
 
-        text_header = text_hdr_desc._decode(buffer)
-        return text_hdr_desc._wrap(text_header)
+        text_header = text_hdr_spec._decode(buffer)
+        return text_hdr_spec._wrap(text_header)
 
-    def _infer_spec(self) -> SegyDescriptor:
+    def _infer_spec(self) -> SegySpec:
         """Infer the SEG-Y specification for the file."""
         if self.settings.revision is not None:
             return get_spec_from_settings(self.settings)
@@ -237,13 +237,13 @@ class SegyFile:
         bin_hdr_size = self.spec.binary_file_header.itemsize
 
         # Update trace start offset and sample length
-        self.spec.trace.sample_descriptor.samples = self.samples_per_trace
+        self.spec.trace.data_spec.samples = self.samples_per_trace
         self.spec.trace.offset = text_hdr_size + bin_hdr_size
 
         if self.num_ext_text > 0:
-            self.spec.extended_text_header = rev1_extended_text_header
+            self.spec.ext_text_header = rev1_ext_text_header
 
-            ext_text_size = self.spec.extended_text_header.itemsize * self.num_ext_text
+            ext_text_size = self.spec.ext_text_header.itemsize * self.num_ext_text
             self.spec.trace.offset = self.spec.trace.offset + ext_text_size
 
     @property
@@ -254,7 +254,7 @@ class SegyFile:
             self.url,
             self.spec.trace,
             self.num_traces,
-            kind="sample",
+            kind="data",
             settings=self.settings,
             transforms=self.accessors.sample_decode_transforms,
         )

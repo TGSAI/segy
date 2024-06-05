@@ -22,8 +22,8 @@ if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
     from numpy.typing import NDArray
 
-    from segy.schema import TraceDescriptor
-    from segy.schema.base import BaseTypeDescriptor
+    from segy.schema import TraceSpec
+    from segy.schema.base import BaseDataType
 
 
 def merge_cat_file(
@@ -102,7 +102,7 @@ class AbstractIndexer(ABC):
     Args:
         fs: An instance of `fsspec` file-system.
         url: A string representing the URL of the file.
-        spec: An instance of BaseTypeDescriptor.
+        spec: An instance of BaseDataType.
         max_value: An integer representing the maximum value of the index.
         kind: A string representing the kind of index.
         settings: Optional parsing settings.
@@ -113,7 +113,7 @@ class AbstractIndexer(ABC):
         self,
         fs: AbstractFileSystem,
         url: str,
-        spec: BaseTypeDescriptor,
+        spec: BaseDataType,
         max_value: int,
         kind: str,
         settings: SegyFileSettings | None = None,
@@ -199,16 +199,15 @@ class TraceIndexer(AbstractIndexer):
     """Indexer for reading traces (headers + data).
 
     Inherits from AbstractIndexer. Implements decoding based on trace
-    descriptor. It will optionally return the headers as a Pandas
-    DataFrame.
+    spec. It will optionally return the headers as a Pandas DataFrame.
     """
 
-    spec: TraceDescriptor
+    spec: TraceSpec
 
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
         """Convert trace indices to byte ranges."""
         if self.spec.offset is None:
-            msg = "Descriptor offset must be specified."
+            msg = "Trace starting offset must be specified."
             raise ValueError(msg)
 
         start_offset = self.spec.offset
@@ -229,19 +228,18 @@ class HeaderIndexer(AbstractIndexer):
     """Indexer for reading trace headers only.
 
     Inherits from AbstractIndexer. Implements decoding based on trace
-    descriptor. It will optionally return the headers as a Pandas
-    DataFrame.
+    spec. It will optionally return the headers as a Pandas DataFrame.
     """
 
-    spec: TraceDescriptor
+    spec: TraceSpec
 
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
         """Convert header indices to byte ranges (without trace data)."""
         trace_itemsize = self.spec.dtype.itemsize
-        header_itemsize = self.spec.header_descriptor.itemsize
+        header_itemsize = self.spec.header_spec.itemsize
 
         if self.spec.offset is None:
-            msg = "Descriptor offset must be specified."
+            msg = "Trace starting offset must be specified."
             raise ValueError(msg)
 
         start_offset = self.spec.offset
@@ -260,20 +258,19 @@ class HeaderIndexer(AbstractIndexer):
 class SampleIndexer(AbstractIndexer):
     """Indexer for reading trace samples only.
 
-    Inherits from AbstractIndexer. Implements decoding based on trace
-    descriptor.
+    Inherits from AbstractIndexer. Implements decoding based on trace spec.
     """
 
-    spec: TraceDescriptor
+    spec: TraceSpec
 
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
         """Convert data indices to byte ranges (without trace headers)."""
         trace_itemsize = self.spec.dtype.itemsize
-        data_itemsize = self.spec.sample_descriptor.dtype.itemsize
-        header_itemsize = self.spec.header_descriptor.dtype.itemsize
+        data_itemsize = self.spec.data_spec.dtype.itemsize
+        header_itemsize = self.spec.header_spec.dtype.itemsize
 
         if self.spec.offset is None:
-            msg = "Descriptor offset must be specified."
+            msg = "Trace starting offset must be specified."
             raise ValueError(msg)
 
         start_offset = self.spec.offset + header_itemsize
@@ -285,4 +282,4 @@ class SampleIndexer(AbstractIndexer):
 
     def decode(self, buffer: bytearray) -> NDArray[Any]:
         """Decode trace samples only."""
-        return np.frombuffer(buffer, dtype=self.spec.dtype["sample"])
+        return np.frombuffer(buffer, dtype=self.spec.dtype["data"])
