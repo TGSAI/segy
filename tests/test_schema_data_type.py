@@ -12,8 +12,8 @@ from segy.schema.data_type import StructuredDataTypeDescriptor
 from segy.schema.data_type import StructuredFieldDescriptor
 
 
-class TestBaseDataTypes:
-    """Tests for basic and structured data types and their dtype method."""
+class TestScalarTypeDescriptor:
+    """Tests for scalar data type descriptor."""
 
     @pytest.mark.parametrize(
         ("format_", "expected"),
@@ -29,6 +29,10 @@ class TestBaseDataTypes:
         """Test creating data type descriptors for `ScalarType`s."""
         dtype_descr = DataTypeDescriptor(format=format_)
         assert dtype_descr.dtype == np.dtype(expected)
+
+
+class TestStructuredDataTypeDescriptor:
+    """Tests for structured field and structured type descriptors."""
 
     @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
     @pytest.mark.parametrize(
@@ -64,6 +68,107 @@ class TestBaseDataTypes:
             assert not struct_descriptor.dtype.isnative
         if itemsize is not None:
             assert struct_descriptor.dtype.itemsize == itemsize
+
+    def test_add_structured_field(self) -> None:
+        """Test adding fields to descriptor with and without overwrite."""
+        struct_descriptor = StructuredDataTypeDescriptor(fields=[])
+
+        field1 = StructuredFieldDescriptor(name="f1", byte=3, format=ScalarType.INT16)
+        field2 = StructuredFieldDescriptor(name="f2", byte=7, format=ScalarType.INT16)
+
+        struct_descriptor.add_field(field1)
+        struct_descriptor.add_field(field2)
+
+        actual_fields = dict(struct_descriptor.dtype.fields)  # type: ignore
+        assert struct_descriptor.dtype.itemsize == field2.offset + field2.dtype.itemsize
+        assert struct_descriptor.dtype.names == ("f1", "f2")
+        assert actual_fields["f1"] == (field1.dtype, field1.offset)
+        assert actual_fields["f2"] == (field2.dtype, field2.offset)
+
+        # Test with overwrite.
+        field2 = StructuredFieldDescriptor(name="f2", byte=11, format=ScalarType.INT32)
+        struct_descriptor.add_field(field2, overwrite=True)
+
+        actual_fields = dict(struct_descriptor.dtype.fields)  # type: ignore
+        assert struct_descriptor.dtype.itemsize == field2.offset + field2.dtype.itemsize
+        assert actual_fields["f1"] == (field1.dtype, field1.offset)
+        assert actual_fields["f2"] == (field2.dtype, field2.offset)
+
+    def test_remove_structured_field(self) -> None:
+        """Test field removal from structured data type."""
+        struct_descriptor = StructuredDataTypeDescriptor(
+            fields=[
+                StructuredFieldDescriptor(name="f1", byte=11, format=ScalarType.INT8),
+                StructuredFieldDescriptor(name="f2", byte=21, format=ScalarType.INT16),
+            ]
+        )
+
+        struct_descriptor.remove_field("f2")
+
+        remaining_field = struct_descriptor.fields[0]
+        expected_itemsize = remaining_field.offset + remaining_field.dtype.itemsize
+        assert struct_descriptor.itemsize == expected_itemsize
+        assert struct_descriptor.dtype.names == ("f1",)
+
+
+class TestStructuredDataTypeDescriptorExceptions:
+    """Test exceptions in structured descriptors."""
+
+    def test_duplicate_field_exception(self) -> None:
+        """Test expected failure when multiple keys are provided more than once."""
+        fields_with_duplicate = [
+            StructuredFieldDescriptor(name="f1", byte=3, format=ScalarType.INT16),
+            StructuredFieldDescriptor(name="f1", byte=9, format=ScalarType.INT16),
+        ]
+        with pytest.raises(ValueError, match="Duplicate header fields detected"):
+            StructuredDataTypeDescriptor(fields=fields_with_duplicate)
+
+    def test_add_field_exception(self) -> None:
+        """Test adding fields that already exists without overwrite flag."""
+        struct_descriptor = StructuredDataTypeDescriptor(
+            fields=[
+                StructuredFieldDescriptor(name="f1", byte=3, format=ScalarType.INT16),
+                StructuredFieldDescriptor(name="f2", byte=11, format=ScalarType.INT16),
+            ]
+        )
+
+        field = StructuredFieldDescriptor(name="f1", byte=7, format=ScalarType.UINT8)
+        with pytest.raises(KeyError, match="f1 already exists."):
+            struct_descriptor.add_field(field)
+
+    def test_remove_field_exception(self) -> None:
+        """Test field removal from structured data type."""
+        struct_descriptor = StructuredDataTypeDescriptor(
+            fields=[
+                StructuredFieldDescriptor(name="f1", byte=11, format=ScalarType.INT8),
+                StructuredFieldDescriptor(name="f2", byte=21, format=ScalarType.INT16),
+            ]
+        )
+
+        with pytest.raises(KeyError, match="f3 does not exist."):
+            struct_descriptor.remove_field("f3")
+
+    @pytest.mark.parametrize(
+        ("names", "bytes_", "formats", "itemsize"),
+        [
+            (["f1"], [1], [ScalarType.UINT64], 4),
+            (["f1", "f2"], [1, 24], [ScalarType.UINT8, ScalarType.INT16], 16),
+        ],
+    )
+    def test_struct_size_overflow(
+        self,
+        names: list[str],
+        bytes_: list[int],
+        formats: list[ScalarType],
+        itemsize: int,
+    ) -> None:
+        """Test validation where the max field size exceeds the item size."""
+        fields = [
+            StructuredFieldDescriptor(name=name, byte=byte, format=format_)
+            for name, byte, format_ in zip(names, bytes_, formats)
+        ]
+        with pytest.raises(ValueError, match="Offsets exceed allowed header size."):
+            StructuredDataTypeDescriptor(fields=fields, item_size=itemsize)
 
 
 def test_structured_data_type_descriptor_json_validate() -> None:

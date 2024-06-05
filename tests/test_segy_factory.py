@@ -52,7 +52,7 @@ def mock_segy_factory(request: pytest.FixtureRequest) -> SegyFactory:
     spec.segy_standard = test_config.segy_standard
 
     # Shrink trace headers to 16-bytes and add a few fields
-    spec.trace.header_descriptor.item_size = 16
+    spec.trace.header_descriptor.item_size = 32
     spec.trace.header_descriptor.fields = [
         StructuredFieldDescriptor(name="field1", format=ScalarType.INT8, byte=3),
         StructuredFieldDescriptor(name="field2", format=ScalarType.INT32, byte=5),
