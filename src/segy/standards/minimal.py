@@ -12,31 +12,31 @@ from segy.schema import TraceSpec
 
 BINARY_FILE_HEADER_FIELDS = [
     HeaderField(
-        name="sample_interval",
+        name="sample_int",
         byte=17,
         format=ScalarType.INT16,
         description="Sample Interval",
     ),
     HeaderField(
-        name="sample_interval_orig",
+        name="orig_sample_int",
         byte=19,
         format=ScalarType.INT16,
         description="Sample Interval of Original Field Recording",
     ),
     HeaderField(
-        name="samples_per_trace",
+        name="num_samples",
         byte=21,
         format=ScalarType.INT16,
         description="Number of Samples per Data Trace",
     ),
     HeaderField(
-        name="samples_per_trace_orig",
+        name="orig_num_samples",
         byte=13,
         format=ScalarType.INT16,
         description="Number of Samples per Data Trace for Original Field Recording",
     ),
     HeaderField(
-        name="data_sample_format",
+        name="sample_format",
         byte=25,
         format=ScalarType.INT16,
         description="Data Sample Format Code",
@@ -54,7 +54,7 @@ BINARY_FILE_HEADER_FIELDS = [
         description="Fixed Length Trace Flag",
     ),
     HeaderField(
-        name="ext_textual_headers",
+        name="num_ext_text_headers",
         byte=305,
         format=ScalarType.INT16,
         description="Number of 3200-byte, Extended Textual File Header Records Following the Binary Header",  # noqa: E501

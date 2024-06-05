@@ -181,11 +181,11 @@ class TestSegyFile:
         binary_header = segy_file.binary_header
 
         expected_sample_format = SEGY_FORMAT_MAP[test_config.sample_format]
-        assert binary_header["sample_interval"] == SAMPLE_INTERVAL
-        assert binary_header["sample_interval_orig"] == SAMPLE_INTERVAL
-        assert binary_header["samples_per_trace"] == SAMPLES_PER_TRACE
-        assert binary_header["samples_per_trace_orig"] == SAMPLES_PER_TRACE
-        assert binary_header["data_sample_format"] == expected_sample_format
+        assert binary_header["sample_int"] == SAMPLE_INTERVAL
+        assert binary_header["orig_sample_int"] == SAMPLE_INTERVAL
+        assert binary_header["num_samples"] == SAMPLES_PER_TRACE
+        assert binary_header["orig_num_samples"] == SAMPLES_PER_TRACE
+        assert binary_header["sample_format"] == expected_sample_format
 
     @pytest.mark.parametrize("standard", [SegyStandard.REV0, SegyStandard.REV1])
     @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])

@@ -43,20 +43,20 @@ class TestDump:
         """Test binary header dump."""
         result = runner.invoke(app, ["dump", "binary-header", s3_path])
         assert result.exit_code == 0
-        assert "sample_interval" in result.stdout
-        assert "samples_per_trace" in result.stdout
+        assert "sample_int" in result.stdout
+        assert "num_samples" in result.stdout
 
     def test_trace_header_dump(self, s3_path: str) -> None:
         """Test trace header dump."""
         args = ["dump", "trace-header", s3_path]
         args += ["--index", "100", "--index", "101"]
         args += ["--field", "src_x"]
-        args += ["--field", "scalar_apply_coords"]
+        args += ["--field", "scalar_coord"]
 
         result = runner.invoke(app, args)
         assert result.exit_code == 0
         assert "src_x" in result.stdout
-        assert "scalar_apply_coords" in result.stdout
+        assert "scalar_coord" in result.stdout
         assert "101" in result.stdout
         assert "70628086" in result.stdout
         assert "-100" in result.stdout

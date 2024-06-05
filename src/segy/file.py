@@ -158,12 +158,12 @@ class SegyFile:
     @property
     def samples_per_trace(self) -> int:
         """Return samples per trace in file based on spec."""
-        return int(self.binary_header["samples_per_trace"].item())
+        return int(self.binary_header["num_samples"].item())
 
     @property
     def sample_interval(self) -> int:
         """Return samples interval in file based on spec."""
-        return int(self.binary_header["sample_interval"].item())
+        return int(self.binary_header["sample_int"].item())
 
     @property
     def sample_labels(self) -> NDArray[np.int32]:

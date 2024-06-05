@@ -130,8 +130,8 @@ class TestSegyFactoryTraces:
         mock_segy_factory.spec.trace.header_spec.item_size = 26
         # fmt: off
         mock_segy_factory.spec.trace.header_spec.fields += [
-            HeaderField(name="sample_interval", format=ScalarType.INT16, byte=13),
-            HeaderField(name="samples_per_trace", format=ScalarType.INT16, byte=25),
+            HeaderField(name="sample_int", format=ScalarType.INT16, byte=13),
+            HeaderField(name="num_samples", format=ScalarType.INT16, byte=25),
         ]
         # fmt: on
 
@@ -142,8 +142,8 @@ class TestSegyFactoryTraces:
         expected_samples_per_trace = mock_segy_factory.samples_per_trace
         assert headers.size == num_traces
         assert headers.dtype == header_spec.dtype.newbyteorder("<")
-        assert_array_equal(headers["sample_interval"], expected_sample_info)
-        assert_array_equal(headers["samples_per_trace"], expected_samples_per_trace)
+        assert_array_equal(headers["sample_int"], expected_sample_info)
+        assert_array_equal(headers["num_samples"], expected_samples_per_trace)
 
     @pytest.mark.parametrize(
         "sample_format", [ScalarType.FLOAT32, ScalarType.IBM32, ScalarType.INT16]
