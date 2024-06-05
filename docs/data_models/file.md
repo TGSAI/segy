@@ -2,7 +2,7 @@
 :tocdepth: 3
 ```
 
-```{currentModule} segy.schema.segy
+```{currentModule} segy.schema
 
 ```
 
@@ -15,13 +15,12 @@
 :class-container: sd-p-0 sd-outline-muted sd-rounded-3 sd-font-weight-light
 ```
 
-## SEG-Y Descriptor: A Conceptual Overview
+## SEG-Y Spec: A Conceptual Overview
 
-The [SegyDescriptor](#SegyDescriptor) is a structured model used to define
-the structure and content of a SEG-Y file. SEG-Y is a standard file format
-used in the geophysical industry for recording digital seismic data. In
-essence, this model serves as a blueprint for what a SEG-Y file should
-look like.
+The [SegySpec](#SegySpec) is a structured model used to define the structure and
+content of a SEG-Y file. SEG-Y is a standard file format used in the geophysical
+industry for recording digital seismic data. In essence, this model serves as a
+blueprint for what a SEG-Y file should look like.
 
 This class and its components provide a specified and flexible way to work with
 SEG-Y seismic data files programmatically, from defining the file structure and
@@ -38,12 +37,12 @@ Conceptually a SEG-Y Revision 0 file looks like this on disk.
 
 ### Key Components
 
-This descriptor model consists of several important components. Each of
-these components represents a particular section of a SEG-Y file.
+This spec model consists of several important components. Each of these components
+represent a particular section of a SEG-Y file.
 
 #### SEGY-Standard
 
-This attribute, [`segy_standard`](#SegyDescriptor.segy_standard), corresponds
+This attribute, [`segy_standard`](#SegySpec.segy_standard), corresponds
 to the specific SEG-Y standard that is being used. SEG-Y files can be of different
 revisions or standards, including custom ones.
 
@@ -51,25 +50,23 @@ It must be set to one of the allowed [`SegyStandard`](#SegyStandard) values.
 
 #### Text File Header
 
-The [`text_file_header`](#SegyDescriptor.text_file_header) stores the information
+The [`text_file_header`](#SegySpec.text_file_header) stores the information
 required to parse the textual file header of the SEG-Y file. This includes important
 metadata that pertains to the seismic data in human-readable format.
 
 #### Binary File Header
 
-The [`binary_file_header`](#SegyDescriptor.binary_file_header) item talks about
+The [`binary_file_header`](#SegySpec.binary_file_header) item talks about
 the binary file header of the SEG-Y file. It is a set of structured and important
 information about the data in the file, stored in binary format for machines to
 read and process quickly and efficiently.
 
-Binary headers are defined as
-[StructuredDataTypeDescriptor](#StructuredDataTypeDescriptor)s and are built
-by specifying header fields in the
-[StructuredFieldDescriptor](#StructuredFieldDescriptor) format.
+Binary headers are defined as [HeaderSpec](#HeaderSpec) and are built by specifying
+header fields in the [HeaderField](#HeaderField) format.
 
 #### Extended Text Header
 
-The [`extended_text_header`](#SegyDescriptor.extended_text_header) is an optional
+The [`ext_text_header`](#SegySpec.ext_text_header) is an optional
 attribute that provides space for extra information that can't be fit within the
 regular text file header. This extended header can be used for additional
 human-readable metadata about the data.
@@ -80,32 +77,31 @@ Extended text headers are were added in SEG-Y Revision 1.0.
 
 #### Trace
 
-The [`trace`](#SegyDescriptor.trace) component is a descriptor for both the trace
+The [`trace`](#SegySpec.trace) component is a spec definition for both the trace
 headers and the associated data. Trace headers contain specific information about
 each individual seismic trace in the dataset, and the trace data contains the
 actual numerical seismic data.
 
 ```{seealso}
-[TraceDescriptor](#TraceDescriptor)
+[TraceSpec](#TraceSpec)
 ```
 
 ### The Customize Method
 
-The [`customize`](#SegyDescriptor.customize) method is a way for
-users to tailor an existing SEG-Y descriptor to meet their specific requirements.
-It's an optional tool that provides a way to update the various parts of the
-descriptor including the text header, binary header, extended text header, trace
-header and trace data. Note that the SEGY standard is always set to custom when
-using this method.
+The [`customize`](#SegySpec.customize) method is a way for users to tailor an existing
+SEG-Y spec to meet their specific requirements. It's an optional tool that provides a
+way to update the various parts of the spec including the text header, binary header,
+extended text header, trace header and trace data. Note that the SEGY standard
+is always set to custom when using this method.
 
 ## Reference
 
 ```{eval-rst}
-.. autopydantic_model:: SegyDescriptor
+.. autopydantic_model:: SegySpec
 ```
 
 ```{eval-rst}
-.. autopydantic_model:: segy.schema.header.TextHeaderDescriptor
+.. autopydantic_model:: TextHeaderSpec
     :inherited-members: BaseModel
 ```
 
@@ -117,5 +113,5 @@ using this method.
 ```
 
 ```{eval-rst}
-.. autopydantic_model:: SegyInfo
+.. autopydantic_model:: segy.schema.segy.SegyInfo
 ```

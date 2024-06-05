@@ -1,4 +1,4 @@
-"""Descriptor data model implementations for traces."""
+"""Data model implementations for trace specification."""
 
 from __future__ import annotations
 
@@ -9,16 +9,16 @@ import numpy as np
 from pydantic import Field
 from pydantic import model_validator
 
-from segy.schema.base import BaseTypeDescriptor
+from segy.schema.base import BaseDataType
 
 if TYPE_CHECKING:
-    from segy.schema.data_type import Endianness
-    from segy.schema.data_type import ScalarType
-    from segy.schema.data_type import StructuredDataTypeDescriptor
+    from segy.schema.base import Endianness
+    from segy.schema.format import ScalarType
+    from segy.schema.header import HeaderSpec
 
 
-class TraceSampleDescriptor(BaseTypeDescriptor):
-    """A descriptor class for a Trace Samples."""
+class TraceDataSpec(BaseDataType):
+    """A spec class for trace data (samples)."""
 
     format: ScalarType = Field(..., description="Format of trace samples.")  # noqa: A003
     samples: int | None = Field(
@@ -36,18 +36,14 @@ class TraceSampleDescriptor(BaseTypeDescriptor):
         return np.dtype(dtype)
 
 
-class TraceDescriptor(BaseTypeDescriptor):
-    """A descriptor class for a Trace (Header + Data)."""
+class TraceSpec(BaseDataType):
+    """A spec class for a trace (header + data)."""
 
-    header_descriptor: StructuredDataTypeDescriptor = Field(
-        ..., description="Trace header descriptor."
+    header_spec: HeaderSpec = Field(..., description="Trace header spec.")
+    ext_header_spec: HeaderSpec | None = Field(
+        default=None, description="Extended trace header spec."
     )
-    extended_header_descriptor: StructuredDataTypeDescriptor | None = Field(
-        default=None, description="Extended trace header descriptor."
-    )
-    sample_descriptor: TraceSampleDescriptor = Field(
-        ..., description="Trace data descriptor."
-    )
+    data_spec: TraceDataSpec = Field(..., description="Trace data spec.")
     offset: int | None = Field(
         default=None, description="Starting offset of the trace."
     )
@@ -56,22 +52,22 @@ class TraceDescriptor(BaseTypeDescriptor):
     )
 
     @model_validator(mode="after")
-    def update_submodel_endianness(self) -> TraceDescriptor:
+    def update_submodel_endianness(self) -> TraceSpec:
         """Ensure that submodel endianness matches the trace endianness."""
-        self.header_descriptor.endianness = self.endianness
+        self.header_spec.endianness = self.endianness
 
-        if self.extended_header_descriptor is not None:
-            self.extended_header_descriptor.endianness = self.endianness
+        if self.ext_header_spec is not None:
+            self.ext_header_spec.endianness = self.endianness
 
         return self
 
     @property
     def dtype(self) -> np.dtype[Any]:
         """Get numpy dtype."""
-        header_dtype = self.header_descriptor.dtype
-        data_dtype = self.sample_descriptor.dtype
+        header_dtype = self.header_spec.dtype
+        data_dtype = self.data_spec.dtype
 
-        trace_dtype = np.dtype([("header", header_dtype), ("sample", data_dtype)])
+        trace_dtype = np.dtype([("header", header_dtype), ("data", data_dtype)])
 
         if self.endianness is not None:
             trace_dtype = trace_dtype.newbyteorder(self.endianness.symbol)

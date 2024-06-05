@@ -4,11 +4,15 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import TYPE_CHECKING
+from typing import Literal
+from typing import cast
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
 from pydantic.alias_generators import to_camel
+
+from segy.compat import StrEnum
 
 if TYPE_CHECKING:
     from typing import Any
@@ -40,7 +44,7 @@ class CamelCaseModel(BaseModel):
         return super().model_dump_json(*args, **kwargs, by_alias=True)
 
 
-class BaseTypeDescriptor(CamelCaseModel):
+class BaseDataType(CamelCaseModel):
     """A base model for all SEG-Y Ninja types."""
 
     description: str | None = Field(
@@ -56,3 +60,29 @@ class BaseTypeDescriptor(CamelCaseModel):
     def itemsize(self) -> int:
         """Number of bytes for the data type."""
         return self.dtype.itemsize
+
+
+class Endianness(StrEnum):
+    """Enumeration class with three possible endianness values.
+
+    Examples:
+        >>> endian = Endianness.BIG
+        >>> print(endian.symbol)
+        >
+    """
+
+    BIG = "big"
+    LITTLE = "little"
+    NATIVE = "native"
+
+    def __init__(self, _: str) -> None:
+        self._symbol_map = {
+            "big": ">",
+            "little": "<",
+            "native": "=",
+        }
+
+    @property
+    def symbol(self) -> Literal["<", ">", "="]:
+        """Get the numpy symbol for the endianness from mapping."""
+        return cast(Literal["<", ">", "="], self._symbol_map[self.value])

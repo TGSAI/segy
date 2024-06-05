@@ -53,8 +53,8 @@ def generate_test_trace_data(
 ) -> tuple[NDArray[np.void], NDArray[Any]]:
     """Generate random header and sample data for testing."""
     rng = np.random.default_rng()
-    header_spec = factory.spec.trace.header_descriptor
-    sample_spec = factory.spec.trace.sample_descriptor
+    header_spec = factory.spec.trace.header_spec
+    data_spec = factory.spec.trace.data_spec
 
     header_dtype = header_spec.dtype.newbyteorder("=")
     header_arr = np.empty(num_traces, dtype=header_dtype)
@@ -63,10 +63,10 @@ def generate_test_trace_data(
         header_arr[field.name] = random_field_data.astype(field.format)
 
     # Cast to float32 if IBM.
-    if sample_spec.format == ScalarType.IBM32:
+    if data_spec.format == ScalarType.IBM32:
         sample_dtype = np.dtype("float32")
     else:
-        sample_dtype = np.dtype(sample_spec.format)
+        sample_dtype = np.dtype(data_spec.format)
     sample_shape = (num_traces, SAMPLES_PER_TRACE)
     sample_arr = np.empty(shape=sample_shape, dtype=sample_dtype)
     random_sample_data = rng.normal(size=sample_shape)
@@ -84,7 +84,7 @@ def generate_test_segy(
     """Function for mocking a SEG-Y file with in memory URI."""
     spec = get_segy_standard(segy_standard)
     spec.endianness = endianness
-    spec.trace.sample_descriptor.format = sample_format
+    spec.trace.data_spec.format = sample_format
 
     factory = SegyFactory(
         spec=spec,
@@ -140,10 +140,10 @@ class TestSegyFile:
         segy_file = SegyFile(test_config.uri)
 
         # Assert spec
-        sample_descriptor = segy_file.spec.trace.sample_descriptor
+        trace_data_spec = segy_file.spec.trace.data_spec
         assert segy_file.spec.segy_standard == test_config.segy_standard
         assert segy_file.spec.endianness == test_config.endianness
-        assert sample_descriptor.format == test_config.sample_format
+        assert trace_data_spec.format == test_config.sample_format
 
         # Assert attributes
         assert segy_file.num_traces == NUM_TRACES
@@ -326,7 +326,7 @@ class TestSegyFileSettingsOverride:
         )
 
         settings = SegyFileSettings.model_validate(
-            {"binary": {"extended_text_header": {"value": num_ext_text}}}
+            {"binary": {"ext_text_header": {"value": num_ext_text}}}
         )
         segy_file = SegyFile(test_config.uri, settings=settings)
 

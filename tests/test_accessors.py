@@ -6,11 +6,11 @@ import pytest
 
 from segy.accessors import TraceAccessor
 from segy.schema import Endianness
+from segy.schema import HeaderField
+from segy.schema import HeaderSpec
 from segy.schema import ScalarType
-from segy.schema import StructuredDataTypeDescriptor
-from segy.schema import StructuredFieldDescriptor
-from segy.schema import TraceDescriptor
-from segy.schema import TraceSampleDescriptor
+from segy.schema import TraceDataSpec
+from segy.schema import TraceSpec
 from segy.transforms import Transform
 from segy.transforms import TransformFactory
 
@@ -40,20 +40,18 @@ def compare_transform_sequence(
 )
 def mock_trace_spec(
     request: pytest.FixtureRequest,
-) -> tuple[TraceDescriptor, dict[str, list[Transform]]]:
+) -> tuple[TraceSpec, dict[str, list[Transform]]]:
     """Create mock trace spec for testing and expected values for accessors."""
     header_field_type = request.param[0]
     sample_field_type = request.param[1]
-    trace_header_spec = StructuredDataTypeDescriptor(
-        fields=[StructuredFieldDescriptor(name="h1", format=header_field_type, byte=1)],
+    trace_header_spec = HeaderSpec(
+        fields=[HeaderField(name="h1", format=header_field_type, byte=1)],
         item_size=4,
         endianness=Endianness.BIG,
         offset=0,
     )
-    trace_sample_spec = TraceSampleDescriptor(format=sample_field_type, samples=3)
-    trace_descr = TraceDescriptor(
-        header_descriptor=trace_header_spec, sample_descriptor=trace_sample_spec
-    )
+    trace_data_spec = TraceDataSpec(format=sample_field_type, samples=3)
+    trace_spec = TraceSpec(header_spec=trace_header_spec, data_spec=trace_data_spec)
     expected = {}
     base_transform = TransformFactory.create("byte_swap", Endianness.LITTLE)
     expected["header"] = (
@@ -61,7 +59,7 @@ def mock_trace_spec(
         if header_field_type != ScalarType.IBM32
         else [base_transform, TransformFactory.create("ibm_float", "to_ieee", ["h1"])]
     )
-    expected["sample"] = (
+    expected["data"] = (
         [base_transform]
         if sample_field_type != ScalarType.IBM32
         else [base_transform, TransformFactory.create("ibm_float", "to_ieee")]
@@ -71,14 +69,14 @@ def mock_trace_spec(
         if sample_field_type != ScalarType.IBM32
         else [
             base_transform,
-            TransformFactory.create("ibm_float", "to_ieee", ["sample"]),
+            TransformFactory.create("ibm_float", "to_ieee", ["data"]),
         ]
     )
-    return trace_descr, expected
+    return trace_spec, expected
 
 
 def test_trace_accessor(
-    mock_trace_spec: tuple[TraceDescriptor, dict[str, list[Transform]]],
+    mock_trace_spec: tuple[TraceSpec, dict[str, list[Transform]]],
 ) -> None:
     """Test for trace accessor decoder transforms."""
     trace_spec = mock_trace_spec[0]
@@ -88,7 +86,7 @@ def test_trace_accessor(
         trace_accessor.header_decode_transforms, expected_transforms["header"]
     )
     assert compare_transform_sequence(
-        trace_accessor.sample_decode_transforms, expected_transforms["sample"]
+        trace_accessor.sample_decode_transforms, expected_transforms["data"]
     )
     assert compare_transform_sequence(
         trace_accessor.trace_decode_transforms, expected_transforms["trace"]

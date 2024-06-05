@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
     from numpy.typing import NDArray
 
-    from segy.schema import SegyDescriptor
+    from segy.schema import SegySpec
 
 
 DEFAULT_TEXT_HEADER_LINES = [
@@ -45,7 +45,7 @@ class SegyFactory:
 
     def __init__(
         self,
-        spec: SegyDescriptor,
+        spec: SegySpec,
         sample_interval: int = 4000,
         samples_per_trace: int = 1500,
     ) -> None:
@@ -54,12 +54,12 @@ class SegyFactory:
         self.sample_interval = sample_interval
         self.samples_per_trace = samples_per_trace
 
-        self.spec.trace.sample_descriptor.samples = samples_per_trace
+        self.spec.trace.data_spec.samples = samples_per_trace
 
     @property
     def trace_sample_format(self) -> ScalarType:
         """Trace sample format of the SEG-Y file."""
-        return self.spec.trace.sample_descriptor.format
+        return self.spec.trace.data_spec.format
 
     @property
     def segy_revision(self) -> SegyStandard | None:
@@ -70,7 +70,7 @@ class SegyFactory:
         """Create a textual header for the SEG-Y file.
 
         The length of the text should match the rows and columns in the spec's
-        TextHeaderDescriptor. The newlines must also be in the text to separate
+        TextHeaderSpec. The newlines must also be in the text to separate
         the rows.
 
         Args:
@@ -82,10 +82,10 @@ class SegyFactory:
         """
         text = DEFAULT_TEXT_HEADER if text is None else text
 
-        text_descriptor = self.spec.text_file_header
-        text = text_descriptor._unwrap(text)
+        text_spec = self.spec.text_file_header
+        text = text_spec._unwrap(text)
 
-        return text_descriptor._encode(text)
+        return text_spec._encode(text)
 
     def create_binary_header(self) -> bytes:
         """Create a binary header for the SEG-Y file.
@@ -93,8 +93,8 @@ class SegyFactory:
         Returns:
             Bytes containing the encoded binary header, ready to write.
         """
-        binary_descriptor = self.spec.binary_file_header
-        bin_header = np.zeros(shape=1, dtype=binary_descriptor.dtype)
+        binary_spec = self.spec.binary_file_header
+        bin_header = np.zeros(shape=1, dtype=binary_spec.dtype)
 
         rev0 = self.segy_revision == SegyStandard.REV0
         if self.segy_revision is not None and not rev0:
@@ -120,8 +120,8 @@ class SegyFactory:
         Returns:
             Array containing the trace header template.
         """
-        descriptor = self.spec.trace.header_descriptor
-        dtype = descriptor.dtype.newbyteorder(Endianness.NATIVE.symbol)
+        trace_header_spec = self.spec.trace.header_spec
+        dtype = trace_header_spec.dtype.newbyteorder(Endianness.NATIVE.symbol)
 
         header_template = np.zeros(shape=size, dtype=dtype)
 
@@ -147,8 +147,8 @@ class SegyFactory:
         Returns:
             Array containing the trace data template.
         """
-        descriptor = self.spec.trace.sample_descriptor
-        dtype = descriptor.dtype
+        trace_data_spec = self.spec.trace.data_spec
+        dtype = trace_data_spec.dtype
 
         if self.trace_sample_format == ScalarType.IBM32:
             dtype = np.dtype(("float32", (self.samples_per_trace,)))
@@ -175,8 +175,8 @@ class SegyFactory:
             ValueError: if there is a shape mismatch between headers.
             ValueError: if there is a shape mismatch number of samples.
         """
-        trace_descriptor = self.spec.trace
-        trace_descriptor.sample_descriptor.samples = self.samples_per_trace
+        trace_spec = self.spec.trace
+        trace_spec.data_spec.samples = self.samples_per_trace
 
         if samples.ndim != 2:  # noqa: PLR2004
             msg = (
@@ -196,8 +196,8 @@ class SegyFactory:
         header_pipeline = TransformPipeline()
         data_pipeline = TransformPipeline()
 
-        target_endian = trace_descriptor.endianness
-        target_format = trace_descriptor.sample_descriptor.format
+        target_endian = trace_spec.endianness
+        target_format = trace_spec.data_spec.format
 
         if target_endian == Endianness.BIG:
             byte_swap = TransformFactory.create("byte_swap", target_endian)
@@ -208,8 +208,8 @@ class SegyFactory:
             ibm_float = TransformFactory.create("ibm_float", "to_ibm")
             data_pipeline.add_transform(ibm_float)
 
-        trace = np.zeros(shape=headers.size, dtype=trace_descriptor.dtype)
+        trace = np.zeros(shape=headers.size, dtype=trace_spec.dtype)
         trace["header"] = header_pipeline.apply(headers)
-        trace["sample"] = data_pipeline.apply(samples)
+        trace["data"] = data_pipeline.apply(samples)
 
         return trace.tobytes()

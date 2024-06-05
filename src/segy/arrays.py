@@ -87,4 +87,4 @@ class TraceArray(SegyArray):
     @property
     def sample(self) -> NDArray[Any]:
         """Access data of the trace(s)."""
-        return self["sample"]
+        return self["data"]

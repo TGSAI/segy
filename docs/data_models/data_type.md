@@ -2,7 +2,7 @@
 :tocdepth: 3
 ```
 
-```{currentModule} segy.schema.data_type
+```{currentModule} segy.schema
 
 ```
 
@@ -22,8 +22,9 @@
    :nosignatures:
 
    ScalarType
-   StructuredDataTypeDescriptor
-   StructuredFieldDescriptor
+   DataFormat
+   HeaderSpec
+   HeaderField
    Endianness
 ```
 
@@ -35,12 +36,12 @@
 ```
 
 ```{eval-rst}
-.. autopydantic_model:: StructuredDataTypeDescriptor
+.. autopydantic_model:: HeaderSpec
     :inherited-members: BaseModel
 ```
 
 ```{eval-rst}
-.. autopydantic_model:: StructuredFieldDescriptor
+.. autopydantic_model:: HeaderField
     :inherited-members: BaseModel
 
 ```

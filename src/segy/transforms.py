@@ -61,7 +61,7 @@ def _modify_dtype_field(
     key_to_modify = dtype_info["formats"][key_index]
 
     # Handle the case where field to modify is a struct
-    # For example; a Trace struct with "header" amd "sample" fields.
+    # For example; a Trace struct with "header" amd "data" fields.
     if key_to_modify.kind == "V":
         new_type = np.dtype((new_type.str,) + key_to_modify.subdtype[1:])
 
