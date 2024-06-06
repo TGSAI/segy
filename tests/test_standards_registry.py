@@ -5,13 +5,13 @@ import pytest
 from segy.schema import SegySpec
 from segy.standards import SegyStandard
 from segy.standards import get_segy_standard
-from segy.standards.rev0 import rev0_segy
-from segy.standards.rev1 import rev1_segy
+from segy.standards.spec import REV0
+from segy.standards.spec import REV1
 
 
 @pytest.mark.parametrize(
     ("standard_enum", "standard_spec"),
-    [(SegyStandard.REV0, rev0_segy), (SegyStandard.REV1, rev1_segy)],
+    [(SegyStandard.REV0, REV0), (SegyStandard.REV1, REV1)],
 )
 def test_get_standard(standard_enum: SegyStandard, standard_spec: SegySpec) -> None:
     """Test retrieving SegyStandard from registry."""

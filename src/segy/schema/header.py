@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from typing import TYPE_CHECKING
 from typing import Any
 
 import numpy as np
@@ -12,10 +13,12 @@ from pydantic import model_validator
 
 from segy.schema.base import BaseDataType
 from segy.schema.base import Endianness
-from segy.schema.format import DataFormat
+
+if TYPE_CHECKING:
+    from segy.schema.format import ScalarType
 
 
-class HeaderField(DataFormat):
+class HeaderField(BaseDataType):
     """A class representing header field spec.
 
     Examples:
@@ -46,11 +49,18 @@ class HeaderField(DataFormat):
 
     name: str = Field(..., description="The short name of the field.")
     byte: int = Field(..., ge=1, description="Field's start byte location.")
+    format: ScalarType = Field(..., description="The data type of the field.")  # noqa: A003
+    description: str | None = Field(default=None, description="Long description.")
 
     @property
     def offset(self) -> int:
         """Return zero based offset from one based byte location."""
         return self.byte - 1
+
+    @property
+    def dtype(self) -> np.dtype[Any]:
+        """Converts the byte order and data type of the object into a NumPy dtype."""
+        return np.dtype(self.format.char)
 
 
 class HeaderSpec(BaseDataType):

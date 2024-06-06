@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import numpy as np
-from pydantic import Field
 
 from segy.compat import StrEnum
-from segy.schema.base import BaseDataType
 
 
 class ScalarType(StrEnum):
@@ -26,6 +22,7 @@ class ScalarType(StrEnum):
     FLOAT64 = "float64"
     FLOAT32 = "float32"
     FLOAT16 = "float16"
+    STRING8 = "S8"
 
     @property
     def char(self) -> str:
@@ -34,28 +31,3 @@ class ScalarType(StrEnum):
             return np.sctype2char("uint32")  # noqa: NPY201
 
         return np.sctype2char(str(self.value))  # noqa: NPY201
-
-
-class DataFormat(BaseDataType):
-    """A class representing a data format spec.
-
-    Examples:
-        A float32:
-
-        >>> data_format = DataFormat(format="float32")
-        >>> data_format.dtype
-        dtype('float32')
-
-        A 16-bit unsigned integer:
-
-        >>> data_format = DataFormat(format="uint16")
-        >>> data_format.dtype
-        dtype('uint16')
-    """
-
-    format: ScalarType = Field(..., description="The data type of the field.")  # noqa: A003
-
-    @property
-    def dtype(self) -> np.dtype[Any]:
-        """Converts the byte order and data type of the object into a NumPy dtype."""
-        return np.dtype(self.format.char)

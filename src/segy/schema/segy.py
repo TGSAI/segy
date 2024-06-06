@@ -34,10 +34,8 @@ class SegySpec(CamelCaseModel):
     segy_standard: SegyStandard | None = Field(
         ..., description="SEG-Y Revision / Standard. Can also be custom."
     )
-    text_file_header: TextHeaderSpec = Field(
-        ..., description="Textual file header spec."
-    )
-    binary_file_header: HeaderSpec = Field(..., description="Binary file header spec.")
+    text_header: TextHeaderSpec = Field(..., description="Textual file header spec.")
+    binary_header: HeaderSpec = Field(..., description="Binary file header spec.")
     ext_text_header: TextHeaderSpec | None = Field(
         default=None, description="Extended textual header spec."
     )
@@ -50,7 +48,7 @@ class SegySpec(CamelCaseModel):
     @model_validator(mode="after")
     def update_submodel_endianness(self) -> SegySpec:
         """Ensure that submodel endianness matches the SEG-Y endianness."""
-        self.binary_file_header.endianness = self.endianness
+        self.binary_header.endianness = self.endianness
         self.trace.endianness = self.endianness
 
         return self
@@ -79,11 +77,11 @@ class SegySpec(CamelCaseModel):
         new_spec.segy_standard = None
 
         if text_header_spec:
-            new_spec.text_file_header = text_header_spec
+            new_spec.text_header = text_header_spec
 
         # Update binary header fields if specified; else will revert to default.
         if binary_header_fields:
-            new_spec.binary_file_header.fields = binary_header_fields
+            new_spec.binary_header.fields = binary_header_fields
 
         # Update extended text spec if its specified; else will revert to default.
         if ext_text_spec:

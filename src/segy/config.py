@@ -27,21 +27,21 @@ class SegyFieldSetting(SegyBaseSettings):
 class SamplesPerTraceSetting(SegyFieldSetting):
     """Configuration for samples per trace parsing."""
 
-    key: str = "num_samples"
+    key: str = "samples_per_trace"
     value: int | None = None
 
 
 class SampleIntervalSetting(SegyFieldSetting):
     """Configuration for samples interval parsing."""
 
-    key: str = "sample_int"
+    key: str = "sample_interval"
     value: int | None = None
 
 
 class ExtendedTextHeaderSetting(SegyFieldSetting):
     """Configuration for extended textual headers parsing."""
 
-    key: str = "num_ext_text_headers"
+    key: str = "num_extended_text_headers"
     value: int | None = None
 
 

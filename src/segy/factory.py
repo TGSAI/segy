@@ -82,7 +82,7 @@ class SegyFactory:
         """
         text = DEFAULT_TEXT_HEADER if text is None else text
 
-        text_spec = self.spec.text_file_header
+        text_spec = self.spec.text_header
         text = text_spec._unwrap(text)
 
         return text_spec._encode(text)
@@ -93,18 +93,18 @@ class SegyFactory:
         Returns:
             Bytes containing the encoded binary header, ready to write.
         """
-        binary_spec = self.spec.binary_file_header
+        binary_spec = self.spec.binary_header
         bin_header = np.zeros(shape=1, dtype=binary_spec.dtype)
 
         rev0 = self.segy_revision == SegyStandard.REV0
         if self.segy_revision is not None and not rev0:
             bin_header["seg_y_revision"] = self.segy_revision.value * 256
 
-        bin_header["sample_int"] = self.sample_interval
-        bin_header["orig_sample_int"] = self.sample_interval
-        bin_header["num_samples"] = self.samples_per_trace
-        bin_header["orig_num_samples"] = self.samples_per_trace
-        bin_header["sample_format"] = SEGY_FORMAT_MAP[self.trace_sample_format]
+        bin_header["sample_interval"] = self.sample_interval
+        bin_header["orig_sample_interval"] = self.sample_interval
+        bin_header["samples_per_trace"] = self.samples_per_trace
+        bin_header["orig_samples_per_trace"] = self.samples_per_trace
+        bin_header["data_sample_format"] = SEGY_FORMAT_MAP[self.trace_sample_format]
 
         return bin_header.tobytes()
 
@@ -127,11 +127,11 @@ class SegyFactory:
 
         # 'names' assumed not None by data structure (type ignores).
         field_names = header_template.dtype.names
-        if "sample_int" in field_names:  # type: ignore[operator]
-            header_template["sample_int"] = self.sample_interval
+        if "sample_interval" in field_names:  # type: ignore[operator]
+            header_template["sample_interval"] = self.sample_interval
 
-        if "num_samples" in field_names:  # type: ignore[operator]
-            header_template["num_samples"] = self.samples_per_trace
+        if "samples_per_trace" in field_names:  # type: ignore[operator]
+            header_template["samples_per_trace"] = self.samples_per_trace
 
         return header_template
 

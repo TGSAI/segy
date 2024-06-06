@@ -9,7 +9,6 @@ from typing import cast
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
-from pydantic import Field
 from pydantic.alias_generators import to_camel
 
 from segy.compat import StrEnum
@@ -46,10 +45,6 @@ class CamelCaseModel(BaseModel):
 
 class BaseDataType(CamelCaseModel):
     """A base model for all SEG-Y Ninja types."""
-
-    description: str | None = Field(
-        default=None, description="Description of the field."
-    )
 
     @property
     @abstractmethod

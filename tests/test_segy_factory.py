@@ -72,12 +72,12 @@ def mock_segy_factory(request: pytest.FixtureRequest) -> SegyFactory:
 def test_textual_file_header(encoding: TextHeaderEncoding) -> None:
     """Tests that the textual file header is written correctly."""
     segy_spec = minimal_segy
-    segy_spec.text_file_header.encoding = encoding
+    segy_spec.text_header.encoding = encoding
     factory = SegyFactory(segy_spec)
 
     text_bytes = factory.create_textual_header()
 
-    text_spec = factory.spec.text_file_header
+    text_spec = factory.spec.text_header
     text_actual = text_spec._decode(text_bytes)
     text_actual = text_spec._wrap(text_actual)
     assert text_actual == DEFAULT_TEXT_HEADER
@@ -94,7 +94,7 @@ def test_binary_file_header(
 
     binary_bytes = mock_segy_factory.create_binary_header()
 
-    bin_spec = mock_segy_factory.spec.binary_file_header
+    bin_spec = mock_segy_factory.spec.binary_header
     binary_actual = np.frombuffer(binary_bytes, dtype=bin_spec.dtype)
     binary_expected = (
         mock_segy_factory.sample_interval,
@@ -130,8 +130,8 @@ class TestSegyFactoryTraces:
         mock_segy_factory.spec.trace.header_spec.item_size = 26
         # fmt: off
         mock_segy_factory.spec.trace.header_spec.fields += [
-            HeaderField(name="sample_int", format=ScalarType.INT16, byte=13),
-            HeaderField(name="num_samples", format=ScalarType.INT16, byte=25),
+            HeaderField(name="sample_interval", format=ScalarType.INT16, byte=13),
+            HeaderField(name="samples_per_trace", format=ScalarType.INT16, byte=25),
         ]
         # fmt: on
 
@@ -142,8 +142,8 @@ class TestSegyFactoryTraces:
         expected_samples_per_trace = mock_segy_factory.samples_per_trace
         assert headers.size == num_traces
         assert headers.dtype == header_spec.dtype.newbyteorder("<")
-        assert_array_equal(headers["sample_int"], expected_sample_info)
-        assert_array_equal(headers["num_samples"], expected_samples_per_trace)
+        assert_array_equal(headers["sample_interval"], expected_sample_info)
+        assert_array_equal(headers["samples_per_trace"], expected_samples_per_trace)
 
     @pytest.mark.parametrize(
         "sample_format", [ScalarType.FLOAT32, ScalarType.IBM32, ScalarType.INT16]

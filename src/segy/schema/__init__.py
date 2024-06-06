@@ -1,7 +1,6 @@
 """Data models for manipulating all kinds of SEG-Y files."""
 
 from segy.schema.base import Endianness
-from segy.schema.format import DataFormat
 from segy.schema.format import ScalarType
 from segy.schema.header import HeaderField
 from segy.schema.header import HeaderSpec
@@ -14,7 +13,6 @@ from segy.schema.trace import TraceSpec
 
 __all__ = [
     "Endianness",
-    "DataFormat",
     "ScalarType",
     "HeaderField",
     "HeaderSpec",

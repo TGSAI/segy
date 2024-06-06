@@ -20,8 +20,7 @@ from segy.schema import ScalarType
 from segy.schema import SegyStandard
 from segy.standards import get_segy_standard
 from segy.standards.mapping import SEGY_FORMAT_MAP
-from segy.standards.rev1 import rev1_binary_file_header
-from segy.standards.rev1 import rev1_ext_text_header
+from segy.standards.spec import ext_text_header_ebcdic_3200
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
@@ -58,10 +57,11 @@ def read_default_binary_file_header_buffer(
     fs: AbstractFileSystem, url: str
 ) -> bytearray:
     """Read a binary file header from a URL."""
+    spec = get_segy_standard(SegyStandard.REV1)
     buffer = fs.read_block(
         fn=url,
-        offset=rev1_binary_file_header.offset,
-        length=rev1_binary_file_header.itemsize,
+        offset=spec.binary_header.offset,
+        length=spec.binary_header.itemsize,
     )
 
     return bytearray(buffer)
@@ -158,12 +158,12 @@ class SegyFile:
     @property
     def samples_per_trace(self) -> int:
         """Return samples per trace in file based on spec."""
-        return int(self.binary_header["num_samples"].item())
+        return int(self.binary_header["samples_per_trace"].item())
 
     @property
     def sample_interval(self) -> int:
         """Return samples interval in file based on spec."""
-        return int(self.binary_header["sample_int"].item())
+        return int(self.binary_header["sample_interval"].item())
 
     @property
     def sample_labels(self) -> NDArray[np.int32]:
@@ -174,14 +174,14 @@ class SegyFile:
     @property
     def num_traces(self) -> int:
         """Return number of traces in file based on size and spec."""
-        file_textual_hdr_size = self.spec.text_file_header.itemsize
-        file_bin_hdr_size = self.spec.binary_file_header.itemsize
+        file_textual_hdr_size = self.spec.text_header.itemsize
+        file_bin_hdr_size = self.spec.binary_header.itemsize
         trace_size = self.spec.trace.itemsize
 
         file_metadata_size = file_textual_hdr_size + file_bin_hdr_size
 
         if self.num_ext_text > 0:
-            self.spec.ext_text_header = rev1_ext_text_header
+            self.spec.ext_text_header = ext_text_header_ebcdic_3200
 
             ext_text_size = self.spec.ext_text_header.itemsize * self.num_ext_text
             file_metadata_size = file_metadata_size + ext_text_size
@@ -191,7 +191,7 @@ class SegyFile:
     @cached_property
     def text_header(self) -> str:
         """Return textual file header."""
-        text_hdr_spec = self.spec.text_file_header
+        text_hdr_spec = self.spec.text_header
 
         buffer = self.fs.read_block(
             fn=self.url,
@@ -215,12 +215,12 @@ class SegyFile:
         """Read binary header from store, based on spec."""
         buffer_bytes = self.fs.read_block(
             fn=self.url,
-            offset=self.spec.binary_file_header.offset,
-            length=self.spec.binary_file_header.itemsize,
+            offset=self.spec.binary_header.offset,
+            length=self.spec.binary_header.itemsize,
         )
         buffer = bytearray(buffer_bytes)
 
-        bin_hdr = np.frombuffer(buffer, dtype=self.spec.binary_file_header.dtype)
+        bin_hdr = np.frombuffer(buffer, dtype=self.spec.binary_header.dtype)
 
         transforms = TransformPipeline()
 
@@ -233,15 +233,15 @@ class SegyFile:
     def _parse_binary_header(self) -> None:
         """Parse the binary header and apply some rules."""
         # Calculate sizes for dynamic file metadata
-        text_hdr_size = self.spec.text_file_header.itemsize
-        bin_hdr_size = self.spec.binary_file_header.itemsize
+        text_hdr_size = self.spec.text_header.itemsize
+        bin_hdr_size = self.spec.binary_header.itemsize
 
         # Update trace start offset and sample length
         self.spec.trace.data_spec.samples = self.samples_per_trace
         self.spec.trace.offset = text_hdr_size + bin_hdr_size
 
         if self.num_ext_text > 0:
-            self.spec.ext_text_header = rev1_ext_text_header
+            self.spec.ext_text_header = ext_text_header_ebcdic_3200
 
             ext_text_size = self.spec.ext_text_header.itemsize * self.num_ext_text
             self.spec.trace.offset = self.spec.trace.offset + ext_text_size

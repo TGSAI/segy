@@ -35,7 +35,7 @@ class TestSegySpecCustomize:
         custom_spec = segy_spec.customize(text_header_spec=custom_text_spec)
 
         assert custom_spec.segy_standard is None
-        assert custom_spec.text_file_header == custom_text_spec
+        assert custom_spec.text_header == custom_text_spec
 
     def test_custom_binary_file_headers(self, segy_spec: SegySpec) -> None:
         """Test customizing binary file header spec."""
@@ -47,11 +47,11 @@ class TestSegySpecCustomize:
 
         custom_spec = segy_spec.customize(binary_header_fields=custom_fields)
 
-        expected_itemsize = segy_spec.binary_file_header.dtype.itemsize
+        expected_itemsize = segy_spec.binary_header.dtype.itemsize
         assert custom_spec.segy_standard is None
-        assert len(custom_spec.binary_file_header.fields) == len(custom_fields)
-        assert custom_spec.binary_file_header.dtype.names == ("f1", "f2", "f3")
-        assert custom_spec.binary_file_header.dtype.itemsize == expected_itemsize
+        assert len(custom_spec.binary_header.fields) == len(custom_fields)
+        assert custom_spec.binary_header.dtype.names == ("f1", "f2", "f3")
+        assert custom_spec.binary_header.dtype.itemsize == expected_itemsize
 
     def test_custom_trace_headers(self, segy_spec: SegySpec) -> None:
         """Test customizing trace header spec."""
