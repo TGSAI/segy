@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import struct
 from functools import cached_property
 from typing import TYPE_CHECKING
 
@@ -11,14 +10,15 @@ from fsspec.core import url_to_fs
 
 from segy.accessors import TraceAccessor
 from segy.arrays import HeaderArray
-from segy.config import SegyFileSettings
+from segy.config import SegySettings
+from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
-from segy.indexing import SampleIndexer
 from segy.indexing import TraceIndexer
 from segy.schema import Endianness
-from segy.schema import ScalarType
 from segy.schema import SegyStandard
 from segy.standards import get_segy_standard
+from segy.standards.fields import BinFieldRev0
+from segy.standards.fields import BinFieldRev1
 from segy.standards.mapping import SEGY_FORMAT_MAP
 from segy.standards.spec import ext_text_header_ebcdic_3200
 from segy.transforms import TransformFactory
@@ -32,73 +32,34 @@ if TYPE_CHECKING:
     from segy.schema import SegySpec
 
 
-def create_spec(
-    standard: SegyStandard,
-    endian: Endianness,
-    sample_format: ScalarType | None = None,
-) -> SegySpec:
-    """Create SegySpec from SegyStandard, Endianness, and ScalarType."""
-    spec = get_segy_standard(standard)
-    spec.endianness = endian
-
-    if sample_format is not None:
-        spec.trace.data_spec.format = sample_format
-
-    return spec
-
-
-def get_spec_from_settings(settings: SegyFileSettings) -> SegySpec:
-    """Get the SEG-Y spec from the settings instance."""
-    standard = SegyStandard(settings.revision)
-    return create_spec(standard, settings.endianness)
-
-
-def read_default_binary_file_header_buffer(
-    fs: AbstractFileSystem, url: str
-) -> bytearray:
-    """Read a binary file header from a URL."""
+def infer_spec(fs: AbstractFileSystem, url: str) -> SegySpec:
+    """Try to infer SEG-Y file revision and endianness to build a SegySpec."""
     spec = get_segy_standard(SegyStandard.REV1)
+
     buffer = fs.read_block(
-        fn=url,
+        url,
         offset=spec.binary_header.offset,
         length=spec.binary_header.itemsize,
     )
 
-    return bytearray(buffer)
-
-
-def unpack_binary_header(
-    buffer: bytearray, endianness: Endianness
-) -> tuple[int, float, int]:
-    """Unpack binary header sample rate and revision."""
-    format_ = f"{endianness.symbol}h"
-    sample_increment = struct.unpack_from(format_, buffer, offset=16)[0]
-
-    # Get sample format
-    sample_format = struct.unpack_from(format_, buffer, offset=24)[0]
-
-    # # Get revision. Per SEG-Y standard, there is a Q-point between the
-    # bytes. Dividing by 2^8 to get the floating-point value of the revision.
-    revision = struct.unpack_from(format_, buffer, offset=300)[0] / 256.0
-
-    return sample_increment, revision, sample_format
-
-
-def infer_spec_from_binary_header(buffer: bytearray) -> SegySpec:
-    """Try to infer SEG-Y file revision and endianness to build a SegySpec."""
     for endianness in [Endianness.BIG, Endianness.LITTLE]:
-        unpacked = unpack_binary_header(buffer, endianness)
-        sample_increment, revision, sample_format_int = unpacked
+        spec.endianness = endianness
+        bin_hdr = np.frombuffer(buffer, dtype=spec.binary_header.dtype)
+
+        revision = bin_hdr[BinFieldRev1.SEGY_REVISION].item() / 256.0
+        sample_increment = bin_hdr[BinFieldRev1.SAMPLE_INTERVAL].item()
+        sample_format_int = bin_hdr[BinFieldRev1.DATA_SAMPLE_FORMAT].item()
 
         # Validate the inferred values.
-        in_spec = revision in {0.0, 1.0}
+        in_spec = revision in {0.0, 1.0, 2.0}
         increment_is_positive = sample_increment > 0
         format_is_valid = sample_format_int in SEGY_FORMAT_MAP.values()
 
         if in_spec and increment_is_positive and format_is_valid:
-            standard = SegyStandard(revision)
-            sample_format: ScalarType = SEGY_FORMAT_MAP.inverse[sample_format_int]
-            return create_spec(standard, endianness, sample_format)
+            new_spec = get_segy_standard(SegyStandard(revision))
+            new_spec.trace.data_spec.format = SEGY_FORMAT_MAP.inverse[sample_format_int]
+            new_spec.endianness = endianness
+            return new_spec
 
     # If both fail, raise error.
     msg = "Could not infer SEG-Y standard. Please provide spec."
@@ -124,15 +85,19 @@ class SegyFile:
         self,
         url: str,
         spec: SegySpec | None = None,
-        settings: SegyFileSettings | None = None,
+        settings: SegySettings | None = None,
     ):
-        self.settings = SegyFileSettings() if settings is None else settings
+        self.settings = settings if settings is not None else SegySettings()
 
         self.fs, self.url = url_to_fs(url, **self.settings.storage_options)
-
-        self.spec = self._infer_spec() if spec is None else spec
-
         self._info = self.fs.info(self.url)
+
+        if self.settings.revision is not None:
+            self.spec = get_segy_standard(SegyStandard(self.settings.revision))
+            self.spec.endianness = self.settings.endianness
+        else:
+            self.spec = spec if spec is not None else infer_spec(self.fs, self.url)
+
         self._parse_binary_header()
         self.accessors = TraceAccessor(self.spec.trace)
 
@@ -152,18 +117,17 @@ class SegyFile:
         if self.settings.binary.ext_text_header.value is not None:
             return self.settings.binary.ext_text_header.value
 
-        header_key = self.settings.binary.ext_text_header.key
-        return int(self.binary_header[header_key][0])
+        return self.binary_header[BinFieldRev1.NUM_EXTENDED_TEXT_HEADERS].item()
 
     @property
     def samples_per_trace(self) -> int:
         """Return samples per trace in file based on spec."""
-        return int(self.binary_header["samples_per_trace"].item())
+        return self.binary_header[BinFieldRev0.SAMPLES_PER_TRACE].item()
 
     @property
     def sample_interval(self) -> int:
         """Return samples interval in file based on spec."""
-        return int(self.binary_header["sample_interval"].item())
+        return self.binary_header[BinFieldRev0.SAMPLE_INTERVAL].item()
 
     @property
     def sample_labels(self) -> NDArray[np.int32]:
@@ -201,14 +165,6 @@ class SegyFile:
 
         text_header = text_hdr_spec._decode(buffer)
         return text_hdr_spec._wrap(text_header)
-
-    def _infer_spec(self) -> SegySpec:
-        """Infer the SEG-Y specification for the file."""
-        if self.settings.revision is not None:
-            return get_spec_from_settings(self.settings)
-
-        binary_header_buffer = read_default_binary_file_header_buffer(self.fs, self.url)
-        return infer_spec_from_binary_header(binary_header_buffer)
 
     @cached_property
     def binary_header(self) -> HeaderArray:
@@ -249,12 +205,11 @@ class SegyFile:
     @property
     def sample(self) -> AbstractIndexer:
         """Way to access the file to fetch trace data only."""
-        return SampleIndexer(
+        return DataIndexer(
             self.fs,
             self.url,
             self.spec.trace,
             self.num_traces,
-            kind="data",
             settings=self.settings,
             transforms=self.accessors.sample_decode_transforms,
         )
@@ -267,7 +222,6 @@ class SegyFile:
             self.url,
             self.spec.trace,
             self.num_traces,
-            kind="header",
             settings=self.settings,
             transforms=self.accessors.header_decode_transforms,
         )
@@ -280,7 +234,6 @@ class SegyFile:
             self.url,
             self.spec.trace,
             self.num_traces,
-            kind="trace",
             settings=self.settings,
             transforms=self.accessors.trace_decode_transforms,
         )

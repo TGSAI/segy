@@ -98,7 +98,7 @@ class SegyFactory:
 
         rev0 = self.segy_revision == SegyStandard.REV0
         if self.segy_revision is not None and not rev0:
-            bin_header["seg_y_revision"] = self.segy_revision.value * 256
+            bin_header["segy_revision"] = self.segy_revision.value * 256
 
         bin_header["sample_interval"] = self.sample_interval
         bin_header["orig_sample_interval"] = self.sample_interval

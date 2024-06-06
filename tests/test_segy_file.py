@@ -13,7 +13,7 @@ from numpy.testing import assert_array_equal
 
 from segy import SegyFactory
 from segy import SegyFile
-from segy.config import SegyFileSettings
+from segy.config import SegySettings
 from segy.factory import DEFAULT_TEXT_HEADER
 from segy.schema import Endianness
 from segy.schema import ScalarType
@@ -293,7 +293,7 @@ class TestSegyFileSettingsOverride:
             filesystem=mock_filesystem, segy_standard=SegyStandard.REV0
         )
 
-        settings = SegyFileSettings(revision=1.0)
+        settings = SegySettings(revision=1.0)
         segy_file = SegyFile(test_config.uri, settings=settings)
 
         assert segy_file.spec.segy_standard == SegyStandard.REV1
@@ -306,14 +306,14 @@ class TestSegyFileSettingsOverride:
             endianness=Endianness.BIG,
         )
 
-        settings = SegyFileSettings(revision=1.0, endianness=Endianness.LITTLE)
+        settings = SegySettings(revision=1.0, endianness=Endianness.LITTLE)
         segy_file = SegyFile(test_config.uri, settings=settings)
 
         assert segy_file.spec.segy_standard == SegyStandard.REV1
         assert segy_file.spec.endianness == Endianness.LITTLE
         # Rev1 should have below field, but the value will be zero
-        assert "seg_y_revision" in segy_file.binary_header.dtype.names
-        assert segy_file.binary_header["seg_y_revision"] == 0
+        assert "segy_revision" in segy_file.binary_header.dtype.names
+        assert segy_file.binary_header["segy_revision"] == 0
 
     @pytest.mark.parametrize("num_ext_text", [2])
     def test_ext_text_header_override(
@@ -325,7 +325,7 @@ class TestSegyFileSettingsOverride:
             segy_standard=SegyStandard.REV1,
         )
 
-        settings = SegyFileSettings.model_validate(
+        settings = SegySettings.model_validate(
             {"binary": {"ext_text_header": {"value": num_ext_text}}}
         )
         segy_file = SegyFile(test_config.uri, settings=settings)

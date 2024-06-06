@@ -53,7 +53,7 @@ class SegyBinaryHeaderSettings(SegyBaseSettings):
     ext_text_header: ExtendedTextHeaderSetting = ExtendedTextHeaderSetting()
 
 
-class SegyFileSettings(SegyBaseSettings):
+class SegySettings(SegyBaseSettings):
     """SEG-Y file parsing settings."""
 
     binary: SegyBinaryHeaderSettings = Field(default_factory=SegyBinaryHeaderSettings)

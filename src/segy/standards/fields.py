@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from enum import Enum
-
+from segy.compat import StrEnum
 from segy.schema import HeaderField
 from segy.schema import ScalarType
 
@@ -174,7 +173,7 @@ BIN_HDR_FIELDS_REV0 = [
 
 BIN_HDR_FIELDS_REV1 = BIN_HDR_FIELDS_REV0 + [
     HeaderField(
-        name="seg_y_revision",
+        name="segy_revision",
         byte=301,
         format=ScalarType.INT16,
         description="SEG-Y format revision number.",
@@ -244,13 +243,13 @@ BIN_HDR_FIELDS_REV2 = BIN_HDR_FIELDS_REV1 + [
         description="Integer constant for byte order detection.",
     ),
     HeaderField(
-        name="seg_y_revision_major",
+        name="segy_revision_major",
         byte=301,
         format=ScalarType.UINT8,
         description="Major SEG-Y Format Revision Number.",
     ),
     HeaderField(
-        name="seg_y_revision_minor",
+        name="segy_revision_minor",
         byte=302,
         format=ScalarType.UINT8,
         description="Major SEG-Y Format Revision Number.",
@@ -293,26 +292,26 @@ BIN_HDR_FIELDS_REV2 = BIN_HDR_FIELDS_REV1 + [
     ),
 ]
 BIN_HDR_FIELDS_REV2 = [
-    field for field in BIN_HDR_FIELDS_REV2 if field.name != "seg_y_revision"
+    field for field in BIN_HDR_FIELDS_REV2 if field.name != "segy_revision"
 ]
 
 
 BIN_HDR_FIELDS_REV0 = sorted(BIN_HDR_FIELDS_REV0, key=lambda f: f.byte)
-BinFieldRev0 = Enum(  # type: ignore[misc]
+BinFieldRev0 = StrEnum(  # type: ignore[misc]
     "BinaryHeaderFieldRev0",
-    {field.name.upper(): field for field in BIN_HDR_FIELDS_REV0},
+    {field.name.upper(): field.name for field in BIN_HDR_FIELDS_REV0},
 )
 
 BIN_HDR_FIELDS_REV1 = sorted(BIN_HDR_FIELDS_REV1, key=lambda f: f.byte)
-BinFieldRev1 = Enum(  # type: ignore[misc]
+BinFieldRev1 = StrEnum(  # type: ignore[misc]
     "BinaryHeaderFieldRev1",
-    {field.name.upper(): field for field in BIN_HDR_FIELDS_REV1},
+    {field.name.upper(): field.name for field in BIN_HDR_FIELDS_REV1},
 )
 
 BIN_HDR_FIELDS_REV2 = sorted(BIN_HDR_FIELDS_REV2, key=lambda f: f.byte)
-BinFieldRev2 = Enum(  # type: ignore[misc]
+BinFieldRev2 = StrEnum(  # type: ignore[misc]
     "BinaryHeaderFieldRev2",
-    {field.name.upper(): field for field in BIN_HDR_FIELDS_REV2},
+    {field.name.upper(): field.name for field in BIN_HDR_FIELDS_REV2},
 )
 
 
@@ -867,15 +866,15 @@ TRC_HDR_FIELDS_REV2 = TRC_HDR_FIELDS_REV1 + [
 ]
 
 
-TraceFieldRev0 = Enum(  # type: ignore[misc]
+TraceFieldRev0 = StrEnum(  # type: ignore[misc]
     "TraceHeaderFieldRev0",
-    {field.name.upper(): field for field in TRC_HDR_FIELDS_REV0},
+    {field.name.upper(): field.name for field in TRC_HDR_FIELDS_REV0},
 )
-TraceFieldRev1 = Enum(  # type: ignore[misc]
+TraceFieldRev1 = StrEnum(  # type: ignore[misc]
     "TraceHeaderFieldRev1",
-    {field.name.upper(): field for field in TRC_HDR_FIELDS_REV1},
+    {field.name.upper(): field.name for field in TRC_HDR_FIELDS_REV1},
 )
-TraceFieldRev2 = Enum(  # type: ignore[misc]
+TraceFieldRev2 = StrEnum(  # type: ignore[misc]
     "TraceHeaderFieldRev2",
-    {field.name.upper(): field for field in TRC_HDR_FIELDS_REV2},
+    {field.name.upper(): field.name for field in TRC_HDR_FIELDS_REV2},
 )

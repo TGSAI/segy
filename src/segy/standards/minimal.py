@@ -42,7 +42,7 @@ BINARY_FILE_HEADER_FIELDS = [
         description="Data Sample Format Code",
     ),
     HeaderField(
-        name="seg_y_revision",
+        name="segy_revision",
         byte=301,
         format=ScalarType.INT16,
         description="SEG Y Format Revision Number",

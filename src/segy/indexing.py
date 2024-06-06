@@ -12,7 +12,7 @@ from fsspec.utils import merge_offset_ranges
 
 from segy.arrays import HeaderArray
 from segy.arrays import TraceArray
-from segy.config import SegyFileSettings
+from segy.config import SegySettings
 from segy.transforms import Transform
 from segy.transforms import TransformPipeline
 
@@ -104,10 +104,11 @@ class AbstractIndexer(ABC):
         url: A string representing the URL of the file.
         spec: An instance of BaseDataType.
         max_value: An integer representing the maximum value of the index.
-        kind: A string representing the kind of index.
         settings: Optional parsing settings.
         transforms: The transforms to apply after decoding.
     """
+
+    kind: str = "Abstract"
 
     def __init__(  # noqa: PLR0913
         self,
@@ -115,16 +116,14 @@ class AbstractIndexer(ABC):
         url: str,
         spec: BaseDataType,
         max_value: int,
-        kind: str,
-        settings: SegyFileSettings | None = None,
+        settings: SegySettings | None = None,
         transforms: list[Transform] | None = None,
     ):
         self.fs = fs
         self.url = url
         self.spec = spec
         self.max_value = max_value
-        self.kind = kind
-        self.settings = SegyFileSettings() if settings is None else settings
+        self.settings = SegySettings() if settings is None else settings
 
         self.transform_pipeline = TransformPipeline()
 
@@ -203,6 +202,7 @@ class TraceIndexer(AbstractIndexer):
     """
 
     spec: TraceSpec
+    kind: str = "trace"
 
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
         """Convert trace indices to byte ranges."""
@@ -232,6 +232,7 @@ class HeaderIndexer(AbstractIndexer):
     """
 
     spec: TraceSpec
+    kind: str = "header"
 
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
         """Convert header indices to byte ranges (without trace data)."""
@@ -255,13 +256,14 @@ class HeaderIndexer(AbstractIndexer):
         return HeaderArray(data)
 
 
-class SampleIndexer(AbstractIndexer):
-    """Indexer for reading trace samples only.
+class DataIndexer(AbstractIndexer):
+    """Indexer for reading trace data samples only.
 
     Inherits from AbstractIndexer. Implements decoding based on trace spec.
     """
 
     spec: TraceSpec
+    kind: str = "data"
 
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
         """Convert data indices to byte ranges (without trace headers)."""
