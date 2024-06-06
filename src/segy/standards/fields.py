@@ -298,19 +298,19 @@ BIN_HDR_FIELDS_REV2 = [
 
 
 BIN_HDR_FIELDS_REV0 = sorted(BIN_HDR_FIELDS_REV0, key=lambda f: f.byte)
-BinFieldRev0 = Enum(
+BinFieldRev0 = Enum(  # type: ignore[misc]
     "BinaryHeaderFieldRev0",
     {field.name.upper(): field for field in BIN_HDR_FIELDS_REV0},
 )
 
 BIN_HDR_FIELDS_REV1 = sorted(BIN_HDR_FIELDS_REV1, key=lambda f: f.byte)
-BinFieldRev1 = Enum(
+BinFieldRev1 = Enum(  # type: ignore[misc]
     "BinaryHeaderFieldRev1",
     {field.name.upper(): field for field in BIN_HDR_FIELDS_REV1},
 )
 
 BIN_HDR_FIELDS_REV2 = sorted(BIN_HDR_FIELDS_REV2, key=lambda f: f.byte)
-BinFieldRev2 = Enum(
+BinFieldRev2 = Enum(  # type: ignore[misc]
     "BinaryHeaderFieldRev2",
     {field.name.upper(): field for field in BIN_HDR_FIELDS_REV2},
 )
@@ -866,15 +866,16 @@ TRC_HDR_FIELDS_REV2 = TRC_HDR_FIELDS_REV1 + [
     ),
 ]
 
-TraceFieldRev0 = Enum(
+
+TraceFieldRev0 = Enum(  # type: ignore[misc]
     "TraceHeaderFieldRev0",
     {field.name.upper(): field for field in TRC_HDR_FIELDS_REV0},
 )
-TraceFieldRev1 = Enum(
+TraceFieldRev1 = Enum(  # type: ignore[misc]
     "TraceHeaderFieldRev1",
     {field.name.upper(): field for field in TRC_HDR_FIELDS_REV1},
 )
-TraceFieldRev2 = Enum(
+TraceFieldRev2 = Enum(  # type: ignore[misc]
     "TraceHeaderFieldRev2",
     {field.name.upper(): field for field in TRC_HDR_FIELDS_REV2},
 )
