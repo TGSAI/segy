@@ -47,8 +47,8 @@ def infer_spec(fs: AbstractFileSystem, url: str) -> SegySpec:
         bin_hdr = np.frombuffer(buffer, dtype=spec.binary_header.dtype)
 
         revision = bin_hdr[BinFieldRev1.SEGY_REVISION].item() / 256.0
-        sample_increment = bin_hdr[BinFieldRev1.SAMPLE_INTERVAL].item()
-        sample_format_int = bin_hdr[BinFieldRev1.DATA_SAMPLE_FORMAT].item()
+        sample_increment = bin_hdr[BinFieldRev0.SAMPLE_INTERVAL].item()
+        sample_format_int = bin_hdr[BinFieldRev0.DATA_SAMPLE_FORMAT].item()
 
         # Validate the inferred values.
         in_spec = revision in {0.0, 1.0, 2.0}
@@ -117,17 +117,17 @@ class SegyFile:
         if self.settings.binary.ext_text_header.value is not None:
             return self.settings.binary.ext_text_header.value
 
-        return self.binary_header[BinFieldRev1.NUM_EXTENDED_TEXT_HEADERS].item()
+        return int(self.binary_header[BinFieldRev1.NUM_EXTENDED_TEXT_HEADERS].item())
 
     @property
     def samples_per_trace(self) -> int:
         """Return samples per trace in file based on spec."""
-        return self.binary_header[BinFieldRev0.SAMPLES_PER_TRACE].item()
+        return int(self.binary_header[BinFieldRev0.SAMPLES_PER_TRACE].item())
 
     @property
     def sample_interval(self) -> int:
         """Return samples interval in file based on spec."""
-        return self.binary_header[BinFieldRev0.SAMPLE_INTERVAL].item()
+        return int(self.binary_header[BinFieldRev0.SAMPLE_INTERVAL].item())
 
     @property
     def sample_labels(self) -> NDArray[np.int32]:
