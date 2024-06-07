@@ -24,6 +24,10 @@ class ScalarType(StrEnum):
     FLOAT16 = "float16"
     STRING8 = "S8"
 
+    def __repr__(self) -> str:
+        """Nicer representation for users."""
+        return f"{self.__class__.__name__}.{self._name_}"
+
     @property
     def char(self) -> str:
         """Returns the numpy character code for a given data type string."""
