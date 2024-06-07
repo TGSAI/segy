@@ -102,6 +102,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"src/segy/standards/fields.py" = ["E501"]
 "tests/*" = ["S101"]
 
 [tool.ruff.lint.flake8-annotations]

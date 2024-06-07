@@ -2,317 +2,114 @@
 
 from __future__ import annotations
 
+from enum import ReprEnum
+
 from segy.compat import StrEnum
 from segy.schema import HeaderField
 from segy.schema import ScalarType
 
-BIN_HDR_FIELDS_REV0 = [
-    HeaderField(
-        name="job_id",
-        byte=1,
-        format=ScalarType.INT32,
-        description="Job identification number.",
-    ),
-    HeaderField(
-        name="line_num",
-        byte=5,
-        format=ScalarType.INT32,
-        description="Line number.",
-    ),
-    HeaderField(
-        name="reel_num",
-        byte=9,
-        format=ScalarType.INT32,
-        description="Reel number.",
-    ),
-    HeaderField(
-        name="data_traces_per_ensemble",
-        byte=13,
-        format=ScalarType.INT16,
-        description="Number of data traces per ensemble.",
-    ),
-    HeaderField(
-        name="aux_traces_per_ensemble",
-        byte=15,
-        format=ScalarType.INT16,
-        description="Number of auxiliary traces per ensemble.",
-    ),
-    HeaderField(
-        name="sample_interval",
-        byte=17,
-        format=ScalarType.INT16,
-        description="Sample interval (microseconds).",
-    ),
-    HeaderField(
-        name="orig_sample_interval",
-        byte=19,
-        format=ScalarType.INT16,
-        description="Sample interval of original field recording (microseconds).",
-    ),
-    HeaderField(
-        name="samples_per_trace",
-        byte=21,
-        format=ScalarType.INT16,
-        description="Number of samples per data trace.",
-    ),
-    HeaderField(
-        name="orig_samples_per_trace",
-        byte=23,
-        format=ScalarType.INT16,
-        description="Number of samples per data trace for original field recording.",
-    ),
-    HeaderField(
-        name="data_sample_format",
-        byte=25,
-        format=ScalarType.INT16,
-        description="Data sample format code.",
-    ),
-    HeaderField(
-        name="ensemble_fold",
-        byte=27,
-        format=ScalarType.INT16,
-        description="Ensemble fold.",
-    ),
-    HeaderField(
-        name="trace_sorting_code",
-        byte=29,
-        format=ScalarType.INT16,
-        description="Trace sorting code.",
-    ),
-    HeaderField(
-        name="vertical_sum_code",
-        byte=31,
-        format=ScalarType.INT16,
-        description="Vertical sum code.",
-    ),
-    HeaderField(
-        name="sweep_freq_start",
-        byte=33,
-        format=ScalarType.INT16,
-        description="Sweep frequency at start.",
-    ),
-    HeaderField(
-        name="sweep_freq_end",
-        byte=35,
-        format=ScalarType.INT16,
-        description="Sweep frequency at end.",
-    ),
-    HeaderField(
-        name="sweep_length",
-        byte=37,
-        format=ScalarType.INT16,
-        description="Sweep length (ms).",
-    ),
-    HeaderField(
-        name="sweep_type_code",
-        byte=39,
-        format=ScalarType.INT16,
-        description="Sweep type code.",
-    ),
-    HeaderField(
-        name="sweep_trace_num",
-        byte=41,
-        format=ScalarType.INT16,
-        description="Trace number of sweep channel.",
-    ),
-    HeaderField(
-        name="sweep_taper_start",
-        byte=43,
-        format=ScalarType.INT16,
-        description="Sweep trace taper length at start (ms).",
-    ),
-    HeaderField(
-        name="sweep_taper_end",
-        byte=45,
-        format=ScalarType.INT16,
-        description="Sweep trace taper length at end (ms).",
-    ),
-    HeaderField(
-        name="taper_type_code",
-        byte=47,
-        format=ScalarType.INT16,
-        description="Taper type.",
-    ),
-    HeaderField(
-        name="correlated_data_code",
-        byte=49,
-        format=ScalarType.INT16,
-        description="Correlated data traces.",
-    ),
-    HeaderField(
-        name="binary_gain_code",
-        byte=51,
-        format=ScalarType.INT16,
-        description="Binary gain recovered.",
-    ),
-    HeaderField(
-        name="amp_recovery_code",
-        byte=53,
-        format=ScalarType.INT16,
-        description="Amplitude recovery method.",
-    ),
-    HeaderField(
-        name="measurement_system_code",
-        byte=55,
-        format=ScalarType.INT16,
-        description="Measurement system.",
-    ),
-    HeaderField(
-        name="impulse_polarity_code",
-        byte=57,
-        format=ScalarType.INT16,
-        description="Impulse signal polarity.",
-    ),
-    HeaderField(
-        name="vibratory_polarity_code",
-        byte=59,
-        format=ScalarType.INT16,
-        description="Vibratory polarity code.",
-    ),
-]
 
-BIN_HDR_FIELDS_REV1 = BIN_HDR_FIELDS_REV0 + [
-    HeaderField(
-        name="segy_revision",
-        byte=301,
-        format=ScalarType.INT16,
-        description="SEG-Y format revision number.",
-    ),
-    HeaderField(
-        name="fixed_length_trace_flag",
-        byte=303,
-        format=ScalarType.INT16,
-        description="Fixed length trace flag.",
-    ),
-    HeaderField(
-        name="num_extended_text_headers",
-        byte=305,
-        format=ScalarType.INT16,
-        description="Number of 3200-byte extended textual file header records.",
-    ),
-]
+class HeaderEnum(str, ReprEnum):
+    """A subclass for Enum for convenience and reduce repetition.
+
+    We don't want to define the same things as Enum, HeaderField, etc.
+    Using this we can conveniently have Enums for users; and also
+    use it to build the HeaderField lists to generate templates for
+    SEG-Y standards.
+
+    Args:
+        byte: Start byte location.
+        format_: Data format.
+        description: Long description of the field.
+
+    Attributes:
+        byte: Start byte location.
+        format: Data format.
+        description: Long description of the field.
+    """
+
+    def __repr__(self) -> str:
+        """Nice representation to users."""
+        return f"{self.__class__.__name__}({self._value_})"
+
+    def __new__(cls, field: HeaderField) -> str:
+        """Create a string member but set value to HeaderField."""
+        member = str.__new__(cls, field.name)
+        member._value_ = field
+
+        member.byte = field.byte
+        member.format = field.format
+        member.description = field.description
+
+        return member
 
 
+# fmt: off
+class BinFieldRev0(HeaderEnum):
+    """Header fields for SEG-Y binary headers revision 0."""
+    JOB_ID                   = HeaderField(name="job_id", byte=1, format=ScalarType.INT32, description="Job identification number.")
+    LINE_NUM                 = HeaderField(name="line_num", byte=5, format=ScalarType.INT32, description="Line number.")
+    REEL_NUM                 = HeaderField(name="reel_num", byte=9, format=ScalarType.INT32, description="Reel number.")
+    DATA_TRACES_PER_ENSEMBLE = HeaderField(name="data_traces_per_ensemble", byte=13, format=ScalarType.INT16, description="Number of data traces per ensemble.")
+    AUX_TRACES_PER_ENSEMBLE  = HeaderField(name="aux_traces_per_ensemble", byte=15, format=ScalarType.INT16, description="Number of auxiliary traces per ensemble.")
+    SAMPLE_INTERVAL          = HeaderField(name="sample_interval", byte=17, format=ScalarType.INT16, description="Sample interval (microseconds).")
+    ORIG_SAMPLE_INTERVAL     = HeaderField(name="orig_sample_interval", byte=19, format=ScalarType.INT16, description="Sample interval of original field recording (microseconds).")
+    SAMPLES_PER_TRACE        = HeaderField(name="samples_per_trace", byte=21, format=ScalarType.INT16, description="Number of samples per data trace.")
+    ORIG_SAMPLES_PER_TRACE   = HeaderField(name="orig_samples_per_trace", byte=23, format=ScalarType.INT16, description="Number of samples per data trace for original field recording.")
+    DATA_SAMPLE_FORMAT       = HeaderField(name="data_sample_format", byte=25, format=ScalarType.INT16, description="Data sample format code.")
+    ENSEMBLE_FOLD            = HeaderField(name="ensemble_fold", byte=27, format=ScalarType.INT16, description="Ensemble fold.")
+    TRACE_SORTING_CODE       = HeaderField(name="trace_sorting_code", byte=29, format=ScalarType.INT16, description="Trace sorting code.")
+    VERTICAL_SUM_CODE        = HeaderField(name="vertical_sum_code", byte=31, format=ScalarType.INT16, description="Vertical sum code.")
+    SWEEP_FREQ_START         = HeaderField(name="sweep_freq_start", byte=33, format=ScalarType.INT16, description="Sweep frequency at start.")
+    SWEEP_FREQ_END           = HeaderField(name="sweep_freq_end", byte=35, format=ScalarType.INT16, description="Sweep frequency at end.")
+    SWEEP_LENGTH             = HeaderField(name="sweep_length", byte=37, format=ScalarType.INT16, description="Sweep length (ms).")
+    SWEEP_TYPE_CODE          = HeaderField(name="sweep_type_code", byte=39, format=ScalarType.INT16, description="Sweep type code.")
+    SWEEP_TRACE_NUM          = HeaderField(name="sweep_trace_num", byte=41, format=ScalarType.INT16, description="Trace number of sweep channel.")
+    SWEEP_TAPER_START        = HeaderField(name="sweep_taper_start", byte=43, format=ScalarType.INT16, description="Sweep trace taper length at start (ms).")
+    SWEEP_TAPER_END          = HeaderField(name="sweep_taper_end", byte=45, format=ScalarType.INT16, description="Sweep trace taper length at end (ms).")
+    TAPER_TYPE_CODE          = HeaderField(name="taper_type_code", byte=47, format=ScalarType.INT16, description="Taper type.")
+    CORRELATED_DATA_CODE     = HeaderField(name="correlated_data_code", byte=49, format=ScalarType.INT16, description="Correlated data traces.")
+    BINARY_GAIN_CODE         = HeaderField(name="binary_gain_code", byte=51, format=ScalarType.INT16, description="Binary gain recovered.")
+    AMP_RECOVERY_CODE        = HeaderField(name="amp_recovery_code", byte=53, format=ScalarType.INT16, description="Amplitude recovery method.")
+    MEASUREMENT_SYSTEM_CODE  = HeaderField(name="measurement_system_code", byte=55, format=ScalarType.INT16, description="Measurement system.")
+    IMPULSE_POLARITY_CODE    = HeaderField(name="impulse_polarity_code", byte=57, format=ScalarType.INT16, description="Impulse signal polarity.")
+    VIBRATORY_POLARITY_CODE  = HeaderField(name="vibratory_polarity_code", byte=59, format=ScalarType.INT16, description="Vibratory polarity code.")
+
+
+class BinFieldRev1(HeaderEnum):
+    """Extra header fields for SEG-Y binary headers revision 1."""
+    SEGY_REVISION             = HeaderField(name="segy_revision", byte=301, format=ScalarType.INT16, description="SEG-Y format revision number.")
+    FIXED_LENGTH_TRACE_FLAG   = HeaderField(name="fixed_length_trace_flag", byte=303, format=ScalarType.INT16, description="Fixed length trace flag.")
+    NUM_EXTENDED_TEXT_HEADERS = HeaderField(name="num_extended_text_headers", byte=305, format=ScalarType.INT16, description="Number of 3200-byte extended textual file header records.")
+
+
+class BinFieldRev2(HeaderEnum):
+    """Extra header fields for SEG-Y binary headers revision 2."""
+    EXTENDED_DATA_TRACES_PER_ENSEMBLE = HeaderField(name="extended_data_traces_per_ensemble", byte=61, format=ScalarType.INT32, description="Extended number of data traces per ensemble.")
+    EXTENDED_AUX_TRACES_PER_ENSEMBLE  = HeaderField(name="extended_aux_traces_per_ensemble", byte=65, format=ScalarType.INT32, description="Extended number of auxiliary traces per ensemble.")
+    EXTENDED_SAMPLES_PER_TRACE        = HeaderField(name="extended_samples_per_trace", byte=69, format=ScalarType.INT32, description="Extended number of samples per data trace.")
+    EXTENDED_SAMPLE_INTERVAL          = HeaderField(name="extended_sample_interval", byte=73, format=ScalarType.FLOAT64, description="Extended sample interval.")
+    EXTENDED_ORIG_SAMPLE_INTERVAL     = HeaderField(name="extended_orig_sample_interval", byte=81, format=ScalarType.FLOAT64, description="Extended sample interval of original field recording.")
+    EXTENDED_ORIG_SAMPLES_PER_TRACE   = HeaderField(name="extended_orig_samples_per_trace", byte=89, format=ScalarType.INT32, description="Extended number of samples per data trace in original recording.")
+    EXTENDED_ENSEMBLE_FOLD            = HeaderField(name="extended_ensemble_fold", byte=93, format=ScalarType.INT32, description="Extended ensemble fold. Overrides bytes 3227–3228 if nonzero.")
+    BYTE_ORDER                        = HeaderField(name="byte_order", byte=97, format=ScalarType.INT32, description="Integer constant for byte order detection.")
+    SEGY_REVISION_MAJOR               = HeaderField(name="segy_revision_major", byte=301, format=ScalarType.UINT8, description="Major SEG-Y Format Revision Number.")
+    SEGY_REVISION_MINOR               = HeaderField(name="segy_revision_minor", byte=302, format=ScalarType.UINT8, description="Major SEG-Y Format Revision Number.")
+    MAX_EXTENDED_TRACE_HEADERS        = HeaderField(name="max_extended_trace_headers", byte=307, format=ScalarType.INT16, description="Maximum number of additional 240-byte trace headers. Zero indicates none.")
+    SURVEY_TYPE                       = HeaderField(name="survey_type", byte=309, format=ScalarType.INT16, description="Survey type: sum of options from each group.")
+    TIME_BASIS_CODE                   = HeaderField(name="time_basis_code", byte=311, format=ScalarType.INT16, description="Time basis code: 1 = Local, 2 = GMT, 3 = Other, 4 = UTC, 5 = GPS.")
+    NUM_TRACES                        = HeaderField(name="num_traces", byte=313, format=ScalarType.UINT64, description="Number of traces in this file or stream.")
+    BYTE_OFFSET_FIRST_TRACE           = HeaderField(name="byte_offset_first_trace", byte=321, format=ScalarType.UINT64, description="Byte offset of first trace relative to start of file or stream.")
+    NUM_DATA_TRAILER_STANZAS          = HeaderField(name="num_data_trailer_stanzas", byte=329, format=ScalarType.INT32, description="Number of 3200-byte data trailer stanza records. Zero indicates none.")
+# fmt: on
+
+
+BIN_HDR_FIELDS_REV0 = [field.value for field in BinFieldRev0]
+BIN_HDR_FIELDS_REV1 = BIN_HDR_FIELDS_REV0 + [field.value for field in BinFieldRev1]
 BIN_HDR_FIELDS_REV2 = BIN_HDR_FIELDS_REV1 + [
-    HeaderField(
-        name="extended_data_traces_per_ensemble",
-        byte=61,
-        format=ScalarType.INT32,
-        description="Extended number of data traces per ensemble.",
-    ),
-    HeaderField(
-        name="extended_aux_traces_per_ensemble",
-        byte=65,
-        format=ScalarType.INT32,
-        description="Extended number of auxiliary traces per ensemble.",
-    ),
-    HeaderField(
-        name="extended_samples_per_trace",
-        byte=69,
-        format=ScalarType.INT32,
-        description="Extended number of samples per data trace.",
-    ),
-    HeaderField(
-        name="extended_sample_interval",
-        byte=73,
-        format=ScalarType.FLOAT64,
-        description="Extended sample interval.",
-    ),
-    HeaderField(
-        name="extended_orig_sample_interval",
-        byte=81,
-        format=ScalarType.FLOAT64,
-        description="Extended sample interval of original field recording",
-    ),
-    HeaderField(
-        name="extended_orig_samples_per_trace",
-        byte=89,
-        format=ScalarType.INT32,
-        description="Extended number of samples per data trace in original recording.",
-    ),
-    HeaderField(
-        name="extended_ensemble_fold",
-        byte=93,
-        format=ScalarType.INT32,
-        description="Extended ensemble fold. Overrides bytes 3227–3228 if nonzero.",
-    ),
-    HeaderField(
-        name="byte_order",
-        byte=97,
-        format=ScalarType.INT32,
-        description="Integer constant for byte order detection.",
-    ),
-    HeaderField(
-        name="segy_revision_major",
-        byte=301,
-        format=ScalarType.UINT8,
-        description="Major SEG-Y Format Revision Number.",
-    ),
-    HeaderField(
-        name="segy_revision_minor",
-        byte=302,
-        format=ScalarType.UINT8,
-        description="Major SEG-Y Format Revision Number.",
-    ),
-    HeaderField(
-        name="max_extended_trace_headers",
-        byte=307,
-        format=ScalarType.INT16,
-        description="Maximum number of additional 240-byte trace headers. Zero indicates none.",
-    ),
-    HeaderField(
-        name="survey_type",
-        byte=309,
-        format=ScalarType.INT16,
-        description="Survey type: sum of options from each group.",
-    ),
-    HeaderField(
-        name="time_basis_code",
-        byte=311,
-        format=ScalarType.INT16,
-        description="Time basis code: 1 = Local, 2 = GMT, 3 = Other, 4 = UTC, 5 = GPS.",
-    ),
-    HeaderField(
-        name="num_traces",
-        byte=313,
-        format=ScalarType.UINT64,
-        description="Number of traces in this file or stream.",
-    ),
-    HeaderField(
-        name="byte_offset_first_trace",
-        byte=321,
-        format=ScalarType.UINT64,
-        description="Byte offset of first trace relative to start of file or stream.",
-    ),
-    HeaderField(
-        name="num_data_trailer_stanzas",
-        byte=329,
-        format=ScalarType.INT32,
-        description="Number of 3200-byte data trailer stanza records. Zero indicates none.",
-    ),
+    field.value for field in BinFieldRev2 if field != BinFieldRev1.SEGY_REVISION
 ]
-BIN_HDR_FIELDS_REV2 = [
-    field for field in BIN_HDR_FIELDS_REV2 if field.name != "segy_revision"
-]
-
-
-BIN_HDR_FIELDS_REV0 = sorted(BIN_HDR_FIELDS_REV0, key=lambda f: f.byte)
-BinFieldRev0 = StrEnum(  # type: ignore[misc]
-    "BinaryHeaderFieldRev0",
-    {field.name.upper(): field.name for field in BIN_HDR_FIELDS_REV0},
-)
-
-BIN_HDR_FIELDS_REV1 = sorted(BIN_HDR_FIELDS_REV1, key=lambda f: f.byte)
-BinFieldRev1 = StrEnum(  # type: ignore[misc]
-    "BinaryHeaderFieldRev1",
-    {field.name.upper(): field.name for field in BIN_HDR_FIELDS_REV1},
-)
-
 BIN_HDR_FIELDS_REV2 = sorted(BIN_HDR_FIELDS_REV2, key=lambda f: f.byte)
-BinFieldRev2 = StrEnum(  # type: ignore[misc]
-    "BinaryHeaderFieldRev2",
-    {field.name.upper(): field.name for field in BIN_HDR_FIELDS_REV2},
-)
 
 
 TRC_HDR_FIELDS_REV0 = [
