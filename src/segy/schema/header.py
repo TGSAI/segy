@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections import Counter
-from typing import TYPE_CHECKING
 from typing import Any
 
 import numpy as np
@@ -13,9 +12,7 @@ from pydantic import model_validator
 
 from segy.schema.base import BaseDataType
 from segy.schema.base import Endianness
-
-if TYPE_CHECKING:
-    from segy.schema.format import ScalarType
+from segy.schema.format import ScalarType  # noqa: TCH001
 
 
 class HeaderField(BaseDataType):
