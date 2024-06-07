@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from enum import ReprEnum
+from enum import Enum
 
 from segy.compat import StrEnum
 from segy.schema import HeaderField
 from segy.schema import ScalarType
 
 
-class HeaderEnum(str, ReprEnum):
+class HeaderEnum(str, Enum):
     """A subclass for Enum for convenience and reduce repetition.
 
     We don't want to define the same things as Enum, HeaderField, etc.
