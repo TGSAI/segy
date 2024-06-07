@@ -18,9 +18,7 @@ class HeaderEnum(str, ReprEnum):
     SEG-Y standards.
 
     Args:
-        byte: Start byte location.
-        format_: Data format.
-        description: Long description of the field.
+        field: HeaderField instance
 
     Attributes:
         byte: Start byte location.
@@ -28,20 +26,19 @@ class HeaderEnum(str, ReprEnum):
         description: Long description of the field.
     """
 
+    def __init__(self, field: HeaderField) -> None:
+        self.byte = field.byte
+        self.format = field.format  # type: ignore[assignment, method-assign]
+        self.description = field.description
+        self._value_ = field
+
     def __repr__(self) -> str:
         """Nice representation to users."""
         return f"{self.__class__.__name__}({self._value_})"
 
-    def __new__(cls, field: HeaderField) -> str:
+    def __new__(cls, field: HeaderField) -> HeaderEnum:
         """Create a string member but set value to HeaderField."""
-        member = str.__new__(cls, field.name)
-        member._value_ = field
-
-        member.byte = field.byte
-        member.format = field.format
-        member.description = field.description
-
-        return member
+        return str.__new__(cls, field.name)
 
 
 # fmt: off
@@ -106,9 +103,8 @@ class BinFieldRev2(HeaderEnum):
 
 BIN_HDR_FIELDS_REV0 = [field.value for field in BinFieldRev0]
 BIN_HDR_FIELDS_REV1 = BIN_HDR_FIELDS_REV0 + [field.value for field in BinFieldRev1]
-BIN_HDR_FIELDS_REV2 = BIN_HDR_FIELDS_REV1 + [
-    field.value for field in BinFieldRev2 if field != BinFieldRev1.SEGY_REVISION
-]
+BIN_HDR_FIELDS_REV2 = BIN_HDR_FIELDS_REV1 + [field.value for field in BinFieldRev2]
+BIN_HDR_FIELDS_REV2.remove(BinFieldRev1.SEGY_REVISION.value)
 BIN_HDR_FIELDS_REV2 = sorted(BIN_HDR_FIELDS_REV2, key=lambda f: f.byte)
 
 
