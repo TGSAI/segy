@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from enum import Enum
 
-from segy.compat import StrEnum
 from segy.schema import HeaderField
 from segy.schema import ScalarType
 
@@ -98,6 +97,108 @@ class BinFieldRev2(HeaderEnum):
     NUM_TRACES                        = HeaderField(name="num_traces", byte=313, format=ScalarType.UINT64, description="Number of traces in this file or stream.")
     BYTE_OFFSET_FIRST_TRACE           = HeaderField(name="byte_offset_first_trace", byte=321, format=ScalarType.UINT64, description="Byte offset of first trace relative to start of file or stream.")
     NUM_DATA_TRAILER_STANZAS          = HeaderField(name="num_data_trailer_stanzas", byte=329, format=ScalarType.INT32, description="Number of 3200-byte data trailer stanza records. Zero indicates none.")
+
+
+class TrcFieldRev0(HeaderEnum):
+    """Header fields for SEG-Y trace headers revision 0."""
+    TRACE_SEQ_NUM_LINE          = HeaderField(name="trace_seq_num_line", byte=1, format=ScalarType.INT32, description="Trace sequence number within line.")
+    TRACE_SEQ_NUM_REEL          = HeaderField(name="trace_seq_num_reel", byte=5, format=ScalarType.INT32, description="Trace sequence number within reel.")
+    ORIG_FIELD_RECORD_NUM       = HeaderField(name="orig_field_record_num", byte=9, format=ScalarType.INT32, description="Original field record number.")
+    TRACE_NUM_ORIG_RECORD       = HeaderField(name="trace_num_orig_record", byte=13, format=ScalarType.INT32, description="Trace number within the original field record.")
+    ENERGY_SOURCE_POINT_NUM     = HeaderField(name="energy_source_point_num", byte=17, format=ScalarType.INT32, description="Energy source point number.")
+    ENSEMBLE_NUM                = HeaderField(name="ensemble_num", byte=21, format=ScalarType.INT32, description="Ensemble number (CDP, CMP, ...).")
+    TRACE_NUM_ENSEMBLE          = HeaderField(name="trace_num_ensemble", byte=25, format=ScalarType.INT32, description="Trace number within the ensemble.")
+    TRACE_ID_CODE               = HeaderField(name="trace_id_code", byte=29, format=ScalarType.INT16, description="Trace identification code.")
+    VERTICALLY_SUMMED_TRACES    = HeaderField(name="vertically_summed_traces", byte=31, format=ScalarType.INT16, description="Number of vertically summed traces.")
+    HORIZONTALLY_STACKED_TRACES = HeaderField(name="horizontally_stacked_traces", byte=33, format=ScalarType.INT16, description="Number of horizontally stacked traces.")
+    DATA_USE                    = HeaderField(name="data_use", byte=35, format=ScalarType.INT16, description="Data use (production or test).")
+    SOURCE_TO_RECEIVER_DISTANCE = HeaderField(name="source_to_receiver_distance", byte=37, format=ScalarType.INT32, description="Distance from center of source to the center of the receiver.")
+    RECEIVER_GROUP_ELEVATION    = HeaderField(name="receiver_group_elevation", byte=41, format=ScalarType.INT32, description="Elevation at the receiver group.")
+    SOURCE_SURFACE_ELEVATION    = HeaderField(name="source_surface_elevation", byte=45, format=ScalarType.INT32, description="Surface elevation at the source.")
+    SOURCE_DEPTH_BELOW_SURFACE  = HeaderField(name="source_depth_below_surface", byte=49, format=ScalarType.INT32, description="Source depth below surface.")
+    RECEIVER_DATUM_ELEVATION    = HeaderField(name="receiver_datum_elevation", byte=53, format=ScalarType.INT32, description="Datum elevation at the receiver group.")
+    SOURCE_DATUM_ELEVATION      = HeaderField(name="source_datum_elevation", byte=57, format=ScalarType.INT32, description="Datum elevation at the source.")
+    SOURCE_WATER_DEPTH          = HeaderField(name="source_water_depth", byte=61, format=ScalarType.INT32, description="Water depth at the source.")
+    RECEIVER_WATER_DEPTH        = HeaderField(name="receiver_water_depth", byte=65, format=ScalarType.INT32, description="Water depth at the receiver group.")
+    ELEVATION_DEPTH_SCALAR      = HeaderField(name="elevation_depth_scalar", byte=69, format=ScalarType.INT16, description="Scalar to be applied to all elevations and depths.")
+    COORDINATE_SCALAR           = HeaderField(name="coordinate_scalar", byte=71, format=ScalarType.INT16, description="Scalar to be applied to coordinates.")
+    SOURCE_COORD_X              = HeaderField(name="source_coord_x", byte=73, format=ScalarType.INT32, description="Source coordinate - X.")
+    SOURCE_COORD_Y              = HeaderField(name="source_coord_y", byte=77, format=ScalarType.INT32, description="Source coordinate - Y.")
+    GROUP_COORD_X               = HeaderField(name="group_coord_x", byte=81, format=ScalarType.INT32, description="Receiver coordinate - X.")
+    GROUP_COORD_Y               = HeaderField(name="group_coord_y", byte=85, format=ScalarType.INT32, description="Receiver coordinate - Y.")
+    COORDINATE_UNITS            = HeaderField(name="coordinate_units", byte=89, format=ScalarType.INT16, description="Coordinate units.")
+    WEATHERING_VELOCITY         = HeaderField(name="weathering_velocity", byte=91, format=ScalarType.INT16, description="Weathering velocity.")
+    SUBWEATHERING_VELOCITY      = HeaderField(name="subweathering_velocity", byte=93, format=ScalarType.INT16, description="Subweathering velocity.")
+    UPHOLE_TIME_SOURCE          = HeaderField(name="uphole_time_source", byte=95, format=ScalarType.INT16, description="Uphole time at the source.")
+    UPHOLE_TIME_GROUP           = HeaderField(name="uphole_time_group", byte=97, format=ScalarType.INT16, description="Uphole time at the receiver group.")
+    SOURCE_STATIC_CORRECTION    = HeaderField(name="source_static_correction", byte=99, format=ScalarType.INT16, description="Source static correction.")
+    RECEIVER_STATIC_CORRECTION  = HeaderField(name="receiver_static_correction", byte=101, format=ScalarType.INT16, description="Receiver static correction.")
+    TOTAL_STATIC_APPLIED        = HeaderField(name="total_static_applied", byte=103, format=ScalarType.INT16, description="Total static applied.")
+    LAG_TIME_A                  = HeaderField(name="lag_time_a", byte=105, format=ScalarType.INT16, description="Lag time A")
+    LAG_TIME_B                  = HeaderField(name="lag_time_b", byte=107, format=ScalarType.INT16, description="Lag time B")
+    DELAY_RECORDING_TIME        = HeaderField(name="delay_recording_time", byte=109, format=ScalarType.INT16, description="Delay recording time.")
+    MUTE_TIME_START             = HeaderField(name="mute_time_start", byte=111, format=ScalarType.INT16, description="Mute time - start.")
+    MUTE_TIME_END               = HeaderField(name="mute_time_end", byte=113, format=ScalarType.INT16, description="Mute time - end.")
+    SAMPLES_PER_TRACE           = HeaderField(name="samples_per_trace", byte=115, format=ScalarType.INT16, description="Number of samples in this trace.")
+    SAMPLE_INTERVAL             = HeaderField(name="sample_interval", byte=117, format=ScalarType.INT16, description="Sample interval in microseconds for this trace.")
+    INSTRUMENT_GAIN_TYPE        = HeaderField(name="instrument_gain_type", byte=119, format=ScalarType.INT16, description="Gain type of field instruments.")
+    INSTRUMENT_GAIN_CONST       = HeaderField(name="instrument_gain_const", byte=121, format=ScalarType.INT16, description="Instrument gain constant.")
+    INSTRUMENT_GAIN_INITIAL     = HeaderField(name="instrument_gain_initial", byte=123, format=ScalarType.INT16, description="Instrument early or initial gain.")
+    CORRELATED_DATA             = HeaderField(name="correlated_data", byte=125, format=ScalarType.INT16, description="Correlated.")
+    SWEEP_FREQ_START            = HeaderField(name="sweep_freq_start", byte=127, format=ScalarType.INT16, description="Sweep frequency at start.")
+    SWEEP_FREQ_END              = HeaderField(name="sweep_freq_end", byte=129, format=ScalarType.INT16, description="Sweep frequency at end.")
+    SWEEP_LENGTH                = HeaderField(name="sweep_length", byte=131, format=ScalarType.INT16, description="Sweep length in ms.")
+    SWEEP_TYPE                  = HeaderField(name="sweep_type", byte=133, format=ScalarType.INT16, description="Sweep type code.")
+    SWEEP_TAPER_START           = HeaderField(name="sweep_taper_start", byte=135, format=ScalarType.INT16, description="Sweep trace taper length at start in ms.")
+    SWEEP_TAPER_END             = HeaderField(name="sweep_taper_end", byte=137, format=ScalarType.INT16, description="Sweep trace taper length at end in ms.")
+    TAPER_TYPE                  = HeaderField(name="taper_type", byte=139, format=ScalarType.INT16, description="Taper type.")
+    ALIAS_FILTER_FREQ           = HeaderField(name="alias_filter_freq", byte=141, format=ScalarType.INT16, description="Alias filter frequency, if used.")
+    ALIAS_FILTER_SLOPE          = HeaderField(name="alias_filter_slope", byte=143, format=ScalarType.INT16, description="Alias filter slope.")
+    NOTCH_FILTER_FREQ           = HeaderField(name="notch_filter_freq", byte=145, format=ScalarType.INT16, description="Notch filter frequency, if used.")
+    NOTCH_FILTER_SLOPE          = HeaderField(name="notch_filter_slope", byte=147, format=ScalarType.INT16, description="Notch filter slope.")
+    LOW_CUT_FREQ                = HeaderField(name="low_cut_freq", byte=149, format=ScalarType.INT16, description="Low cut frequency, if used.")
+    HIGH_CUT_FREQ               = HeaderField(name="high_cut_freq", byte=151, format=ScalarType.INT16, description="High cut frequency, if used.")
+    LOW_CUT_SLOPE               = HeaderField(name="low_cut_slope", byte=153, format=ScalarType.INT16, description="Low cut slope.")
+    HIGH_CUT_SLOPE              = HeaderField(name="high_cut_slope", byte=155, format=ScalarType.INT16, description="High cut slope.")
+    YEAR_RECORDED               = HeaderField(name="year_recorded", byte=157, format=ScalarType.INT16, description="Year data recorded.")
+    DAY_OF_YEAR                 = HeaderField(name="day_of_year", byte=159, format=ScalarType.INT16, description="Day of year.")
+    HOUR_OF_DAY                 = HeaderField(name="hour_of_day", byte=161, format=ScalarType.INT16, description="Hour of day (24-hour clock).")
+    MINUTE_OF_HOUR              = HeaderField(name="minute_of_hour", byte=163, format=ScalarType.INT16, description="Minute of hour.")
+    SECOND_OF_MINUTE            = HeaderField(name="second_of_minute", byte=165, format=ScalarType.INT16, description="Second of minute.")
+    TIME_BASIS_CODE             = HeaderField(name="time_basis_code", byte=167, format=ScalarType.INT16, description="Time basis code.")
+    TRACE_WEIGHTING_FACTOR      = HeaderField(name="trace_weighting_factor", byte=169, format=ScalarType.INT16, description="Trace weighting factor.")
+    GROUP_NUM_ROLL_SWITCH       = HeaderField(name="group_num_roll_switch", byte=171, format=ScalarType.INT16, description="Geophone group number of roll switch position one.")
+    GROUP_NUM_FIRST_TRACE       = HeaderField(name="group_num_first_trace", byte=173, format=ScalarType.INT16, description="Geophone group number of trace number one, original field record.")
+    GROUP_NUM_LAST_TRACE        = HeaderField(name="group_num_last_trace", byte=175, format=ScalarType.INT16, description="Geophone group number of last trace, original field record.")
+    GAP_SIZE                    = HeaderField(name="gap_size", byte=177, format=ScalarType.INT16, description="Gap size (total number of groups dropped).")
+    TAPER_OVERTRAVEL            = HeaderField(name="taper_overtravel", byte=179, format=ScalarType.INT16, description="Overtravel associated with taper.")
+
+
+class TrcFieldRev1(HeaderEnum):
+    """Header fields for SEG-Y trace headers revision 1."""
+    CDP_X                       = HeaderField(name="cdp_x", byte=181, format=ScalarType.INT32, description="X coordinate of ensemble (CDP) position of this trace.")
+    CDP_Y                       = HeaderField(name="cdp_y", byte=185, format=ScalarType.INT32, description="Y coordinate of ensemble (CDP) position of this trace.")
+    INLINE                      = HeaderField(name="inline", byte=189, format=ScalarType.INT32, description="For 3D poststack data, in-line number.")
+    CROSSLINE                   = HeaderField(name="crossline", byte=193, format=ScalarType.INT32, description="For 3D poststack data, cross-line number.")
+    SHOT_POINT                  = HeaderField(name="shot_point", byte=197, format=ScalarType.INT32, description="Shot-point number.")
+    SHOT_POINT_SCALAR           = HeaderField(name="shot_point_scalar", byte=201, format=ScalarType.INT16, description="Scalar to be applied to shotpoint number.")
+    TRACE_VALUE_UNITS           = HeaderField(name="trace_value_units", byte=203, format=ScalarType.INT16, description="Trace value measurement unit.")
+    TRANSDUCTION_CONST_MANTISSA = HeaderField(name="transduction_const_mantissa", byte=205, format=ScalarType.INT32, description="Transduction constant mantissa.")
+    TRANSDUCTION_CONST_EXPONENT = HeaderField(name="transduction_const_exponent", byte=209, format=ScalarType.INT16, description="Transduction constant exponent.")
+    TRANSDUCTION_UNITS          = HeaderField(name="transduction_units", byte=211, format=ScalarType.INT16, description="Transduction units.")
+    DEVICE_TRACE_ID             = HeaderField(name="device_trace_id", byte=213, format=ScalarType.INT16, description="Device/Trace identifier.")
+    TIMES_SCALAR                = HeaderField(name="times_scalar", byte=215, format=ScalarType.INT16, description="Scalar to be applied to times specified in bytes 109-114.")
+    SOURCE_TYPE_ORIENTATION     = HeaderField(name="source_type_orientation", byte=217, format=ScalarType.INT16, description="Source type/orientation.")
+    SOURCE_ENERGY_DIR_MANTISSA  = HeaderField(name="source_energy_dir_mantissa", byte=219, format=ScalarType.INT32, description="Source Energy Direction with respect to vertical, mantissa.")
+    SOURCE_ENERGY_DIR_EXPONENT  = HeaderField(name="source_energy_dir_exponent", byte=223, format=ScalarType.INT16, description="Source Energy Direction with respect to vertical, exponent.")
+    SOURCE_MEASUREMENT_MANTISSA = HeaderField(name="source_measurement_mantissa", byte=225, format=ScalarType.INT32, description="Source measurement mantissa.")
+    SOURCE_MEASUREMENT_EXPONENT = HeaderField(name="source_measurement_exponent", byte=229, format=ScalarType.INT16, description="Source measurement exponent.")
+    SOURCE_MEASUREMENT_UNITS    = HeaderField(name="source_measurement_units", byte=231, format=ScalarType.INT16, description="Source measurement unit.")
+
+
+class TrcFieldRev2(HeaderEnum):
+    """Header fields for SEG-Y trace headers revision 2."""
+    TRACE_HEADER_NAME = HeaderField(name="trace_header_name", byte=233, format=ScalarType.STRING8, description='Either binary zeros or the eight-character trace header name "SEG00000".',)
 # fmt: on
 
 
@@ -107,567 +208,6 @@ BIN_HDR_FIELDS_REV2 = BIN_HDR_FIELDS_REV1 + [field.value for field in BinFieldRe
 BIN_HDR_FIELDS_REV2.remove(BinFieldRev1.SEGY_REVISION.value)
 BIN_HDR_FIELDS_REV2 = sorted(BIN_HDR_FIELDS_REV2, key=lambda f: f.byte)
 
-
-TRC_HDR_FIELDS_REV0 = [
-    HeaderField(
-        name="trace_seq_num_line",
-        byte=1,
-        format=ScalarType.INT32,
-        description="Trace sequence number within line.",
-    ),
-    HeaderField(
-        name="trace_seq_num_reel",
-        byte=5,
-        format=ScalarType.INT32,
-        description="Trace sequence number within reel.",
-    ),
-    HeaderField(
-        name="orig_field_record_num",
-        byte=9,
-        format=ScalarType.INT32,
-        description="Original field record number.",
-    ),
-    HeaderField(
-        name="trace_num_orig_record",
-        byte=13,
-        format=ScalarType.INT32,
-        description="Trace number within the original field record.",
-    ),
-    HeaderField(
-        name="energy_source_point_num",
-        byte=17,
-        format=ScalarType.INT32,
-        description="Energy source point number.",
-    ),
-    HeaderField(
-        name="ensemble_num",
-        byte=21,
-        format=ScalarType.INT32,
-        description="Ensemble number (CDP, CMP, ...).",
-    ),
-    HeaderField(
-        name="trace_num_ensemble",
-        byte=25,
-        format=ScalarType.INT32,
-        description="Trace number within the ensemble.",
-    ),
-    HeaderField(
-        name="trace_id_code",
-        byte=29,
-        format=ScalarType.INT16,
-        description="Trace identification code.",
-    ),
-    HeaderField(
-        name="vertically_summed_traces",
-        byte=31,
-        format=ScalarType.INT16,
-        description="Number of vertically summed traces.",
-    ),
-    HeaderField(
-        name="horizontally_stacked_traces",
-        byte=33,
-        format=ScalarType.INT16,
-        description="Number of horizontally stacked traces.",
-    ),
-    HeaderField(
-        name="data_use",
-        byte=35,
-        format=ScalarType.INT16,
-        description="Data use (production or test).",
-    ),
-    HeaderField(
-        name="source_to_receiver_distance",
-        byte=37,
-        format=ScalarType.INT32,
-        description="Distance from center of source to the center of the receiver.",
-    ),
-    HeaderField(
-        name="receiver_group_elevation",
-        byte=41,
-        format=ScalarType.INT32,
-        description="Elevation at the receiver group.",
-    ),
-    HeaderField(
-        name="source_surface_elevation",
-        byte=45,
-        format=ScalarType.INT32,
-        description="Surface elevation at the source.",
-    ),
-    HeaderField(
-        name="source_depth_below_surface",
-        byte=49,
-        format=ScalarType.INT32,
-        description="Source depth below surface.",
-    ),
-    HeaderField(
-        name="receiver_datum_elevation",
-        byte=53,
-        format=ScalarType.INT32,
-        description="Datum elevation at the receiver group.",
-    ),
-    HeaderField(
-        name="source_datum_elevation",
-        byte=57,
-        format=ScalarType.INT32,
-        description="Datum elevation at the source.",
-    ),
-    HeaderField(
-        name="source_water_depth",
-        byte=61,
-        format=ScalarType.INT32,
-        description="Water depth at the source.",
-    ),
-    HeaderField(
-        name="receiver_water_depth",
-        byte=65,
-        format=ScalarType.INT32,
-        description="Water depth at the receiver group.",
-    ),
-    HeaderField(
-        name="elevation_depth_scalar",
-        byte=69,
-        format=ScalarType.INT16,
-        description="Scalar to be applied to all elevations and depths.",
-    ),
-    HeaderField(
-        name="coordinate_scalar",
-        byte=71,
-        format=ScalarType.INT16,
-        description="Scalar to be applied to coordinates.",
-    ),
-    HeaderField(
-        name="source_coord_x",
-        byte=73,
-        format=ScalarType.INT32,
-        description="Source coordinate - X.",
-    ),
-    HeaderField(
-        name="source_coord_y",
-        byte=77,
-        format=ScalarType.INT32,
-        description="Source coordinate - Y.",
-    ),
-    HeaderField(
-        name="group_coord_x",
-        byte=81,
-        format=ScalarType.INT32,
-        description="Receiver coordinate - X.",
-    ),
-    HeaderField(
-        name="group_coord_y",
-        byte=85,
-        format=ScalarType.INT32,
-        description="Receiver coordinate - Y.",
-    ),
-    HeaderField(
-        name="coordinate_units",
-        byte=89,
-        format=ScalarType.INT16,
-        description="Coordinate units.",
-    ),
-    HeaderField(
-        name="weathering_velocity",
-        byte=91,
-        format=ScalarType.INT16,
-        description="Weathering velocity.",
-    ),
-    HeaderField(
-        name="subweathering_velocity",
-        byte=93,
-        format=ScalarType.INT16,
-        description="Subweathering velocity.",
-    ),
-    HeaderField(
-        name="uphole_time_source",
-        byte=95,
-        format=ScalarType.INT16,
-        description="Uphole time at the source.",
-    ),
-    HeaderField(
-        name="uphole_time_group",
-        byte=97,
-        format=ScalarType.INT16,
-        description="Uphole time at the receiver group.",
-    ),
-    HeaderField(
-        name="source_static_correction",
-        byte=99,
-        format=ScalarType.INT16,
-        description="Source static correction.",
-    ),
-    HeaderField(
-        name="receiver_static_correction",
-        byte=101,
-        format=ScalarType.INT16,
-        description="Receiver static correction.",
-    ),
-    HeaderField(
-        name="total_static_applied",
-        byte=103,
-        format=ScalarType.INT16,
-        description="Total static applied.",
-    ),
-    HeaderField(
-        name="lag_time_a",
-        byte=105,
-        format=ScalarType.INT16,
-        description="Lag time A",
-    ),
-    HeaderField(
-        name="lag_time_b",
-        byte=107,
-        format=ScalarType.INT16,
-        description="Lag time B",
-    ),
-    HeaderField(
-        name="delay_recording_time",
-        byte=109,
-        format=ScalarType.INT16,
-        description="Delay recording time.",
-    ),
-    HeaderField(
-        name="mute_time_start",
-        byte=111,
-        format=ScalarType.INT16,
-        description="Mute time - start.",
-    ),
-    HeaderField(
-        name="mute_time_end",
-        byte=113,
-        format=ScalarType.INT16,
-        description="Mute time - end.",
-    ),
-    HeaderField(
-        name="samples_per_trace",
-        byte=115,
-        format=ScalarType.INT16,
-        description="Number of samples in this trace.",
-    ),
-    HeaderField(
-        name="sample_interval",
-        byte=117,
-        format=ScalarType.INT16,
-        description="Sample interval in microseconds for this trace.",
-    ),
-    HeaderField(
-        name="instrument_gain_type",
-        byte=119,
-        format=ScalarType.INT16,
-        description="Gain type of field instruments.",
-    ),
-    HeaderField(
-        name="instrument_gain_const",
-        byte=121,
-        format=ScalarType.INT16,
-        description="Instrument gain constant.",
-    ),
-    HeaderField(
-        name="instrument_gain_initial",
-        byte=123,
-        format=ScalarType.INT16,
-        description="Instrument early or initial gain.",
-    ),
-    HeaderField(
-        name="correlated_data",
-        byte=125,
-        format=ScalarType.INT16,
-        description="Correlated.",
-    ),
-    HeaderField(
-        name="sweep_freq_start",
-        byte=127,
-        format=ScalarType.INT16,
-        description="Sweep frequency at start.",
-    ),
-    HeaderField(
-        name="sweep_freq_end",
-        byte=129,
-        format=ScalarType.INT16,
-        description="Sweep frequency at end.",
-    ),
-    HeaderField(
-        name="sweep_length",
-        byte=131,
-        format=ScalarType.INT16,
-        description="Sweep length in ms.",
-    ),
-    HeaderField(
-        name="sweep_type",
-        byte=133,
-        format=ScalarType.INT16,
-        description="Sweep type code.",
-    ),
-    HeaderField(
-        name="sweep_taper_start",
-        byte=135,
-        format=ScalarType.INT16,
-        description="Sweep trace taper length at start in ms.",
-    ),
-    HeaderField(
-        name="sweep_taper_end",
-        byte=137,
-        format=ScalarType.INT16,
-        description="Sweep trace taper length at end in ms.",
-    ),
-    HeaderField(
-        name="taper_type",
-        byte=139,
-        format=ScalarType.INT16,
-        description="Taper type.",
-    ),
-    HeaderField(
-        name="alias_filter_freq",
-        byte=141,
-        format=ScalarType.INT16,
-        description="Alias filter frequency, if used.",
-    ),
-    HeaderField(
-        name="alias_filter_slope",
-        byte=143,
-        format=ScalarType.INT16,
-        description="Alias filter slope.",
-    ),
-    HeaderField(
-        name="notch_filter_freq",
-        byte=145,
-        format=ScalarType.INT16,
-        description="Notch filter frequency, if used.",
-    ),
-    HeaderField(
-        name="notch_filter_slope",
-        byte=147,
-        format=ScalarType.INT16,
-        description="Notch filter slope.",
-    ),
-    HeaderField(
-        name="low_cut_freq",
-        byte=149,
-        format=ScalarType.INT16,
-        description="Low cut frequency, if used.",
-    ),
-    HeaderField(
-        name="high_cut_freq",
-        byte=151,
-        format=ScalarType.INT16,
-        description="High cut frequency, if used.",
-    ),
-    HeaderField(
-        name="low_cut_slope",
-        byte=153,
-        format=ScalarType.INT16,
-        description="Low cut slope.",
-    ),
-    HeaderField(
-        name="high_cut_slope",
-        byte=155,
-        format=ScalarType.INT16,
-        description="High cut slope.",
-    ),
-    HeaderField(
-        name="year_recorded",
-        byte=157,
-        format=ScalarType.INT16,
-        description="Year data recorded.",
-    ),
-    HeaderField(
-        name="day_of_year",
-        byte=159,
-        format=ScalarType.INT16,
-        description="Day of year.",
-    ),
-    HeaderField(
-        name="hour_of_day",
-        byte=161,
-        format=ScalarType.INT16,
-        description="Hour of day (24-hour clock).",
-    ),
-    HeaderField(
-        name="minute_of_hour",
-        byte=163,
-        format=ScalarType.INT16,
-        description="Minute of hour.",
-    ),
-    HeaderField(
-        name="second_of_minute",
-        byte=165,
-        format=ScalarType.INT16,
-        description="Second of minute.",
-    ),
-    HeaderField(
-        name="time_basis_code",
-        byte=167,
-        format=ScalarType.INT16,
-        description="Time basis code.",
-    ),
-    HeaderField(
-        name="trace_weighting_factor",
-        byte=169,
-        format=ScalarType.INT16,
-        description="Trace weighting factor.",
-    ),
-    HeaderField(
-        name="group_num_roll_switch",
-        byte=171,
-        format=ScalarType.INT16,
-        description="Geophone group number of roll switch position one.",
-    ),
-    HeaderField(
-        name="group_num_first_trace",
-        byte=173,
-        format=ScalarType.INT16,
-        description="Geophone group number of trace number one, original field record.",
-    ),
-    HeaderField(
-        name="group_num_last_trace",
-        byte=175,
-        format=ScalarType.INT16,
-        description="Geophone group number of last trace, original field record.",
-    ),
-    HeaderField(
-        name="gap_size",
-        byte=177,
-        format=ScalarType.INT16,
-        description="Gap size (total number of groups dropped).",
-    ),
-    HeaderField(
-        name="taper_overtravel",
-        byte=179,
-        format=ScalarType.INT16,
-        description="Overtravel associated with taper.",
-    ),
-]
-
-
-TRC_HDR_FIELDS_REV1 = TRC_HDR_FIELDS_REV0 + [
-    HeaderField(
-        name="cdp_x",
-        byte=181,
-        format=ScalarType.INT32,
-        description="X coordinate of ensemble (CDP) position of this trace.",
-    ),
-    HeaderField(
-        name="cdp_y",
-        byte=185,
-        format=ScalarType.INT32,
-        description="Y coordinate of ensemble (CDP) position of this trace.",
-    ),
-    HeaderField(
-        name="inline",
-        byte=189,
-        format=ScalarType.INT32,
-        description="For 3D poststack data, in-line number.",
-    ),
-    HeaderField(
-        name="crossline",
-        byte=193,
-        format=ScalarType.INT32,
-        description="For 3D poststack data, cross-line number.",
-    ),
-    HeaderField(
-        name="shot_point",
-        byte=197,
-        format=ScalarType.INT32,
-        description="Shot-point number.",
-    ),
-    HeaderField(
-        name="shot_point_scalar",
-        byte=201,
-        format=ScalarType.INT16,
-        description="Scalar to be applied to shotpoint number.",
-    ),
-    HeaderField(
-        name="trace_value_units",
-        byte=203,
-        format=ScalarType.INT16,
-        description="Trace value measurement unit.",
-    ),
-    HeaderField(
-        name="transduction_const_mantissa",
-        byte=205,
-        format=ScalarType.INT32,
-        description="Transduction constant mantissa.",
-    ),
-    HeaderField(
-        name="transduction_const_exponent",
-        byte=209,
-        format=ScalarType.INT16,
-        description="Transduction constant exponent.",
-    ),
-    HeaderField(
-        name="transduction_units",
-        byte=211,
-        format=ScalarType.INT16,
-        description="Transduction units.",
-    ),
-    HeaderField(
-        name="device_trace_id",
-        byte=213,
-        format=ScalarType.INT16,
-        description="Device/Trace identifier.",
-    ),
-    HeaderField(
-        name="times_scalar",
-        byte=215,
-        format=ScalarType.INT16,
-        description="Scalar to be applied to times specified in bytes 109-114.",
-    ),
-    HeaderField(
-        name="source_type_orientation",
-        byte=217,
-        format=ScalarType.INT16,
-        description="Source type/orientation.",
-    ),
-    HeaderField(
-        name="source_energy_dir_mantissa",
-        byte=219,
-        format=ScalarType.INT32,
-        description="Source Energy Direction with respect to vertical, mantissa.",
-    ),
-    HeaderField(
-        name="source_energy_dir_exponent",
-        byte=223,
-        format=ScalarType.INT16,
-        description="Source Energy Direction with respect to vertical, exponent.",
-    ),
-    HeaderField(
-        name="source_measurement_mantissa",
-        byte=225,
-        format=ScalarType.INT32,
-        description="Source measurement mantissa.",
-    ),
-    HeaderField(
-        name="source_measurement_exponent",
-        byte=229,
-        format=ScalarType.INT16,
-        description="Source measurement exponent.",
-    ),
-    HeaderField(
-        name="source_measurement_units",
-        byte=231,
-        format=ScalarType.INT16,
-        description="Source measurement unit.",
-    ),
-]
-
-TRC_HDR_FIELDS_REV2 = TRC_HDR_FIELDS_REV1 + [
-    HeaderField(
-        name="trace_header_name",
-        byte=233,
-        format=ScalarType.STRING8,
-        description='Either binary zeros or the eight-character trace header name "SEG00000".',
-    ),
-]
-
-
-TraceFieldRev0 = StrEnum(  # type: ignore[misc]
-    "TraceHeaderFieldRev0",
-    {field.name.upper(): field.name for field in TRC_HDR_FIELDS_REV0},
-)
-TraceFieldRev1 = StrEnum(  # type: ignore[misc]
-    "TraceHeaderFieldRev1",
-    {field.name.upper(): field.name for field in TRC_HDR_FIELDS_REV1},
-)
-TraceFieldRev2 = StrEnum(  # type: ignore[misc]
-    "TraceHeaderFieldRev2",
-    {field.name.upper(): field.name for field in TRC_HDR_FIELDS_REV2},
-)
+TRC_HDR_FIELDS_REV0 = [field.value for field in TrcFieldRev0]
+TRC_HDR_FIELDS_REV1 = [field.value for field in TrcFieldRev1]
+TRC_HDR_FIELDS_REV2 = [field.value for field in TrcFieldRev2]
