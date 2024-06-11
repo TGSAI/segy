@@ -20,7 +20,7 @@ BIN_HDR_FIELDS = [
     binary.Rev1.FIXED_LENGTH_TRACE_FLAG,
     binary.Rev1.NUM_EXTENDED_TEXT_HEADERS,
 ]
-BIN_HDR_FIELDS = [field.model for field in BIN_HDR_FIELDS]
+BIN_HDR_FIELD_MODELS = [field.model for field in BIN_HDR_FIELDS]
 
 textual_file_header = TextHeaderSpec(
     rows=40,
@@ -32,7 +32,7 @@ textual_file_header = TextHeaderSpec(
 minimal_segy = SegySpec(
     segy_standard=None,
     text_header=textual_file_header,
-    binary_header=HeaderSpec(fields=BIN_HDR_FIELDS, item_size=400, offset=3200),
+    binary_header=HeaderSpec(fields=BIN_HDR_FIELD_MODELS, item_size=400, offset=3200),
     trace=TraceSpec(
         header_spec=HeaderSpec(fields=[], item_size=240),
         data_spec=TraceDataSpec(format=ScalarType.IBM32),
