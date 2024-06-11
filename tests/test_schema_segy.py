@@ -9,6 +9,7 @@ from segy.schema import SegySpec
 from segy.schema import TextHeaderEncoding
 from segy.schema import TextHeaderSpec
 from segy.schema import TraceDataSpec
+from segy.schema.text_header import ExtendedTextHeaderSpec
 from segy.standards import SegyStandard
 from segy.standards import get_segy_standard
 
@@ -29,7 +30,6 @@ class TestSegySpecCustomize:
             rows=1,
             cols=5,
             encoding=TextHeaderEncoding.EBCDIC,
-            format=ScalarType.UINT8,
         )
 
         custom_spec = segy_spec.customize(text_header_spec=custom_text_spec)
@@ -74,13 +74,13 @@ class TestSegySpecCustomize:
             rows=3,
             cols=7,
             encoding=TextHeaderEncoding.ASCII,
-            format=ScalarType.UINT8,
         )
 
-        custom_spec = segy_spec.customize(ext_text_spec=custom_text_spec)
+        custom_ext_text_spec = ExtendedTextHeaderSpec(spec=custom_text_spec, count=1)
+        custom_spec = segy_spec.customize(ext_text_spec=custom_ext_text_spec)
 
         assert custom_spec.segy_standard is None
-        assert custom_spec.ext_text_header == custom_text_spec
+        assert custom_spec.ext_text_header == custom_ext_text_spec
 
     def test_custom_trace_samples(self, segy_spec: SegySpec) -> None:
         """Test customizing trace data spec."""

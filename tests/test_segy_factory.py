@@ -78,8 +78,7 @@ def test_textual_file_header(encoding: TextHeaderEncoding) -> None:
     text_bytes = factory.create_textual_header()
 
     text_spec = factory.spec.text_header
-    text_actual = text_spec._decode(text_bytes)
-    text_actual = text_spec._wrap(text_actual)
+    text_actual = text_spec.decode(text_bytes)
     assert text_actual == DEFAULT_TEXT_HEADER
 
 

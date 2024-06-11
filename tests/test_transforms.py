@@ -8,7 +8,7 @@ from typing import Any
 import numpy as np
 import pytest
 
-from segy.schema import Endianness
+from segy.schema.base import Endianness
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
