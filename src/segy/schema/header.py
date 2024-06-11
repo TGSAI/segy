@@ -47,7 +47,6 @@ class HeaderField(BaseDataType):
     name: str = Field(..., description="The short name of the field.")
     byte: int = Field(..., ge=1, description="Field's start byte location.")
     format: ScalarType = Field(..., description="The data type of the field.")  # noqa: A003
-    description: str | None = Field(default=None, description="Long description.")
 
     @property
     def offset(self) -> int:

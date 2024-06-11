@@ -1,6 +1,6 @@
 """Implementation of SEG-Y standards."""
 
-from segy.schema import SegyStandard
+from segy.schema.segy import SegyStandard
 from segy.standards.registry import get_segy_standard
 from segy.standards.registry import register_segy_standard
 from segy.standards.spec import REV0

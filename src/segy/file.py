@@ -17,8 +17,6 @@ from segy.indexing import TraceIndexer
 from segy.schema import Endianness
 from segy.schema import SegyStandard
 from segy.standards import get_segy_standard
-from segy.standards.fields import BinFieldRev0
-from segy.standards.fields import BinFieldRev1
 from segy.standards.mapping import SEGY_FORMAT_MAP
 from segy.standards.spec import ext_text_header_ebcdic_3200
 from segy.transforms import TransformFactory
@@ -46,9 +44,9 @@ def infer_spec(fs: AbstractFileSystem, url: str) -> SegySpec:
         spec.endianness = endianness
         bin_hdr = np.frombuffer(buffer, dtype=spec.binary_header.dtype)
 
-        revision = bin_hdr[BinFieldRev1.SEGY_REVISION].item() / 256.0
-        sample_increment = bin_hdr[BinFieldRev0.SAMPLE_INTERVAL].item()
-        sample_format_int = bin_hdr[BinFieldRev0.DATA_SAMPLE_FORMAT].item()
+        revision = bin_hdr["segy_revision"].item() / 256.0
+        sample_increment = bin_hdr["sample_interval"].item()
+        sample_format_int = bin_hdr["data_sample_format"].item()
 
         # Validate the inferred values.
         in_spec = revision in {0.0, 1.0, 2.0}
@@ -117,17 +115,17 @@ class SegyFile:
         if self.settings.binary.ext_text_header.value is not None:
             return self.settings.binary.ext_text_header.value
 
-        return int(self.binary_header[BinFieldRev1.NUM_EXTENDED_TEXT_HEADERS].item())
+        return int(self.binary_header["num_extended_text_headers"].item())
 
     @property
     def samples_per_trace(self) -> int:
         """Return samples per trace in file based on spec."""
-        return int(self.binary_header[BinFieldRev0.SAMPLES_PER_TRACE].item())
+        return int(self.binary_header["samples_per_trace"].item())
 
     @property
     def sample_interval(self) -> int:
         """Return samples interval in file based on spec."""
-        return int(self.binary_header[BinFieldRev0.SAMPLE_INTERVAL].item())
+        return int(self.binary_header["sample_interval"].item())
 
     @property
     def sample_labels(self) -> NDArray[np.int32]:
@@ -163,8 +161,23 @@ class SegyFile:
             length=text_hdr_spec.itemsize,
         )
 
-        text_header = text_hdr_spec._decode(buffer)
-        return text_hdr_spec._wrap(text_header)
+        return text_hdr_spec.decode(buffer)
+
+    @cached_property
+    def ext_text_header(self) -> list[str]:
+        """Return textual file header."""
+        ext_text_hdr_spec = self.spec.ext_text_header
+
+        if ext_text_hdr_spec is None:
+            return []
+
+        buffer = self.fs.read_block(
+            fn=self.url,
+            offset=ext_text_hdr_spec.offset,
+            length=ext_text_hdr_spec.itemsize,
+        )
+
+        return ext_text_hdr_spec.decode(buffer)
 
     @cached_property
     def binary_header(self) -> HeaderArray:

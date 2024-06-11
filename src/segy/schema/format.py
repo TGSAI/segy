@@ -35,3 +35,15 @@ class ScalarType(StrEnum):
             return np.sctype2char("uint32")  # noqa: NPY201
 
         return np.sctype2char(str(self.value))  # noqa: NPY201
+
+
+class TextHeaderEncoding(StrEnum):
+    """Supported textual header encodings."""
+
+    ASCII = "ascii"
+    EBCDIC = "ebcdic"
+
+    @property
+    def dtype(self) -> ScalarType:
+        """Converts the byte order and data type of the object into a NumPy dtype."""
+        return ScalarType.UINT8

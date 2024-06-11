@@ -10,7 +10,7 @@ import numpy as np
 
 from segy.ibm import ibm2ieee
 from segy.ibm import ieee2ibm
-from segy.schema import Endianness
+from segy.schema.base import Endianness
 
 if TYPE_CHECKING:
     from typing import Any
@@ -120,15 +120,15 @@ class Transform:
             data = data.copy()
 
         if self.keys is None:
-            return self._transform(data)
+            return self.transform(data)
 
-        return self._transform_struct(data)
+        return self.transform_struct(data)
 
     @abstractmethod
-    def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Abstract transformation method on numpy arrays."""
 
-    def _transform_struct(self, data: NDArray[Any]) -> NDArray[Any]:
+    def transform_struct(self, data: NDArray[Any]) -> NDArray[Any]:
         """Generalized transform for structured arrays."""
         if self.keys is None:  # pragma: no cover
             msg = "Trying to modify structured array fields with no keys provided."
@@ -144,7 +144,7 @@ class Transform:
             raise ValueError(msg)
 
         for key in self.keys:
-            transformed = self._transform(data[key])
+            transformed = self.transform(data[key])
             data = _modify_structured_field(data, key, transformed)
 
         return data
@@ -161,7 +161,8 @@ class ByteSwapTransform(Transform):
         super().__init__()
         self.target_order = target_order
 
-    def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Byte swap numpy array given target order."""
         source_order = get_endianness(data)
 
         if source_order != self.target_order:
@@ -187,7 +188,8 @@ class IbmFloatTransform(Transform):
         super().__init__(keys)
         self.direction = direction
 
-    def _transform(self, data: NDArray[Any]) -> NDArray[Any]:
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Convert floats between IEEE and IBM."""
         return self.ibm_func_map[self.direction](data)  # type: ignore
 
 

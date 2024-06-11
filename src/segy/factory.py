@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from segy.schema import Endianness
-from segy.schema import ScalarType
-from segy.schema import SegyStandard
+from segy.schema.base import Endianness
+from segy.schema.format import ScalarType
+from segy.schema.segy import SegyStandard
 from segy.standards.mapping import SEGY_FORMAT_MAP
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
@@ -83,9 +83,8 @@ class SegyFactory:
         text = DEFAULT_TEXT_HEADER if text is None else text
 
         text_spec = self.spec.text_header
-        text = text_spec._unwrap(text)
 
-        return text_spec._encode(text)
+        return text_spec.encode(text)
 
     def create_binary_header(self) -> bytes:
         """Create a binary header for the SEG-Y file.

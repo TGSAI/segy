@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from segy.schema.base import Endianness
     from segy.schema.header import HeaderField
     from segy.schema.header import HeaderSpec
+    from segy.schema.text_header import ExtendedTextHeaderSpec
     from segy.schema.text_header import TextHeaderSpec
     from segy.schema.trace import TraceDataSpec
     from segy.schema.trace import TraceSpec
@@ -36,7 +37,7 @@ class SegySpec(CamelCaseModel):
     )
     text_header: TextHeaderSpec = Field(..., description="Textual file header spec.")
     binary_header: HeaderSpec = Field(..., description="Binary file header spec.")
-    ext_text_header: TextHeaderSpec | None = Field(
+    ext_text_header: ExtendedTextHeaderSpec | None = Field(
         default=None, description="Extended textual header spec."
     )
     trace: TraceSpec = Field(..., description="Trace header + data spec.")
@@ -57,7 +58,7 @@ class SegySpec(CamelCaseModel):
         self: SegySpec,
         text_header_spec: TextHeaderSpec | None = None,
         binary_header_fields: list[HeaderField] | None = None,
-        ext_text_spec: TextHeaderSpec | None = None,
+        ext_text_spec: ExtendedTextHeaderSpec | None = None,
         trace_header_fields: list[HeaderField] | None = None,
         trace_data_spec: TraceDataSpec | None = None,
     ) -> SegySpec:
