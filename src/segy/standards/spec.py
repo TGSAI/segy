@@ -26,19 +26,18 @@ TRC_HDR_FIELDS_REV1 = TRC_HDR_FIELDS_REV0 + [field.model for field in trace.Rev1
 TRC_HDR_FIELDS_REV2 = TRC_HDR_FIELDS_REV1 + [field.model for field in trace.Rev2]
 
 
-text_header_ebcdic_3200 = TextHeaderSpec(
+text_header_ebcdic = TextHeaderSpec(
     rows=40,
     cols=80,
-    offset=0,
     encoding=TextHeaderEncoding.EBCDIC,
 )
 
-ext_text_header_ebcdic_3200 = ExtendedTextHeaderSpec(spec=text_header_ebcdic_3200)
+ext_text_header_ebcdic_3200 = ExtendedTextHeaderSpec(spec=text_header_ebcdic)
 
 REV0 = SegySpec(
     segy_standard=SegyStandard.REV0,
     endianness=Endianness.BIG,
-    text_header=text_header_ebcdic_3200,
+    text_header=text_header_ebcdic,
     binary_header=HeaderSpec(fields=BIN_HDR_FIELDS_REV0, item_size=400, offset=3200),
     trace=TraceSpec(
         data=TraceDataSpec(format=ScalarType.IBM32),
@@ -49,7 +48,7 @@ REV0 = SegySpec(
 REV1 = SegySpec(
     segy_standard=SegyStandard.REV1,
     endianness=Endianness.BIG,
-    text_header=text_header_ebcdic_3200,
+    text_header=text_header_ebcdic,
     binary_header=HeaderSpec(fields=BIN_HDR_FIELDS_REV1, item_size=400, offset=3200),
     ext_text_header=ext_text_header_ebcdic_3200,
     trace=TraceSpec(
@@ -61,7 +60,7 @@ REV1 = SegySpec(
 REV2 = SegySpec(
     segy_standard=SegyStandard.REV2,
     endianness=Endianness.BIG,
-    text_header=text_header_ebcdic_3200,
+    text_header=text_header_ebcdic,
     binary_header=HeaderSpec(fields=BIN_HDR_FIELDS_REV2, item_size=400, offset=3200),
     ext_text_header=ext_text_header_ebcdic_3200,
     trace=TraceSpec(
