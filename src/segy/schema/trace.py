@@ -28,6 +28,7 @@ class TraceDataSpec(BaseDataType):
             "then it must be read from each trace header."
         ),
     )
+    interval: int | None = Field(default=None, description="Sample interval of traces")
 
     @property
     def dtype(self) -> np.dtype[Any]:
@@ -50,6 +51,7 @@ class TraceSpec(BaseDataType):
     endianness: Endianness | None = Field(
         default=None, description="Endianness of traces and headers."
     )
+    count: int | None = Field(default=None, ge=0, description="Number of traces.")
 
     @model_validator(mode="after")
     def update_submodel_endianness(self) -> TraceSpec:
