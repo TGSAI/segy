@@ -53,8 +53,8 @@ def generate_test_trace_data(
 ) -> tuple[NDArray[np.void], NDArray[Any]]:
     """Generate random header and sample data for testing."""
     rng = np.random.default_rng()
-    header_spec = factory.spec.trace.header_spec
-    data_spec = factory.spec.trace.data_spec
+    header_spec = factory.spec.trace.header
+    data_spec = factory.spec.trace.data
 
     header_dtype = header_spec.dtype.newbyteorder("=")
     header_arr = np.empty(num_traces, dtype=header_dtype)
@@ -84,7 +84,7 @@ def generate_test_segy(
     """Function for mocking a SEG-Y file with in memory URI."""
     spec = get_segy_standard(segy_standard)
     spec.endianness = endianness
-    spec.trace.data_spec.format = sample_format
+    spec.trace.data.format = sample_format
 
     factory = SegyFactory(
         spec=spec,
@@ -140,7 +140,7 @@ class TestSegyFile:
         segy_file = SegyFile(test_config.uri)
 
         # Assert spec
-        trace_data_spec = segy_file.spec.trace.data_spec
+        trace_data_spec = segy_file.spec.trace.data
         assert segy_file.spec.segy_standard == test_config.segy_standard
         assert segy_file.spec.endianness == test_config.endianness
         assert trace_data_spec.format == test_config.sample_format

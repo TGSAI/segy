@@ -54,12 +54,12 @@ class SegyFactory:
         self.sample_interval = sample_interval
         self.samples_per_trace = samples_per_trace
 
-        self.spec.trace.data_spec.samples = samples_per_trace
+        self.spec.trace.data.samples = samples_per_trace
 
     @property
     def trace_sample_format(self) -> ScalarType:
         """Trace sample format of the SEG-Y file."""
-        return self.spec.trace.data_spec.format
+        return self.spec.trace.data.format
 
     @property
     def segy_revision(self) -> SegyStandard | None:
@@ -119,7 +119,7 @@ class SegyFactory:
         Returns:
             Array containing the trace header template.
         """
-        trace_header_spec = self.spec.trace.header_spec
+        trace_header_spec = self.spec.trace.header
         dtype = trace_header_spec.dtype.newbyteorder(Endianness.NATIVE.symbol)
 
         header_template = np.zeros(shape=size, dtype=dtype)
@@ -146,7 +146,7 @@ class SegyFactory:
         Returns:
             Array containing the trace data template.
         """
-        trace_data_spec = self.spec.trace.data_spec
+        trace_data_spec = self.spec.trace.data
         dtype = trace_data_spec.dtype
 
         if self.trace_sample_format == ScalarType.IBM32:
@@ -175,7 +175,7 @@ class SegyFactory:
             ValueError: if there is a shape mismatch number of samples.
         """
         trace_spec = self.spec.trace
-        trace_spec.data_spec.samples = self.samples_per_trace
+        trace_spec.data.samples = self.samples_per_trace
 
         if samples.ndim != 2:  # noqa: PLR2004
             msg = (
@@ -196,7 +196,7 @@ class SegyFactory:
         data_pipeline = TransformPipeline()
 
         target_endian = trace_spec.endianness
-        target_format = trace_spec.data_spec.format
+        target_format = trace_spec.data.format
 
         if target_endian == Endianness.BIG:
             byte_swap = TransformFactory.create("byte_swap", target_endian)

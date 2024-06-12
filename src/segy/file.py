@@ -55,7 +55,7 @@ def infer_spec(fs: AbstractFileSystem, url: str) -> SegySpec:
 
         if in_spec and increment_is_positive and format_is_valid:
             new_spec = get_segy_standard(SegyStandard(revision))
-            new_spec.trace.data_spec.format = SEGY_FORMAT_MAP.inverse[sample_format_int]
+            new_spec.trace.data.format = SEGY_FORMAT_MAP.inverse[sample_format_int]
             new_spec.endianness = endianness
             return new_spec
 

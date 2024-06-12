@@ -41,8 +41,8 @@ REV0 = SegySpec(
     text_header=text_header_ebcdic_3200,
     binary_header=HeaderSpec(fields=BIN_HDR_FIELDS_REV0, item_size=400, offset=3200),
     trace=TraceSpec(
-        data_spec=TraceDataSpec(format=ScalarType.IBM32),
-        header_spec=HeaderSpec(fields=TRC_HDR_FIELDS_REV0, item_size=240),
+        data=TraceDataSpec(format=ScalarType.IBM32),
+        header=HeaderSpec(fields=TRC_HDR_FIELDS_REV0, item_size=240),
     ),
 )
 
@@ -53,8 +53,8 @@ REV1 = SegySpec(
     binary_header=HeaderSpec(fields=BIN_HDR_FIELDS_REV1, item_size=400, offset=3200),
     ext_text_header=ext_text_header_ebcdic_3200,
     trace=TraceSpec(
-        data_spec=TraceDataSpec(format=ScalarType.IBM32),
-        header_spec=HeaderSpec(fields=TRC_HDR_FIELDS_REV1, item_size=240),
+        data=TraceDataSpec(format=ScalarType.IBM32),
+        header=HeaderSpec(fields=TRC_HDR_FIELDS_REV1, item_size=240),
     ),
 )
 
@@ -65,7 +65,7 @@ REV2 = SegySpec(
     binary_header=HeaderSpec(fields=BIN_HDR_FIELDS_REV2, item_size=400, offset=3200),
     ext_text_header=ext_text_header_ebcdic_3200,
     trace=TraceSpec(
-        data_spec=TraceDataSpec(format=ScalarType.IBM32),
-        header_spec=HeaderSpec(fields=TRC_HDR_FIELDS_REV2, item_size=240),
+        data=TraceDataSpec(format=ScalarType.IBM32),
+        header=HeaderSpec(fields=TRC_HDR_FIELDS_REV2, item_size=240),
     ),
 )

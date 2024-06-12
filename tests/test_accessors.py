@@ -51,7 +51,7 @@ def mock_trace_spec(
         offset=0,
     )
     trace_data_spec = TraceDataSpec(format=sample_field_type, samples=3)
-    trace_spec = TraceSpec(header_spec=trace_header_spec, data_spec=trace_data_spec)
+    trace_spec = TraceSpec(header=trace_header_spec, data=trace_data_spec)
     expected = {}
     base_transform = TransformFactory.create("byte_swap", Endianness.LITTLE)
     expected["header"] = (

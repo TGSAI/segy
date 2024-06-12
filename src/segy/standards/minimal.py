@@ -34,8 +34,8 @@ minimal_segy = SegySpec(
     text_header=textual_file_header,
     binary_header=HeaderSpec(fields=BIN_HDR_FIELD_MODELS, item_size=400, offset=3200),
     trace=TraceSpec(
-        header_spec=HeaderSpec(fields=[], item_size=240),
-        data_spec=TraceDataSpec(format=ScalarType.IBM32),
+        header=HeaderSpec(fields=[], item_size=240),
+        data=TraceDataSpec(format=ScalarType.IBM32),
     ),
     endianness=Endianness.BIG,
 )

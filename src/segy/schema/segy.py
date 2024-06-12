@@ -90,11 +90,11 @@ class SegySpec(CamelCaseModel):
 
         # Update trace header spec if its specified; else will revert to default.
         if trace_header_fields:
-            new_spec.trace.header_spec.fields = trace_header_fields
+            new_spec.trace.header.fields = trace_header_fields
 
         # Update trace data spec if its specified; else will revert to default.
         if trace_data_spec:
-            new_spec.trace.data_spec = trace_data_spec
+            new_spec.trace.data = trace_data_spec
 
         return new_spec
 

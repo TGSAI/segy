@@ -237,7 +237,7 @@ class HeaderIndexer(AbstractIndexer):
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
         """Convert header indices to byte ranges (without trace data)."""
         trace_itemsize = self.spec.dtype.itemsize
-        header_itemsize = self.spec.header_spec.itemsize
+        header_itemsize = self.spec.header.itemsize
 
         if self.spec.offset is None:
             msg = "Trace starting offset must be specified."
@@ -267,9 +267,9 @@ class DataIndexer(AbstractIndexer):
 
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
         """Convert data indices to byte ranges (without trace headers)."""
-        trace_itemsize = self.spec.dtype.itemsize
-        data_itemsize = self.spec.data_spec.dtype.itemsize
-        header_itemsize = self.spec.header_spec.dtype.itemsize
+        trace_itemsize = self.spec.itemsize
+        data_itemsize = self.spec.data.itemsize
+        header_itemsize = self.spec.header.itemsize
 
         if self.spec.offset is None:
             msg = "Trace starting offset must be specified."
