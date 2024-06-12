@@ -212,7 +212,7 @@ class SegyFile:
             self.spec.trace,
             self.num_traces,
             settings=self.settings,
-            transforms=self.accessors.sample_decode_transforms,
+            transform_pipeline=self.accessors.sample_decode_pipeline,
         )
 
     @property
@@ -224,7 +224,7 @@ class SegyFile:
             self.spec.trace,
             self.num_traces,
             settings=self.settings,
-            transforms=self.accessors.header_decode_transforms,
+            transform_pipeline=self.accessors.header_decode_pipeline,
         )
 
     @property
@@ -236,5 +236,5 @@ class SegyFile:
             self.spec.trace,
             self.num_traces,
             settings=self.settings,
-            transforms=self.accessors.trace_decode_transforms,
+            transform_pipeline=self.accessors.trace_decode_pipeline,
         )

@@ -83,11 +83,11 @@ def test_trace_accessor(
     expected_transforms = mock_trace_spec[1]
     trace_accessor = TraceAccessor(trace_spec)
     assert compare_transform_sequence(
-        trace_accessor.header_decode_transforms, expected_transforms["header"]
+        trace_accessor.header_decode_pipeline.transforms, expected_transforms["header"]
     )
     assert compare_transform_sequence(
-        trace_accessor.sample_decode_transforms, expected_transforms["data"]
+        trace_accessor.sample_decode_pipeline.transforms, expected_transforms["data"]
     )
     assert compare_transform_sequence(
-        trace_accessor.trace_decode_transforms, expected_transforms["trace"]
+        trace_accessor.trace_decode_pipeline.transforms, expected_transforms["trace"]
     )

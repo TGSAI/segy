@@ -13,7 +13,6 @@ from fsspec.utils import merge_offset_ranges
 from segy.arrays import HeaderArray
 from segy.arrays import TraceArray
 from segy.config import SegySettings
-from segy.transforms import Transform
 from segy.transforms import TransformPipeline
 
 if TYPE_CHECKING:
@@ -105,7 +104,7 @@ class AbstractIndexer(ABC):
         spec: An instance of BaseDataType.
         max_value: An integer representing the maximum value of the index.
         settings: Optional parsing settings.
-        transforms: The transforms to apply after decoding.
+        transform_pipeline: The transforms pipeline to apply for decoding.
     """
 
     kind: str = "Abstract"
@@ -117,7 +116,7 @@ class AbstractIndexer(ABC):
         spec: BaseDataType,
         max_value: int,
         settings: SegySettings | None = None,
-        transforms: list[Transform] | None = None,
+        transform_pipeline: TransformPipeline | None = None,
     ):
         self.fs = fs
         self.url = url
@@ -125,11 +124,9 @@ class AbstractIndexer(ABC):
         self.max_value = max_value
         self.settings = SegySettings() if settings is None else settings
 
-        self.transform_pipeline = TransformPipeline()
-
-        if transforms is not None:
-            for transform in transforms:
-                self.transform_pipeline.add_transform(transform)
+        self.transform_pipeline = (
+            TransformPipeline() if transform_pipeline is None else transform_pipeline
+        )
 
     @abstractmethod
     def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:

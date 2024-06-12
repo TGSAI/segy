@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING
 from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.transforms import TransformFactory
+from segy.transforms import TransformPipeline
 
 if TYPE_CHECKING:
     from segy.schema import TraceSpec
-    from segy.transforms import Transform
 
 
 class TraceAccessor:
@@ -26,32 +26,26 @@ class TraceAccessor:
             for field in self.trace_spec.header.fields
             if field.format == ScalarType.IBM32
         ]
-        self.header_decode_transforms: list[Transform] = []
-        self.sample_decode_transforms: list[Transform] = []
-        self.trace_decode_transforms: list[Transform] = []
+        self.header_decode_pipeline = TransformPipeline()
+        self.sample_decode_pipeline = TransformPipeline()
+        self.trace_decode_pipeline = TransformPipeline()
         self._update_decoders()
 
     def _update_decoders(self) -> None:
-        self.sample_decode_transforms.append(
-            TransformFactory.create("byte_swap", Endianness.LITTLE)
-        )
-        self.header_decode_transforms.append(
-            TransformFactory.create("byte_swap", Endianness.LITTLE)
-        )
-        self.trace_decode_transforms.append(
-            TransformFactory.create("byte_swap", Endianness.LITTLE)
-        )
+        endian_transform = TransformFactory.create("byte_swap", Endianness.LITTLE)
+        self.header_decode_pipeline.add_transform(endian_transform)
+        self.sample_decode_pipeline.add_transform(endian_transform)
+        self.trace_decode_pipeline.add_transform(endian_transform)
+
         if self.trace_spec.data.format == ScalarType.IBM32:
-            self.sample_decode_transforms.append(
-                TransformFactory.create("ibm_float", "to_ieee")
-            )
-            self.trace_decode_transforms.append(
-                TransformFactory.create("ibm_float", "to_ieee", ["data"])
-            )
+            ibm2ieee = TransformFactory.create("ibm_float", "to_ieee")
+            ibm2ieee_data = TransformFactory.create("ibm_float", "to_ieee", ["data"])
+
+            self.sample_decode_pipeline.add_transform(ibm2ieee)
+            self.trace_decode_pipeline.add_transform(ibm2ieee_data)
 
         if len(self.header_ibm_keys) != 0:
-            self.header_decode_transforms.append(
-                TransformFactory.create(
-                    "ibm_float", "to_ieee", keys=self.header_ibm_keys
-                )
+            ibm2ieee = TransformFactory.create(
+                "ibm_float", "to_ieee", keys=self.header_ibm_keys
             )
+            self.header_decode_pipeline.add_transform(ibm2ieee)
