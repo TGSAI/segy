@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from functools import cached_property
 from typing import TYPE_CHECKING
+from typing import cast
 
 import numpy as np
 from fsspec.core import url_to_fs
@@ -107,12 +108,12 @@ class SegyFile:
     @property
     def samples_per_trace(self) -> int:
         """Return samples per trace in file based on spec."""
-        return self.spec.trace.data.samples
+        return cast(int, self.spec.trace.data.samples)  # we know for sure its int
 
     @property
     def sample_interval(self) -> int:
         """Return samples interval in file based on spec."""
-        return self.spec.trace.data.interval
+        return cast(int, self.spec.trace.data.interval)  # we know for sure its int
 
     @property
     def sample_labels(self) -> NDArray[np.int32]:
@@ -123,7 +124,7 @@ class SegyFile:
     @property
     def num_ext_text(self) -> int:
         """Return number of extended text headers."""
-        if self.spec.segy_standard == SegyStandard.REV0:
+        if self.spec.ext_text_header is None:
             return 0
 
         return self.spec.ext_text_header.count
@@ -131,7 +132,7 @@ class SegyFile:
     @property
     def num_traces(self) -> int:
         """Return number of traces in file based on size and spec."""
-        return self.spec.trace.count
+        return cast(int, self.spec.trace.count)  # we know for sure its int
 
     @cached_property
     def text_header(self) -> str:
@@ -184,13 +185,11 @@ class SegyFile:
 
     def _update_spec(self) -> None:
         """Parse the binary header and apply some rules."""
-        has_extended_text = self.spec.ext_text_header is not None
-        if has_extended_text:
+        if self.spec.ext_text_header is not None:
             num_ext_text = self.binary_header["num_extended_text_headers"].item()
             self.spec.ext_text_header.count = num_ext_text
 
-            settings_override = self.settings.binary.ext_text_header.value is not None
-            if settings_override:
+            if self.settings.binary.ext_text_header.value is not None:
                 settings_num_ext_text = self.settings.binary.ext_text_header.value
                 self.spec.ext_text_header.count = settings_num_ext_text
 
@@ -199,7 +198,7 @@ class SegyFile:
 
         self.spec.update_offsets()
 
-        trace_offset = self.spec.trace.offset
+        trace_offset = cast(int, self.spec.trace.offset)  # we know for sure not None
         trace_itemsize = self.spec.trace.itemsize
         self.spec.trace.count = (self.file_size - trace_offset) // trace_itemsize
 
