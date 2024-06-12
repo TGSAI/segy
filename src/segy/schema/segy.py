@@ -54,6 +54,25 @@ class SegySpec(CamelCaseModel):
 
         return self
 
+    def update_offsets(self) -> None:
+        """Update the offsets of the SEG-Y components."""
+        cursor = 0
+
+        if self.text_header.offset is None:
+            self.text_header.offset = 0
+        cursor += self.text_header.itemsize
+
+        if self.binary_header.offset is None:
+            self.binary_header.offset = cursor
+        cursor += self.binary_header.itemsize
+
+        if self.ext_text_header is not None:
+            self.ext_text_header.offset = cursor
+            cursor += self.ext_text_header.itemsize
+
+        if self.trace.offset is None:
+            self.trace.offset = cursor
+
     def customize(  # noqa: PLR0913
         self: SegySpec,
         text_header_spec: TextHeaderSpec | None = None,

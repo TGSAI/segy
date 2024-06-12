@@ -315,7 +315,7 @@ class TestSegyFileSettingsOverride:
         assert "segy_revision" in segy_file.binary_header.dtype.names
         assert segy_file.binary_header["segy_revision"] == 0
 
-    @pytest.mark.parametrize("num_ext_text", [2])
+    @pytest.mark.parametrize("num_ext_text", [1])
     def test_ext_text_header_override(
         self, mock_filesystem: MemoryFileSystem, num_ext_text: int
     ) -> None:

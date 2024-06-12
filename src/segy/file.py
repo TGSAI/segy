@@ -18,7 +18,6 @@ from segy.schema import Endianness
 from segy.schema import SegyStandard
 from segy.standards import get_segy_standard
 from segy.standards.mapping import SEGY_FORMAT_MAP
-from segy.standards.spec import ext_text_header_ebcdic_3200
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
@@ -96,7 +95,7 @@ class SegyFile:
         else:
             self.spec = spec if spec is not None else infer_spec(self.fs, self.url)
 
-        self._parse_binary_header()
+        self._update_spec()
         self.accessors = TraceAccessor(self.spec.trace)
 
     @property
@@ -106,26 +105,14 @@ class SegyFile:
         return size
 
     @property
-    def num_ext_text(self) -> int:
-        """Return number of extended text headers."""
-        if self.spec.segy_standard == SegyStandard.REV0:
-            return 0
-
-        # Overriding from settings
-        if self.settings.binary.ext_text_header.value is not None:
-            return self.settings.binary.ext_text_header.value
-
-        return int(self.binary_header["num_extended_text_headers"].item())
-
-    @property
     def samples_per_trace(self) -> int:
         """Return samples per trace in file based on spec."""
-        return int(self.binary_header["samples_per_trace"].item())
+        return self.spec.trace.data.samples
 
     @property
     def sample_interval(self) -> int:
         """Return samples interval in file based on spec."""
-        return int(self.binary_header["sample_interval"].item())
+        return self.spec.trace.data.interval
 
     @property
     def sample_labels(self) -> NDArray[np.int32]:
@@ -134,21 +121,17 @@ class SegyFile:
         return np.arange(0, max_samp, self.sample_interval, dtype="int32")
 
     @property
+    def num_ext_text(self) -> int:
+        """Return number of extended text headers."""
+        if self.spec.segy_standard == SegyStandard.REV0:
+            return 0
+
+        return self.spec.ext_text_header.count
+
+    @property
     def num_traces(self) -> int:
         """Return number of traces in file based on size and spec."""
-        file_textual_hdr_size = self.spec.text_header.itemsize
-        file_bin_hdr_size = self.spec.binary_header.itemsize
-        trace_size = self.spec.trace.itemsize
-
-        file_metadata_size = file_textual_hdr_size + file_bin_hdr_size
-
-        if self.num_ext_text > 0:
-            self.spec.ext_text_header = ext_text_header_ebcdic_3200
-
-            ext_text_size = self.spec.ext_text_header.itemsize * self.num_ext_text
-            file_metadata_size = file_metadata_size + ext_text_size
-
-        return (self.file_size - file_metadata_size) // trace_size
+        return self.spec.trace.count
 
     @cached_property
     def text_header(self) -> str:
@@ -199,21 +182,26 @@ class SegyFile:
 
         return HeaderArray(transforms.apply(bin_hdr))
 
-    def _parse_binary_header(self) -> None:
+    def _update_spec(self) -> None:
         """Parse the binary header and apply some rules."""
-        # Calculate sizes for dynamic file metadata
-        text_hdr_size = self.spec.text_header.itemsize
-        bin_hdr_size = self.spec.binary_header.itemsize
+        has_extended_text = self.spec.ext_text_header is not None
+        if has_extended_text:
+            num_ext_text = self.binary_header["num_extended_text_headers"].item()
+            self.spec.ext_text_header.count = num_ext_text
 
-        # Update trace start offset and sample length
-        self.spec.trace.data_spec.samples = self.samples_per_trace
-        self.spec.trace.offset = text_hdr_size + bin_hdr_size
+            settings_override = self.settings.binary.ext_text_header.value is not None
+            if settings_override:
+                settings_num_ext_text = self.settings.binary.ext_text_header.value
+                self.spec.ext_text_header.count = settings_num_ext_text
 
-        if self.num_ext_text > 0:
-            self.spec.ext_text_header = ext_text_header_ebcdic_3200
+        self.spec.trace.data.samples = self.binary_header["samples_per_trace"].item()
+        self.spec.trace.data.interval = self.binary_header["sample_interval"].item()
 
-            ext_text_size = self.spec.ext_text_header.itemsize * self.num_ext_text
-            self.spec.trace.offset = self.spec.trace.offset + ext_text_size
+        self.spec.update_offsets()
+
+        trace_offset = self.spec.trace.offset
+        trace_itemsize = self.spec.trace.itemsize
+        self.spec.trace.count = (self.file_size - trace_offset) // trace_itemsize
 
     @property
     def sample(self) -> AbstractIndexer:
