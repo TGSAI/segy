@@ -5,7 +5,7 @@ class SegyError(Exception):
     """Base class for all exceptions in this library."""
 
 
-class InvalidHeaderKeyError(SegyError):
+class InvalidFieldError(SegyError):
     """Raised when a header key does not match known values."""
 
     def __init__(self, key: str, suggestions: list[str]):
@@ -19,3 +19,7 @@ class InvalidHeaderKeyError(SegyError):
         first, second, third = self.suggestions
         suggestion_text = f"'{first}', '{second}', or '{third}'"
         return f"Invalid key '{self.key}'. Did you mean one of: {suggestion_text}?"
+
+
+class NonSpecFieldError(SegyError):
+    """Raised when a header field is missing from a HeaderArray."""
