@@ -108,9 +108,3 @@ class Rev2(SegStandardEnum):
 
     TRACE_HEADER_NAME           = (233, "S8")
 # fmt: on
-
-
-VALID_FIELDS: set[str] = set()
-VALID_FIELDS.update(Rev0.__members__)
-VALID_FIELDS.update(Rev1.__members__)
-VALID_FIELDS.update(Rev2.__members__)

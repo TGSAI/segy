@@ -64,9 +64,3 @@ class Rev2(SegStandardEnum):
     BYTE_OFFSET_FIRST_TRACE           = (321, "uint64")
     NUM_DATA_TRAILER_STANZAS          = (329, "int32")
 # fmt:on
-
-
-VALID_FIELDS: set[str] = set()
-VALID_FIELDS.update(Rev0.__members__)
-VALID_FIELDS.update(Rev1.__members__)
-VALID_FIELDS.update(Rev2.__members__)

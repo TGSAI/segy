@@ -15,12 +15,14 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 import numpy as np
-from pandas import DataFrame
+
+from segy.alias.core import normalize_key
 
 if TYPE_CHECKING:
     from typing import Literal
 
     from numpy.typing import NDArray
+    from pandas import DataFrame
 
     OrderKACF = Literal[None, "K", "A", "C", "F"]
 
@@ -73,7 +75,16 @@ class HeaderArray(SegyArray):
 
     def to_dataframe(self) -> DataFrame:
         """Convert structured data to pandas DataFrame."""
+        from pandas import DataFrame
+
         return DataFrame.from_records(self)
+
+    def __getitem__(self, item: Any) -> HeaderArray:  # noqa: ANN401
+        """Special getitem where we normalize header keys. Pass along to numpy."""
+        if isinstance(item, str):
+            item = normalize_key(item)
+
+        return super().__getitem__(item)  # type: ignore[no-any-return]
 
 
 class TraceArray(SegyArray):
