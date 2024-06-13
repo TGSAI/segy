@@ -10,6 +10,7 @@ https://numpy.org/doc/stable/user/basics.subclassing.html
 
 from __future__ import annotations
 
+from copy import copy
 from json import dumps as json_dumps
 from typing import TYPE_CHECKING
 from typing import Any
@@ -17,6 +18,7 @@ from typing import Any
 import numpy as np
 
 from segy.alias.core import normalize_key
+from segy.alias.core import validate_key
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -81,8 +83,15 @@ class HeaderArray(SegyArray):
 
     def __getitem__(self, item: Any) -> HeaderArray:  # noqa: ANN401
         """Special getitem where we normalize header keys. Pass along to numpy."""
+        if isinstance(item, list) and all(isinstance(key, str) for key in item):
+            item_orig = copy(item)
+            item = [normalize_key(key) for key in item]
+            [validate_key(k1, k2, self.dtype.names) for k1, k2 in zip(item, item_orig)]
+
         if isinstance(item, str):
+            item_orig = copy(item)
             item = normalize_key(item)
+            validate_key(item, item_orig, self.dtype.names)
 
         return super().__getitem__(item)  # type: ignore[no-any-return]
 
