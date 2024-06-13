@@ -5,7 +5,9 @@ from rapidfuzz.fuzz import WRatio
 
 from segy.alias.segyio import SEGYIO_BIN_FIELD_MAP
 from segy.alias.segyio import SEGYIO_TRACE_FIELD_MAP
-from segy.exceptions import InvalidHeaderKeyError
+from segy.alias.seis_unix import SEIS_UNIX_TRACE_FIELD_MAP
+from segy.exceptions import InvalidFieldError
+from segy.exceptions import NonSpecFieldError
 from segy.standards.fields import binary
 from segy.standards.fields import trace
 
@@ -13,6 +15,9 @@ FIELD_MAP = {}
 
 FIELD_MAP.update({k.lower(): v.name.lower() for k, v in SEGYIO_BIN_FIELD_MAP.items()})
 FIELD_MAP.update({k.lower(): v.name.lower() for k, v in SEGYIO_TRACE_FIELD_MAP.items()})
+FIELD_MAP.update(
+    {k.lower(): v.name.lower() for k, v in SEIS_UNIX_TRACE_FIELD_MAP.items()}
+)
 
 CANONICAL_KEYS = (
     set()
@@ -56,6 +61,26 @@ def normalize_key(key: str) -> str:
 
     if alias_key is None:
         suggestion_keys = get_suggestion_keys(key)
-        raise InvalidHeaderKeyError(key, suggestion_keys)
+        raise InvalidFieldError(key, suggestion_keys)
 
     return alias_key
+
+
+def validate_key(key: str, orig_key: str, defined_keys: set[str]) -> None:
+    """Validate a key against known fields and aliases."""
+    is_same_key = orig_key == key
+
+    if is_same_key and key not in defined_keys:
+        msg = (
+            f"The header field '{orig_key}' is not defined in the current "
+            f"SEG-Y spec."
+        )
+        raise NonSpecFieldError(msg)
+
+    if key not in defined_keys:
+        msg = (
+            f"The header field '{orig_key}' is found in field alias table as "
+            f"'{key}'. However, the current SEG-Y spec does not define this "
+            f"field in header fields."
+        )
+        raise NonSpecFieldError(msg)
