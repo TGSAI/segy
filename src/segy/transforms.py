@@ -8,8 +8,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from segy.ibm import ibm2ieee
-from segy.ibm import ieee2ibm
 from segy.schema.base import Endianness
 
 if TYPE_CHECKING:
@@ -179,9 +177,10 @@ class IbmFloatTransform(Transform):
         keys: Optional list of keys to apply the transform.
     """
 
+    # To map user parameter to compiled function and its expected type.
     ibm_func_map = {
-        "to_ibm": lambda x: ieee2ibm(x.astype("float32")),
-        "to_ieee": lambda x: ibm2ieee(x.view("uint32")),
+        "to_ibm": ("ieee2ibm", "float32"),
+        "to_ieee": ("ibm2ieee", "uint32"),
     }
 
     def __init__(self, direction: str, keys: list[str] | None = None) -> None:
@@ -190,7 +189,12 @@ class IbmFloatTransform(Transform):
 
     def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Convert floats between IEEE and IBM."""
-        return self.ibm_func_map[self.direction](data)  # type: ignore
+        from segy import ibm
+
+        func_name, cast_dtype = self.ibm_func_map[self.direction]
+        func = getattr(ibm, func_name)
+
+        return func(data.astype(cast_dtype))  # type: ignore
 
 
 class TransformFactory:
