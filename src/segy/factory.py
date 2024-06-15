@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from segy.arrays import HeaderArray
+from segy.arrays import TraceArray
 from segy.schema.base import Endianness
 from segy.schema.format import ScalarType
 from segy.schema.segy import SegyStandard
@@ -122,14 +124,14 @@ class SegyFactory:
         trace_header_spec = self.spec.trace.header
         dtype = trace_header_spec.dtype.newbyteorder(Endianness.NATIVE.symbol)
 
-        header_template = np.zeros(shape=size, dtype=dtype)
+        header_template = HeaderArray(np.zeros(shape=size, dtype=dtype))
 
         # 'names' assumed not None by data structure (type ignores).
         field_names = header_template.dtype.names
-        if "sample_interval" in field_names:  # type: ignore[operator]
+        if "sample_interval" in field_names:
             header_template["sample_interval"] = self.sample_interval
 
-        if "samples_per_trace" in field_names:  # type: ignore[operator]
+        if "samples_per_trace" in field_names:
             header_template["samples_per_trace"] = self.samples_per_trace
 
         return header_template
@@ -207,7 +209,7 @@ class SegyFactory:
             ibm_float = TransformFactory.create("ibm_float", "to_ibm")
             data_pipeline.add_transform(ibm_float)
 
-        trace = np.zeros(shape=headers.size, dtype=trace_spec.dtype)
+        trace = TraceArray(np.zeros(shape=headers.size, dtype=trace_spec.dtype))
         trace["header"] = header_pipeline.apply(headers)
         trace["data"] = data_pipeline.apply(samples)
 
