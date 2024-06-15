@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 from functools import cached_property
 from typing import TYPE_CHECKING
 from typing import cast
 
 import numpy as np
+import uvloop
 from fsspec.core import url_to_fs
 
 from segy.accessors import TraceAccessor
@@ -21,6 +23,8 @@ from segy.standards import get_segy_standard
 from segy.standards.mapping import SEGY_FORMAT_MAP
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
+
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
