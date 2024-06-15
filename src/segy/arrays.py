@@ -81,19 +81,51 @@ class HeaderArray(SegyArray):
 
         return DataFrame.from_records(self)
 
-    def __getitem__(self, item: Any) -> HeaderArray:  # noqa: ANN401
+    def _normalize_and_validate_keys(self, key: str | list[str]) -> str | list[str]:
+        if isinstance(key, str):
+            original_key = copy(key)
+            key = normalize_key(key)
+            validate_key(key, original_key, self.dtype.names)
+        elif isinstance(key, list):
+            original_keys = copy(key)
+            key = [normalize_key(k) for k in key]
+            for k, orig_k in zip(key, original_keys):
+                validate_key(k, orig_k, self.dtype.names)
+
+        return key
+
+    def __getitem__(self, item: Any) -> Any:  # noqa: ANN401
         """Special getitem where we normalize header keys. Pass along to numpy."""
-        if isinstance(item, list) and all(isinstance(key, str) for key in item):
-            item_orig = copy(item)
-            item = [normalize_key(key) for key in item]
-            [validate_key(k1, k2, self.dtype.names) for k1, k2 in zip(item, item_orig)]
+        if isinstance(item, str) and item in self.dtype.names:
+            return super().__getitem__(item)
 
         if isinstance(item, str):
-            item_orig = copy(item)
-            item = normalize_key(item)
-            validate_key(item, item_orig, self.dtype.names)
+            item = self._normalize_and_validate_keys(item)
+        elif isinstance(item, list) and all(isinstance(i, str) for i in item):
+            if all(key in item in self.dtype.names for key in item):
+                return super().__getitem__(item)
 
-        return super().__getitem__(item)  # type: ignore[no-any-return]
+            item = self._normalize_and_validate_keys(item)
+
+        return super().__getitem__(item)
+
+    def __setitem__(self, key: Any, value: Any) -> None:  # noqa: ANN401
+        """Special getitem where we normalize header keys. Pass along to numpy."""
+        if isinstance(key, str) and key in self.dtype.names:
+            super().__setitem__(key, value)  # type: ignore[no-untyped-call]
+            return
+
+        if isinstance(key, str):
+            key = self._normalize_and_validate_keys(key)
+
+        elif isinstance(key, list) and all(isinstance(i, str) for i in key):
+            if all(k in key in self.dtype.names for k in key):
+                super().__setitem__(key, value)  # type: ignore[no-untyped-call]
+                return
+
+            key = self._normalize_and_validate_keys(key)
+
+        super().__setitem__(key, value)  # type: ignore[no-untyped-call]
 
 
 class TraceArray(SegyArray):
