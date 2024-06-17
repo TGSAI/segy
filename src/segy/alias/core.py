@@ -68,15 +68,6 @@ def normalize_key(key: str) -> str:
 
 def validate_key(key: str, orig_key: str, defined_keys: tuple[str, ...]) -> None:
     """Validate a key against known fields and aliases."""
-    is_same_key = orig_key == key
-
-    if is_same_key and key not in defined_keys:
-        msg = (
-            f"The header field '{orig_key}' is not defined in the current "
-            f"SEG-Y spec."
-        )
-        raise NonSpecFieldError(msg)
-
     if key not in defined_keys:
         msg = (
             f"The header field '{orig_key}' is found in field alias table as "
