@@ -61,6 +61,10 @@ class TestHeaderAlias:
         with pytest.raises(NonSpecFieldError, match="spec does not define this field"):
             _ = header_array[["SEGYRevision", "ExtSamples"]]
 
+        # test shortcuts (i.e. not using alias)
+        assert header_array[keys[0]].item() == values[0]
+        assert header_array[keys].item() == values
+
     def test_setitem_alias(
         self, keys: list[str], aliases: list[str], values: list[int]
     ) -> None:
@@ -80,3 +84,8 @@ class TestHeaderAlias:
         values_x2 = tuple(val * 2 for val in values)
         header_array[aliases] = values_x2
         assert header_array[aliases].item() == values_x2
+
+        # test shortcuts (i.e. not using alias)
+        values_x3 = tuple(val * 3 for val in values)
+        header_array[keys] = values_x3
+        assert header_array[aliases].item() == values_x3
