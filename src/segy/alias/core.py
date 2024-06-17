@@ -66,7 +66,7 @@ def normalize_key(key: str) -> str:
     return alias_key
 
 
-def validate_key(key: str, orig_key: str, defined_keys: set[str]) -> None:
+def validate_key(key: str, orig_key: str, defined_keys: tuple[str, ...]) -> None:
     """Validate a key against known fields and aliases."""
     is_same_key = orig_key == key
 
