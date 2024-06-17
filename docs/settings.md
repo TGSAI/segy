@@ -42,16 +42,15 @@ optionally providing initial values for the settings. For example:
 
 ```python
 from segy.config import SegyBinaryHeaderSettings
-from segy.config import SegyFileSettings
+from segy.config import SegySettings
 from segy.schema import Endianness
-
 
 # Override extended text header count to zero
 binary_header_settings = SegyBinaryHeaderSettings(
     extended_text_header={"value": 0}
 )
 
-settings = SegyFileSettings(
+settings = SegySettings(
     binary=binary_header_settings,
     endian=Endianness.LITTLE,
     revision=1,

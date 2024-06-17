@@ -40,8 +40,8 @@ class TestTraceSpec:
         )
         data_spec = TraceDataSpec(format=sample_format, samples=samples_per_trace)
         trace_spec = TraceSpec(
-            header_spec=header_spec,
-            data_spec=data_spec,
+            header=header_spec,
+            data=data_spec,
             endianness=endianness,
         )
 
@@ -49,9 +49,9 @@ class TestTraceSpec:
         expected_header_itemsize = header_spec.dtype.itemsize
         expected_sample_subtype = (np.dtype(sample_format.char), (samples_per_trace,))
         assert trace_spec.dtype.itemsize == expected_itemsize
-        assert trace_spec.header_spec.dtype.names == ("h1", "h2")
-        assert trace_spec.header_spec.dtype.itemsize == expected_header_itemsize
-        assert trace_spec.data_spec.dtype.subdtype == expected_sample_subtype
+        assert trace_spec.header.dtype.names == ("h1", "h2")
+        assert trace_spec.header.dtype.itemsize == expected_header_itemsize
+        assert trace_spec.data.dtype.subdtype == expected_sample_subtype
         if endianness == Endianness.LITTLE:
             assert trace_spec.dtype.isnative
         else:

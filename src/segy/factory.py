@@ -6,9 +6,11 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from segy.schema import Endianness
-from segy.schema import ScalarType
-from segy.schema import SegyStandard
+from segy.arrays import HeaderArray
+from segy.arrays import TraceArray
+from segy.schema.base import Endianness
+from segy.schema.format import ScalarType
+from segy.schema.segy import SegyStandard
 from segy.standards.mapping import SEGY_FORMAT_MAP
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
@@ -54,12 +56,12 @@ class SegyFactory:
         self.sample_interval = sample_interval
         self.samples_per_trace = samples_per_trace
 
-        self.spec.trace.data_spec.samples = samples_per_trace
+        self.spec.trace.data.samples = samples_per_trace
 
     @property
     def trace_sample_format(self) -> ScalarType:
         """Trace sample format of the SEG-Y file."""
-        return self.spec.trace.data_spec.format
+        return self.spec.trace.data.format
 
     @property
     def segy_revision(self) -> SegyStandard | None:
@@ -82,10 +84,9 @@ class SegyFactory:
         """
         text = DEFAULT_TEXT_HEADER if text is None else text
 
-        text_spec = self.spec.text_file_header
-        text = text_spec._unwrap(text)
+        text_spec = self.spec.text_header
 
-        return text_spec._encode(text)
+        return text_spec.encode(text)
 
     def create_binary_header(self) -> bytes:
         """Create a binary header for the SEG-Y file.
@@ -93,17 +94,17 @@ class SegyFactory:
         Returns:
             Bytes containing the encoded binary header, ready to write.
         """
-        binary_spec = self.spec.binary_file_header
+        binary_spec = self.spec.binary_header
         bin_header = np.zeros(shape=1, dtype=binary_spec.dtype)
 
         rev0 = self.segy_revision == SegyStandard.REV0
         if self.segy_revision is not None and not rev0:
-            bin_header["seg_y_revision"] = self.segy_revision.value * 256
+            bin_header["segy_revision"] = self.segy_revision.value * 256
 
         bin_header["sample_interval"] = self.sample_interval
-        bin_header["sample_interval_orig"] = self.sample_interval
+        bin_header["orig_sample_interval"] = self.sample_interval
         bin_header["samples_per_trace"] = self.samples_per_trace
-        bin_header["samples_per_trace_orig"] = self.samples_per_trace
+        bin_header["orig_samples_per_trace"] = self.samples_per_trace
         bin_header["data_sample_format"] = SEGY_FORMAT_MAP[self.trace_sample_format]
 
         return bin_header.tobytes()
@@ -120,17 +121,17 @@ class SegyFactory:
         Returns:
             Array containing the trace header template.
         """
-        trace_header_spec = self.spec.trace.header_spec
+        trace_header_spec = self.spec.trace.header
         dtype = trace_header_spec.dtype.newbyteorder(Endianness.NATIVE.symbol)
 
-        header_template = np.zeros(shape=size, dtype=dtype)
+        header_template = HeaderArray(np.zeros(shape=size, dtype=dtype))
 
         # 'names' assumed not None by data structure (type ignores).
         field_names = header_template.dtype.names
-        if "sample_interval" in field_names:  # type: ignore[operator]
+        if "sample_interval" in field_names:
             header_template["sample_interval"] = self.sample_interval
 
-        if "samples_per_trace" in field_names:  # type: ignore[operator]
+        if "samples_per_trace" in field_names:
             header_template["samples_per_trace"] = self.samples_per_trace
 
         return header_template
@@ -147,7 +148,7 @@ class SegyFactory:
         Returns:
             Array containing the trace data template.
         """
-        trace_data_spec = self.spec.trace.data_spec
+        trace_data_spec = self.spec.trace.data
         dtype = trace_data_spec.dtype
 
         if self.trace_sample_format == ScalarType.IBM32:
@@ -176,7 +177,7 @@ class SegyFactory:
             ValueError: if there is a shape mismatch number of samples.
         """
         trace_spec = self.spec.trace
-        trace_spec.data_spec.samples = self.samples_per_trace
+        trace_spec.data.samples = self.samples_per_trace
 
         if samples.ndim != 2:  # noqa: PLR2004
             msg = (
@@ -197,7 +198,7 @@ class SegyFactory:
         data_pipeline = TransformPipeline()
 
         target_endian = trace_spec.endianness
-        target_format = trace_spec.data_spec.format
+        target_format = trace_spec.data.format
 
         if target_endian == Endianness.BIG:
             byte_swap = TransformFactory.create("byte_swap", target_endian)
@@ -208,7 +209,7 @@ class SegyFactory:
             ibm_float = TransformFactory.create("ibm_float", "to_ibm")
             data_pipeline.add_transform(ibm_float)
 
-        trace = np.zeros(shape=headers.size, dtype=trace_spec.dtype)
+        trace = TraceArray(np.zeros(shape=headers.size, dtype=trace_spec.dtype))
         trace["header"] = header_pipeline.apply(headers)
         trace["data"] = data_pipeline.apply(samples)
 

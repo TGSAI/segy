@@ -50,13 +50,13 @@ class TestDump:
         """Test trace header dump."""
         args = ["dump", "trace-header", s3_path]
         args += ["--index", "100", "--index", "101"]
-        args += ["--field", "src_x"]
-        args += ["--field", "scalar_apply_coords"]
+        args += ["--field", "source_coord_x"]
+        args += ["--field", "coordinate_scalar"]
 
         result = runner.invoke(app, args)
         assert result.exit_code == 0
-        assert "src_x" in result.stdout
-        assert "scalar_apply_coords" in result.stdout
+        assert "source_coord_x" in result.stdout
+        assert "coordinate_scalar" in result.stdout
         assert "101" in result.stdout
         assert "70628086" in result.stdout
         assert "-100" in result.stdout

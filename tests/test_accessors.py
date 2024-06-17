@@ -51,7 +51,7 @@ def mock_trace_spec(
         offset=0,
     )
     trace_data_spec = TraceDataSpec(format=sample_field_type, samples=3)
-    trace_spec = TraceSpec(header_spec=trace_header_spec, data_spec=trace_data_spec)
+    trace_spec = TraceSpec(header=trace_header_spec, data=trace_data_spec)
     expected = {}
     base_transform = TransformFactory.create("byte_swap", Endianness.LITTLE)
     expected["header"] = (
@@ -83,11 +83,11 @@ def test_trace_accessor(
     expected_transforms = mock_trace_spec[1]
     trace_accessor = TraceAccessor(trace_spec)
     assert compare_transform_sequence(
-        trace_accessor.header_decode_transforms, expected_transforms["header"]
+        trace_accessor.header_decode_pipeline.transforms, expected_transforms["header"]
     )
     assert compare_transform_sequence(
-        trace_accessor.sample_decode_transforms, expected_transforms["data"]
+        trace_accessor.sample_decode_pipeline.transforms, expected_transforms["data"]
     )
     assert compare_transform_sequence(
-        trace_accessor.trace_decode_transforms, expected_transforms["trace"]
+        trace_accessor.trace_decode_pipeline.transforms, expected_transforms["trace"]
     )

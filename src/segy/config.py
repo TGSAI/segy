@@ -41,7 +41,7 @@ class SampleIntervalSetting(SegyFieldSetting):
 class ExtendedTextHeaderSetting(SegyFieldSetting):
     """Configuration for extended textual headers parsing."""
 
-    key: str = "ext_textual_headers"
+    key: str = "num_extended_text_headers"
     value: int | None = None
 
 
@@ -53,7 +53,7 @@ class SegyBinaryHeaderSettings(SegyBaseSettings):
     ext_text_header: ExtendedTextHeaderSetting = ExtendedTextHeaderSetting()
 
 
-class SegyFileSettings(SegyBaseSettings):
+class SegySettings(SegyBaseSettings):
     """SEG-Y file parsing settings."""
 
     binary: SegyBinaryHeaderSettings = Field(default_factory=SegyBinaryHeaderSettings)

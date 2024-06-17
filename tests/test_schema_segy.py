@@ -9,6 +9,7 @@ from segy.schema import SegySpec
 from segy.schema import TextHeaderEncoding
 from segy.schema import TextHeaderSpec
 from segy.schema import TraceDataSpec
+from segy.schema.text_header import ExtendedTextHeaderSpec
 from segy.standards import SegyStandard
 from segy.standards import get_segy_standard
 
@@ -29,13 +30,12 @@ class TestSegySpecCustomize:
             rows=1,
             cols=5,
             encoding=TextHeaderEncoding.EBCDIC,
-            format=ScalarType.UINT8,
         )
 
         custom_spec = segy_spec.customize(text_header_spec=custom_text_spec)
 
         assert custom_spec.segy_standard is None
-        assert custom_spec.text_file_header == custom_text_spec
+        assert custom_spec.text_header == custom_text_spec
 
     def test_custom_binary_file_headers(self, segy_spec: SegySpec) -> None:
         """Test customizing binary file header spec."""
@@ -47,11 +47,11 @@ class TestSegySpecCustomize:
 
         custom_spec = segy_spec.customize(binary_header_fields=custom_fields)
 
-        expected_itemsize = segy_spec.binary_file_header.dtype.itemsize
+        expected_itemsize = segy_spec.binary_header.dtype.itemsize
         assert custom_spec.segy_standard is None
-        assert len(custom_spec.binary_file_header.fields) == len(custom_fields)
-        assert custom_spec.binary_file_header.dtype.names == ("f1", "f2", "f3")
-        assert custom_spec.binary_file_header.dtype.itemsize == expected_itemsize
+        assert len(custom_spec.binary_header.fields) == len(custom_fields)
+        assert custom_spec.binary_header.dtype.names == ("f1", "f2", "f3")
+        assert custom_spec.binary_header.dtype.itemsize == expected_itemsize
 
     def test_custom_trace_headers(self, segy_spec: SegySpec) -> None:
         """Test customizing trace header spec."""
@@ -62,11 +62,11 @@ class TestSegySpecCustomize:
 
         custom_spec = segy_spec.customize(trace_header_fields=custom_fields)
 
-        expected_itemsize = segy_spec.trace.header_spec.dtype.itemsize
+        expected_itemsize = segy_spec.trace.header.dtype.itemsize
         assert custom_spec.segy_standard is None
-        assert len(custom_spec.trace.header_spec.fields) == len(custom_fields)
-        assert custom_spec.trace.header_spec.dtype.names == ("f1", "f2")
-        assert custom_spec.trace.header_spec.dtype.itemsize == expected_itemsize
+        assert len(custom_spec.trace.header.fields) == len(custom_fields)
+        assert custom_spec.trace.header.dtype.names == ("f1", "f2")
+        assert custom_spec.trace.header.dtype.itemsize == expected_itemsize
 
     def test_custom_extended_text_header(self, segy_spec: SegySpec) -> None:
         """Test customizing extended text header spec."""
@@ -74,13 +74,13 @@ class TestSegySpecCustomize:
             rows=3,
             cols=7,
             encoding=TextHeaderEncoding.ASCII,
-            format=ScalarType.UINT8,
         )
 
-        custom_spec = segy_spec.customize(ext_text_spec=custom_text_spec)
+        custom_ext_text_spec = ExtendedTextHeaderSpec(spec=custom_text_spec, count=1)
+        custom_spec = segy_spec.customize(ext_text_spec=custom_ext_text_spec)
 
         assert custom_spec.segy_standard is None
-        assert custom_spec.ext_text_header == custom_text_spec
+        assert custom_spec.ext_text_header == custom_ext_text_spec
 
     def test_custom_trace_samples(self, segy_spec: SegySpec) -> None:
         """Test customizing trace data spec."""
@@ -91,5 +91,5 @@ class TestSegySpecCustomize:
         expected_subdtype = (np.dtype("uint16"), (3,))
         assert custom_spec.segy_standard is None
         assert custom_spec.trace.dtype.itemsize == 246  # noqa: PLR2004
-        assert custom_spec.trace.data_spec.dtype.itemsize == 6  # noqa: PLR2004
-        assert custom_spec.trace.data_spec.dtype.subdtype == expected_subdtype
+        assert custom_spec.trace.data.dtype.itemsize == 6  # noqa: PLR2004
+        assert custom_spec.trace.data.dtype.subdtype == expected_subdtype

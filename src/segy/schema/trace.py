@@ -28,6 +28,7 @@ class TraceDataSpec(BaseDataType):
             "then it must be read from each trace header."
         ),
     )
+    interval: int | None = Field(default=None, description="Sample interval of traces")
 
     @property
     def dtype(self) -> np.dtype[Any]:
@@ -39,33 +40,34 @@ class TraceDataSpec(BaseDataType):
 class TraceSpec(BaseDataType):
     """A spec class for a trace (header + data)."""
 
-    header_spec: HeaderSpec = Field(..., description="Trace header spec.")
-    ext_header_spec: HeaderSpec | None = Field(
+    header: HeaderSpec = Field(..., description="Trace header spec.")
+    ext_header: HeaderSpec | None = Field(
         default=None, description="Extended trace header spec."
     )
-    data_spec: TraceDataSpec = Field(..., description="Trace data spec.")
+    data: TraceDataSpec = Field(..., description="Trace data spec.")
     offset: int | None = Field(
         default=None, description="Starting offset of the trace."
     )
     endianness: Endianness | None = Field(
         default=None, description="Endianness of traces and headers."
     )
+    count: int | None = Field(default=None, ge=0, description="Number of traces.")
 
     @model_validator(mode="after")
     def update_submodel_endianness(self) -> TraceSpec:
         """Ensure that submodel endianness matches the trace endianness."""
-        self.header_spec.endianness = self.endianness
+        self.header.endianness = self.endianness
 
-        if self.ext_header_spec is not None:
-            self.ext_header_spec.endianness = self.endianness
+        if self.ext_header is not None:
+            self.ext_header.endianness = self.endianness
 
         return self
 
     @property
     def dtype(self) -> np.dtype[Any]:
         """Get numpy dtype."""
-        header_dtype = self.header_spec.dtype
-        data_dtype = self.data_spec.dtype
+        header_dtype = self.header.dtype
+        data_dtype = self.data.dtype
 
         trace_dtype = np.dtype([("header", header_dtype), ("data", data_dtype)])
 

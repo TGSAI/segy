@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from segy.schema.base import Endianness
     from segy.schema.header import HeaderField
     from segy.schema.header import HeaderSpec
+    from segy.schema.text_header import ExtendedTextHeaderSpec
     from segy.schema.text_header import TextHeaderSpec
     from segy.schema.trace import TraceDataSpec
     from segy.schema.trace import TraceSpec
@@ -34,11 +35,9 @@ class SegySpec(CamelCaseModel):
     segy_standard: SegyStandard | None = Field(
         ..., description="SEG-Y Revision / Standard. Can also be custom."
     )
-    text_file_header: TextHeaderSpec = Field(
-        ..., description="Textual file header spec."
-    )
-    binary_file_header: HeaderSpec = Field(..., description="Binary file header spec.")
-    ext_text_header: TextHeaderSpec | None = Field(
+    text_header: TextHeaderSpec = Field(..., description="Textual file header spec.")
+    binary_header: HeaderSpec = Field(..., description="Binary file header spec.")
+    ext_text_header: ExtendedTextHeaderSpec | None = Field(
         default=None, description="Extended textual header spec."
     )
     trace: TraceSpec = Field(..., description="Trace header + data spec.")
@@ -50,16 +49,35 @@ class SegySpec(CamelCaseModel):
     @model_validator(mode="after")
     def update_submodel_endianness(self) -> SegySpec:
         """Ensure that submodel endianness matches the SEG-Y endianness."""
-        self.binary_file_header.endianness = self.endianness
+        self.binary_header.endianness = self.endianness
         self.trace.endianness = self.endianness
 
         return self
+
+    def update_offsets(self) -> None:
+        """Update the offsets of the SEG-Y components."""
+        cursor = 0
+
+        if self.text_header.offset is None:
+            self.text_header.offset = 0
+        cursor += self.text_header.itemsize
+
+        if self.binary_header.offset is None:
+            self.binary_header.offset = cursor
+        cursor += self.binary_header.itemsize
+
+        if self.ext_text_header is not None:
+            self.ext_text_header.offset = cursor
+            cursor += self.ext_text_header.itemsize
+
+        if self.trace.offset is None:
+            self.trace.offset = cursor
 
     def customize(  # noqa: PLR0913
         self: SegySpec,
         text_header_spec: TextHeaderSpec | None = None,
         binary_header_fields: list[HeaderField] | None = None,
-        ext_text_spec: TextHeaderSpec | None = None,
+        ext_text_spec: ExtendedTextHeaderSpec | None = None,
         trace_header_fields: list[HeaderField] | None = None,
         trace_data_spec: TraceDataSpec | None = None,
     ) -> SegySpec:
@@ -79,11 +97,11 @@ class SegySpec(CamelCaseModel):
         new_spec.segy_standard = None
 
         if text_header_spec:
-            new_spec.text_file_header = text_header_spec
+            new_spec.text_header = text_header_spec
 
         # Update binary header fields if specified; else will revert to default.
         if binary_header_fields:
-            new_spec.binary_file_header.fields = binary_header_fields
+            new_spec.binary_header.fields = binary_header_fields
 
         # Update extended text spec if its specified; else will revert to default.
         if ext_text_spec:
@@ -91,11 +109,11 @@ class SegySpec(CamelCaseModel):
 
         # Update trace header spec if its specified; else will revert to default.
         if trace_header_fields:
-            new_spec.trace.header_spec.fields = trace_header_fields
+            new_spec.trace.header.fields = trace_header_fields
 
         # Update trace data spec if its specified; else will revert to default.
         if trace_data_spec:
-            new_spec.trace.data_spec = trace_data_spec
+            new_spec.trace.data = trace_data_spec
 
         return new_spec
 

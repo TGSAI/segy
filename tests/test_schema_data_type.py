@@ -2,33 +2,12 @@
 
 from __future__ import annotations
 
-import numpy as np
 import pytest
 
-from segy.schema import DataFormat
 from segy.schema import Endianness
 from segy.schema import HeaderField
 from segy.schema import HeaderSpec
 from segy.schema import ScalarType
-
-
-class TestScalarFormat:
-    """Tests for data format spec."""
-
-    @pytest.mark.parametrize(
-        ("format_", "expected"),
-        [
-            (ScalarType.IBM32, "uint32"),
-            (ScalarType.INT64, "int64"),
-            (ScalarType.UINT16, "uint16"),
-            (ScalarType.UINT8, "uint8"),
-            (ScalarType.FLOAT32, "float32"),
-        ],
-    )
-    def test_scalar_format(self, format_: ScalarType, expected: str) -> None:
-        """Test creating data format spec for `ScalarType`s."""
-        data_format = DataFormat(format=format_)
-        assert data_format.dtype == np.dtype(expected)
 
 
 class TestHeaderSpec:
@@ -114,7 +93,6 @@ class TestHeaderSpec:
         """Test for validating recreating a header spec from a JSON string."""
         struct_json = """
         {
-          "description": "dummy description",
           "fields": [
             {"description": "field1", "format": "int32", "name": "f1", "byte": 1},
             {"description": "field2", "format": "ibm32", "name": "f2", "byte": 5}
@@ -125,7 +103,6 @@ class TestHeaderSpec:
         }
         """
         actual_spec = HeaderSpec.model_validate_json(struct_json)
-        assert actual_spec.description == "dummy description"
         assert len(actual_spec.fields) == 2  # noqa: PLR2004
         assert actual_spec.dtype.names == ("f1", "f2")
         assert actual_spec.dtype.itemsize == 12  # noqa: PLR2004

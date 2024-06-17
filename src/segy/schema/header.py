@@ -12,10 +12,10 @@ from pydantic import model_validator
 
 from segy.schema.base import BaseDataType
 from segy.schema.base import Endianness
-from segy.schema.format import DataFormat
+from segy.schema.format import ScalarType  # noqa: TCH001
 
 
-class HeaderField(DataFormat):
+class HeaderField(BaseDataType):
     """A class representing header field spec.
 
     Examples:
@@ -46,11 +46,17 @@ class HeaderField(DataFormat):
 
     name: str = Field(..., description="The short name of the field.")
     byte: int = Field(..., ge=1, description="Field's start byte location.")
+    format: ScalarType = Field(..., description="The data type of the field.")  # noqa: A003
 
     @property
     def offset(self) -> int:
         """Return zero based offset from one based byte location."""
         return self.byte - 1
+
+    @property
+    def dtype(self) -> np.dtype[Any]:
+        """Converts the byte order and data type of the object into a NumPy dtype."""
+        return np.dtype(self.format.char)
 
 
 class HeaderSpec(BaseDataType):

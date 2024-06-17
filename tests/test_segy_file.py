@@ -13,7 +13,7 @@ from numpy.testing import assert_array_equal
 
 from segy import SegyFactory
 from segy import SegyFile
-from segy.config import SegyFileSettings
+from segy.config import SegySettings
 from segy.factory import DEFAULT_TEXT_HEADER
 from segy.schema import Endianness
 from segy.schema import ScalarType
@@ -53,8 +53,8 @@ def generate_test_trace_data(
 ) -> tuple[NDArray[np.void], NDArray[Any]]:
     """Generate random header and sample data for testing."""
     rng = np.random.default_rng()
-    header_spec = factory.spec.trace.header_spec
-    data_spec = factory.spec.trace.data_spec
+    header_spec = factory.spec.trace.header
+    data_spec = factory.spec.trace.data
 
     header_dtype = header_spec.dtype.newbyteorder("=")
     header_arr = np.empty(num_traces, dtype=header_dtype)
@@ -84,7 +84,7 @@ def generate_test_segy(
     """Function for mocking a SEG-Y file with in memory URI."""
     spec = get_segy_standard(segy_standard)
     spec.endianness = endianness
-    spec.trace.data_spec.format = sample_format
+    spec.trace.data.format = sample_format
 
     factory = SegyFactory(
         spec=spec,
@@ -140,7 +140,7 @@ class TestSegyFile:
         segy_file = SegyFile(test_config.uri)
 
         # Assert spec
-        trace_data_spec = segy_file.spec.trace.data_spec
+        trace_data_spec = segy_file.spec.trace.data
         assert segy_file.spec.segy_standard == test_config.segy_standard
         assert segy_file.spec.endianness == test_config.endianness
         assert trace_data_spec.format == test_config.sample_format
@@ -182,9 +182,9 @@ class TestSegyFile:
 
         expected_sample_format = SEGY_FORMAT_MAP[test_config.sample_format]
         assert binary_header["sample_interval"] == SAMPLE_INTERVAL
-        assert binary_header["sample_interval_orig"] == SAMPLE_INTERVAL
+        assert binary_header["orig_sample_interval"] == SAMPLE_INTERVAL
         assert binary_header["samples_per_trace"] == SAMPLES_PER_TRACE
-        assert binary_header["samples_per_trace_orig"] == SAMPLES_PER_TRACE
+        assert binary_header["orig_samples_per_trace"] == SAMPLES_PER_TRACE
         assert binary_header["data_sample_format"] == expected_sample_format
 
     @pytest.mark.parametrize("standard", [SegyStandard.REV0, SegyStandard.REV1])
@@ -293,7 +293,7 @@ class TestSegyFileSettingsOverride:
             filesystem=mock_filesystem, segy_standard=SegyStandard.REV0
         )
 
-        settings = SegyFileSettings(revision=1.0)
+        settings = SegySettings(revision=1.0)
         segy_file = SegyFile(test_config.uri, settings=settings)
 
         assert segy_file.spec.segy_standard == SegyStandard.REV1
@@ -306,16 +306,16 @@ class TestSegyFileSettingsOverride:
             endianness=Endianness.BIG,
         )
 
-        settings = SegyFileSettings(revision=1.0, endianness=Endianness.LITTLE)
+        settings = SegySettings(revision=1.0, endianness=Endianness.LITTLE)
         segy_file = SegyFile(test_config.uri, settings=settings)
 
         assert segy_file.spec.segy_standard == SegyStandard.REV1
         assert segy_file.spec.endianness == Endianness.LITTLE
         # Rev1 should have below field, but the value will be zero
-        assert "seg_y_revision" in segy_file.binary_header.dtype.names
-        assert segy_file.binary_header["seg_y_revision"] == 0
+        assert "segy_revision" in segy_file.binary_header.dtype.names
+        assert segy_file.binary_header["segy_revision"] == 0
 
-    @pytest.mark.parametrize("num_ext_text", [2])
+    @pytest.mark.parametrize("num_ext_text", [1])
     def test_ext_text_header_override(
         self, mock_filesystem: MemoryFileSystem, num_ext_text: int
     ) -> None:
@@ -325,7 +325,7 @@ class TestSegyFileSettingsOverride:
             segy_standard=SegyStandard.REV1,
         )
 
-        settings = SegyFileSettings.model_validate(
+        settings = SegySettings.model_validate(
             {"binary": {"ext_text_header": {"value": num_ext_text}}}
         )
         segy_file = SegyFile(test_config.uri, settings=settings)

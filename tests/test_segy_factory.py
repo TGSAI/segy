@@ -52,8 +52,8 @@ def mock_segy_factory(request: pytest.FixtureRequest) -> SegyFactory:
     spec.segy_standard = test_config.segy_standard
 
     # Shrink trace headers to 16-bytes and add a few fields
-    spec.trace.header_spec.item_size = 32
-    spec.trace.header_spec.fields = [
+    spec.trace.header.item_size = 32
+    spec.trace.header.fields = [
         HeaderField(name="field1", format=ScalarType.INT8, byte=3),
         HeaderField(name="field2", format=ScalarType.INT32, byte=5),
         HeaderField(name="field3", format=ScalarType.UINT8, byte=11),
@@ -72,14 +72,13 @@ def mock_segy_factory(request: pytest.FixtureRequest) -> SegyFactory:
 def test_textual_file_header(encoding: TextHeaderEncoding) -> None:
     """Tests that the textual file header is written correctly."""
     segy_spec = minimal_segy
-    segy_spec.text_file_header.encoding = encoding
+    segy_spec.text_header.encoding = encoding
     factory = SegyFactory(segy_spec)
 
     text_bytes = factory.create_textual_header()
 
-    text_spec = factory.spec.text_file_header
-    text_actual = text_spec._decode(text_bytes)
-    text_actual = text_spec._wrap(text_actual)
+    text_spec = factory.spec.text_header
+    text_actual = text_spec.decode(text_bytes)
     assert text_actual == DEFAULT_TEXT_HEADER
 
 
@@ -90,11 +89,11 @@ def test_binary_file_header(
     mock_segy_factory: SegyFactory, sample_format: ScalarType
 ) -> None:
     """Ensure the binary header is properly encoded and serialized."""
-    mock_segy_factory.spec.trace.data_spec.format = sample_format
+    mock_segy_factory.spec.trace.data.format = sample_format
 
     binary_bytes = mock_segy_factory.create_binary_header()
 
-    bin_spec = mock_segy_factory.spec.binary_file_header
+    bin_spec = mock_segy_factory.spec.binary_header
     binary_actual = np.frombuffer(binary_bytes, dtype=bin_spec.dtype)
     binary_expected = (
         mock_segy_factory.sample_interval,
@@ -119,7 +118,7 @@ class TestSegyFactoryTraces:
         """Test if the trace header template is correct."""
         headers = mock_segy_factory.create_trace_header_template(num_traces)
 
-        header_spec = mock_segy_factory.spec.trace.header_spec
+        header_spec = mock_segy_factory.spec.trace.header
         assert headers.size == num_traces
         assert headers.dtype == header_spec.dtype.newbyteorder("<")
 
@@ -127,9 +126,9 @@ class TestSegyFactoryTraces:
         self, mock_segy_factory: SegyFactory, num_traces: int
     ) -> None:
         """Test if the trace header template is correct with sample info."""
-        mock_segy_factory.spec.trace.header_spec.item_size = 26
+        mock_segy_factory.spec.trace.header.item_size = 26
         # fmt: off
-        mock_segy_factory.spec.trace.header_spec.fields += [
+        mock_segy_factory.spec.trace.header.fields += [
             HeaderField(name="sample_interval", format=ScalarType.INT16, byte=13),
             HeaderField(name="samples_per_trace", format=ScalarType.INT16, byte=25),
         ]
@@ -137,7 +136,7 @@ class TestSegyFactoryTraces:
 
         headers = mock_segy_factory.create_trace_header_template(num_traces)
 
-        header_spec = mock_segy_factory.spec.trace.header_spec
+        header_spec = mock_segy_factory.spec.trace.header
         expected_sample_info = mock_segy_factory.sample_interval
         expected_samples_per_trace = mock_segy_factory.samples_per_trace
         assert headers.size == num_traces
@@ -152,7 +151,7 @@ class TestSegyFactoryTraces:
         self, mock_segy_factory: SegyFactory, num_traces: int, sample_format: ScalarType
     ) -> None:
         """Test if the trace sample template is correct."""
-        mock_segy_factory.spec.trace.data_spec.format = sample_format
+        mock_segy_factory.spec.trace.data.format = sample_format
 
         samples = mock_segy_factory.create_trace_sample_template(num_traces)
 
@@ -174,7 +173,7 @@ class TestSegyFactoryTraces:
         self, mock_segy_factory: SegyFactory, num_traces: int, sample_format: ScalarType
     ) -> None:
         """Test if the trace serialization is correct."""
-        mock_segy_factory.spec.trace.data_spec.format = sample_format
+        mock_segy_factory.spec.trace.data.format = sample_format
 
         # Generate random data
         rng = np.random.default_rng()
@@ -182,7 +181,7 @@ class TestSegyFactoryTraces:
         shape = (num_traces, samples_per_trace)
         rand_samples = np.float32(255 * rng.random(size=shape))
         rand_fields = {}
-        for field in mock_segy_factory.spec.trace.header_spec.fields:
+        for field in mock_segy_factory.spec.trace.header.fields:
             field_data = rng.integers(-100, 100, dtype="int8", size=num_traces)
             rand_fields[field.name] = field_data
 
