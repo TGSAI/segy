@@ -16,7 +16,6 @@ from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
 from segy.indexing import TraceIndexer
 from segy.schema import Endianness
-from segy.schema import SegyStandard
 from segy.standards import get_segy_standard
 from segy.standards.mapping import SEGY_FORMAT_MAP
 from segy.transforms import TransformFactory
@@ -32,7 +31,7 @@ if TYPE_CHECKING:
 
 def infer_spec(fs: AbstractFileSystem, url: str) -> SegySpec:
     """Try to infer SEG-Y file revision and endianness to build a SegySpec."""
-    spec = get_segy_standard(SegyStandard.REV1)
+    spec = get_segy_standard(1.0)
 
     buffer = fs.read_block(
         url,
@@ -54,7 +53,7 @@ def infer_spec(fs: AbstractFileSystem, url: str) -> SegySpec:
         format_is_valid = sample_format_int in SEGY_FORMAT_MAP.values()
 
         if in_spec and increment_is_positive and format_is_valid:
-            new_spec = get_segy_standard(SegyStandard(revision))
+            new_spec = get_segy_standard(revision)
             new_spec.trace.data.format = SEGY_FORMAT_MAP.inverse[sample_format_int]
             new_spec.endianness = endianness
             return new_spec
@@ -90,8 +89,8 @@ class SegyFile:
         self.fs, self.url = url_to_fs(url, **self.settings.storage_options)
         self._info = self.fs.info(self.url)
 
-        if self.settings.revision is not None:
-            self.spec = get_segy_standard(SegyStandard(self.settings.revision))
+        if self.settings.binary.revision is not None:
+            self.spec = get_segy_standard(self.settings.binary.revision)
             self.spec.endianness = self.settings.endianness
         else:
             self.spec = spec if spec is not None else infer_spec(self.fs, self.url)
@@ -189,8 +188,8 @@ class SegyFile:
             num_ext_text = self.binary_header["num_extended_text_headers"].item()
             self.spec.ext_text_header.count = num_ext_text
 
-            if self.settings.binary.ext_text_header.value is not None:
-                settings_num_ext_text = self.settings.binary.ext_text_header.value
+            if self.settings.binary.ext_text_header is not None:
+                settings_num_ext_text = self.settings.binary.ext_text_header
                 self.spec.ext_text_header.count = settings_num_ext_text
 
         self.spec.trace.data.samples = self.binary_header["samples_per_trace"].item()

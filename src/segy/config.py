@@ -17,51 +17,42 @@ class SegyBaseSettings(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore", case_sensitive=False)
 
 
-class SegyFieldSetting(SegyBaseSettings):
-    """Setting class to configure a field (key or override)."""
+class BinaryHeaderSettings(SegyBaseSettings):
+    """SEG-Y binary header parsing overrides.
 
-    key: str = Field(...)
-    value: int | None = Field(...)
+    Any value that is set to an integer will override what is parsed from
+    the binary header in the actual file.
+    """
 
-
-class SamplesPerTraceSetting(SegyFieldSetting):
-    """Configuration for samples per trace parsing."""
-
-    key: str = "samples_per_trace"
-    value: int | None = None
-
-
-class SampleIntervalSetting(SegyFieldSetting):
-    """Configuration for samples interval parsing."""
-
-    key: str = "sample_interval"
-    value: int | None = None
-
-
-class ExtendedTextHeaderSetting(SegyFieldSetting):
-    """Configuration for extended textual headers parsing."""
-
-    key: str = "num_extended_text_headers"
-    value: int | None = None
-
-
-class SegyBinaryHeaderSettings(SegyBaseSettings):
-    """SEG-Y binary header parsing settings."""
-
-    samples_per_trace: SamplesPerTraceSetting = SamplesPerTraceSetting()
-    sample_interval: SampleIntervalSetting = SampleIntervalSetting()
-    ext_text_header: ExtendedTextHeaderSetting = ExtendedTextHeaderSetting()
+    samples_per_trace: int | None = Field(
+        default=None, description="Override samples per trace."
+    )
+    sample_interval: int | None = Field(
+        default=None, description="Override sample interval."
+    )
+    ext_text_header: int | None = Field(
+        default=None, description="Override extended text headers."
+    )
+    revision: int | float | None = Field(
+        default=None, description="SEG-Y revision of the file."
+    )
 
 
 class SegySettings(SegyBaseSettings):
     """SEG-Y file parsing settings."""
 
-    binary: SegyBinaryHeaderSettings = Field(default_factory=SegyBinaryHeaderSettings)
-    endianness: Endianness = Field(default=Endianness.BIG)
-    revision: int | float | None = Field(default=None)
-
-    storage_options: dict[str, Any] = Field(default_factory=dict)
-    apply_transforms: bool = Field(default=True)
+    binary: BinaryHeaderSettings = Field(
+        default_factory=BinaryHeaderSettings,
+        description="Overrides for binary file header settings.",
+    )
+    endianness: Endianness = Field(
+        default=Endianness.BIG,
+        description="Override the inferred endianness of the file.",
+    )
+    storage_options: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Storage options to pass to the storage backend.",
+    )
 
     model_config = SettingsConfigDict(
         env_prefix="SEGY__",

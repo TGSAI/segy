@@ -95,7 +95,7 @@ class SegyFactory:
             Bytes containing the encoded binary header, ready to write.
         """
         binary_spec = self.spec.binary_header
-        bin_header = np.zeros(shape=1, dtype=binary_spec.dtype)
+        bin_header = HeaderArray(np.zeros(shape=1, dtype=binary_spec.dtype))
 
         rev0 = self.segy_revision == SegyStandard.REV0
         if self.segy_revision is not None and not rev0:

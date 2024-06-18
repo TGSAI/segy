@@ -293,7 +293,7 @@ class TestSegyFileSettingsOverride:
             filesystem=mock_filesystem, segy_standard=SegyStandard.REV0
         )
 
-        settings = SegySettings(revision=1.0)
+        settings = SegySettings(binary={"revision": 1.0})
         segy_file = SegyFile(test_config.uri, settings=settings)
 
         assert segy_file.spec.segy_standard == SegyStandard.REV1
@@ -306,7 +306,7 @@ class TestSegyFileSettingsOverride:
             endianness=Endianness.BIG,
         )
 
-        settings = SegySettings(revision=1.0, endianness=Endianness.LITTLE)
+        settings = SegySettings(binary={"revision": 1.0}, endianness=Endianness.LITTLE)
         segy_file = SegyFile(test_config.uri, settings=settings)
 
         assert segy_file.spec.segy_standard == SegyStandard.REV1
@@ -326,7 +326,7 @@ class TestSegyFileSettingsOverride:
         )
 
         settings = SegySettings.model_validate(
-            {"binary": {"ext_text_header": {"value": num_ext_text}}}
+            {"binary": {"ext_text_header": num_ext_text}}
         )
         segy_file = SegyFile(test_config.uri, settings=settings)
 

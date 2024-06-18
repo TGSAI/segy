@@ -50,13 +50,13 @@ It must be set to one of the allowed [`SegyStandard`](#SegyStandard) values.
 
 #### Text File Header
 
-The [`text_file_header`](#SegySpec.text_file_header) stores the information
-required to parse the textual file header of the SEG-Y file. This includes important
-metadata that pertains to the seismic data in human-readable format.
+The [`text_header`](#SegySpec.text_header) stores the information required to parse
+the textual file header of the SEG-Y file. This includes important metadata that
+pertains to the seismic data in human-readable format.
 
 #### Binary File Header
 
-The [`binary_file_header`](#SegySpec.binary_file_header) item talks about
+The [`binary_header`](#SegySpec.binary_header) item talks about
 the binary file header of the SEG-Y file. It is a set of structured and important
 information about the data in the file, stored in binary format for machines to
 read and process quickly and efficiently.

@@ -66,9 +66,11 @@ class TextProcessor:
 class TextHeaderSpec(BaseDataType):
     """A class representing spec for SEG-Y textual headers (8-bit)."""
 
-    rows: int = Field(..., description="Number of rows in text header.")
-    cols: int = Field(..., description="Number of columns in text header.")
-    encoding: TextHeaderEncoding = Field(..., description="String encoding.")
+    rows: int = Field(default=40, description="Number of rows in text header.")
+    cols: int = Field(default=80, description="Number of columns in text header.")
+    encoding: TextHeaderEncoding = Field(
+        default=TextHeaderEncoding.EBCDIC, description="String encoding."
+    )
     offset: int | None = Field(default=None, ge=0, description="Starting byte offset.")
 
     @cached_property
