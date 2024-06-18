@@ -8,7 +8,6 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
 
-from segy.factory import DEFAULT_TEXT_HEADER
 from segy.factory import SegyFactory
 from segy.ibm import ieee2ibm
 from segy.schema import Endianness
@@ -69,7 +68,7 @@ def mock_segy_factory(request: pytest.FixtureRequest) -> SegyFactory:
 @pytest.mark.parametrize(
     "encoding", [TextHeaderEncoding.EBCDIC, TextHeaderEncoding.ASCII]
 )
-def test_textual_file_header(encoding: TextHeaderEncoding) -> None:
+def test_textual_file_header(encoding: TextHeaderEncoding, default_text: str) -> None:
     """Tests that the textual file header is written correctly."""
     segy_spec = minimal_segy
     segy_spec.text_header.encoding = encoding
@@ -79,7 +78,9 @@ def test_textual_file_header(encoding: TextHeaderEncoding) -> None:
 
     text_spec = factory.spec.text_header
     text_actual = text_spec.decode(text_bytes)
-    assert text_actual == DEFAULT_TEXT_HEADER
+
+    # Compare first 5 lines because rest is dynamic.
+    assert text_actual[:400] == default_text[:400]
 
 
 @pytest.mark.parametrize(

@@ -14,7 +14,6 @@ from numpy.testing import assert_array_equal
 from segy import SegyFactory
 from segy import SegyFile
 from segy.config import SegySettings
-from segy.factory import DEFAULT_TEXT_HEADER
 from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.schema import SegyStandard
@@ -151,13 +150,16 @@ class TestSegyFile:
         assert segy_file.num_ext_text == 0
         assert_array_equal(segy_file.sample_labels, EXPECTED_SAMPLE_LABELS)
 
-    def test_text_file_header(self, mock_filesystem: MemoryFileSystem) -> None:
+    def test_text_file_header(
+        self, mock_filesystem: MemoryFileSystem, default_text: str
+    ) -> None:
         """Test text file header attribute."""
         test_config = generate_test_segy(mock_filesystem)
 
         segy_file = SegyFile(test_config.uri)
 
-        assert segy_file.text_header == DEFAULT_TEXT_HEADER
+        # Compare first 5 lines because rest is dynamic.
+        assert segy_file.text_header[:400] == default_text[:400]
 
     @pytest.mark.parametrize("standard", [SegyStandard.REV0, SegyStandard.REV1])
     @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
