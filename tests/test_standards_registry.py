@@ -23,4 +23,4 @@ def test_get_standard(standard_enum: SegyStandard, standard_spec: SegySpec) -> N
 def test_get_nonexistent_spec_error() -> None:
     """Test missing / non-existent SegyStandard from registry."""
     with pytest.raises(NotImplementedError):
-        get_segy_standard("non_existent")  # type: ignore
+        get_segy_standard("non_existent")
