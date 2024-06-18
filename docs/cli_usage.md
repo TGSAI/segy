@@ -187,8 +187,8 @@ trace_index
 ## Configuration Options
 
 When accessing public datasets from S3, we need to set
-`SegyFileSettings().storage_options = {"anon": True}`{l=python} for anonymous
-access. [SegyFileSettings](#SegyFileSettings) exposes all configuration options
+`SegySettings().storage_options = {"anon": True}`{l=python} for anonymous
+access. [SegySettings](#SegySettings) exposes all configuration options
 as environment variables. We just need to set `storage_options` with the `JSON`
 string `{"anon": true}`{l=python}. On Linux you can do this by the command below.
 Environment variables can be configured in many ways, please refer to the options

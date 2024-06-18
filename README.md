@@ -79,6 +79,10 @@ It supports reading from local and cloud files (object store). It can read:
 - Disjoint sequential regions (fast)
 - Random traces (slow)
 
+The library will also try to infer the endianness and the revision of the SEG-Y
+file automatically. If it can't, users can override the endianness, revision, and
+more parameters using the settings.
+
 ### High Performance
 
 The performance is high and to be proven with upcoming benchmarks. The initial
@@ -91,13 +95,13 @@ data models and JSON schema parsing and validation.
 
 ### Predefined SEG-Y Standards
 
-It supports predefined SEG-Y "standards" for various versions. However,
-some versions are still in progress:
+It supports predefined SEG-Y "standards" for various versions. However, some versions
+are still in progress and not all validation logic is implemented yet:
 
-- [x] Rev 0 (1975)
-- [x] Rev 1 (2002)
-- [ ] Rev 2 (2017)
-- [ ] Rev 2.1 (2023)
+- ✅ Rev 0 (1975)
+- ✅ Rev 1 (2002)
+- ✅ Rev 2 (2017)
+- 🔲 Rev 2.1 (2023)
 
 ### Custom SEG-Y Standards
 

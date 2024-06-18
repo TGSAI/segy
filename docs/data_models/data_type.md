@@ -22,7 +22,6 @@
    :nosignatures:
 
    ScalarType
-   DataFormat
    HeaderSpec
    HeaderField
    Endianness

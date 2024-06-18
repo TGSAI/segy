@@ -7,9 +7,9 @@ from segy.standards.spec import REV0
 from segy.standards.spec import REV1
 from segy.standards.spec import REV2
 
-register_segy_standard(SegyStandard.REV0, REV0)
-register_segy_standard(SegyStandard.REV1, REV1)
-register_segy_standard(SegyStandard.REV2, REV2)
+register_segy_standard(version_or_name=0.0, spec=REV0)
+register_segy_standard(version_or_name=1.0, spec=REV1)
+register_segy_standard(version_or_name=2.0, spec=REV2)
 
 
 __all__ = ["get_segy_standard", "SegyStandard"]

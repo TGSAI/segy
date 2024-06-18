@@ -21,26 +21,11 @@
 ## Configuration
 
 ```{eval-rst}
-.. autopydantic_settings:: segy.config.SegyFileSettings
+.. autopydantic_settings:: segy.config.SegySettings
     :inherited-members: BaseModel
 ```
 
 ```{eval-rst}
-.. autopydantic_settings:: segy.config.SegyBinaryHeaderSettings
-    :inherited-members: BaseModel
-```
-
-```{eval-rst}
-.. autopydantic_settings:: segy.config.ExtendedTextHeaderSetting
-    :inherited-members: BaseModel
-```
-
-```{eval-rst}
-.. autopydantic_settings:: segy.config.SampleIntervalSetting
-    :inherited-members: BaseModel
-```
-
-```{eval-rst}
-.. autopydantic_settings:: segy.config.SamplesPerTraceSetting
+.. autopydantic_settings:: segy.config.BinaryHeaderSettings
     :inherited-members: BaseModel
 ```

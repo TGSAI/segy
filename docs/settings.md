@@ -15,43 +15,39 @@
 :class-container: sd-p-0 sd-outline-muted sd-rounded-3 sd-font-weight-light
 ```
 
-## `SegyFileSettings` Class
+## `SegySettings` Class
 
-The [SegyFileSettings] is a configuration object for the
+The [SegySettings] is a configuration object for the
 [SegyFile] in the environment. It allows you to customize various aspects of
 SEG-Y file parsing according to your needs and the specifics of your project.
 
 It is composed of various sub-settings isolated by SEG-Y components and various topics.
 
-- **binary**: The [SegyBinaryHeaderSettings] is used for binary header configuration
-  while reading a SEG-Y file.
-- **endian**: This setting determines the byte order that is being used in the SEG-Y file.
+- **binary**: The [BinaryHeaderSettings] is used for binary header overrides
+  when reading a SEG-Y file.
+- **endianness**: This setting determines the byte order that is being used in the SEG-Y file.
   The possible options are `"big"` or `"little"` based on [Endianness]. If left as None,
   the system defaults to Big Endian (`"big"`).
 - **revision**: This setting is used to specify the SEG-Y revision number. If left as
   None, the system will automatically use the revision mentioned in the SEG-Y file.
-- **use_pandas**: This setting is a boolean that decides whether to use pandas for
-  headers or not. Does not apply to trace data. The trace data is always returned
-  as Numpy arrays. The option to use Numpy for headers is currently disabled and will
-  be available at a later release (as of March 2024).
+- **storage_options**: Provides a hook to pass parameters to storage backend. Like
+  credentials, anonymous access, etc.
 
 ## Usage
 
-You initialize an instance of [SegyFileSettings] like any other Python object,
+You initialize an instance of [SegySettings] like any other Python object,
 optionally providing initial values for the settings. For example:
 
 ```python
-from segy.config import SegyBinaryHeaderSettings
+from segy.config import BinaryHeaderSettings
 from segy.config import SegySettings
 from segy.schema import Endianness
 
 # Override extended text header count to zero
-binary_header_settings = SegyBinaryHeaderSettings(
-    extended_text_header={"value": 0}
-)
+bin_overrides = BinaryHeaderSettings(extended_text_header=0)
 
 settings = SegySettings(
-    binary=binary_header_settings,
+    binary=bin_overrides,
     endian=Endianness.LITTLE,
     revision=1,
 )
@@ -68,25 +64,24 @@ file = SegyFile(uri="...", settings=settings)
 If no settings are provided to [SegyFile], it will take the default values.
 
 ```{seealso}
-[SegyFileSettings], [SegyFile], [Endianness]
+[SegySettings], [SegyFile], [Endianness]
 ```
 
 ## Environment Variables
 
 Environment variables that follow the `SEGY__VARIABLE__SUBVARIABLE` format will be
-automatically included in your [SegyFileSettings] instance:
+automatically included in your [SegySettings] instance:
 
 ```shell
-export SEGY__BINARY__SAMPLES_PER_TRACE__VALUE=1001
-export SEGY__BINARY__SAMPLE_INTERVAL__KEY="my_custom_key_in_schema"
-export SEGY__ENDIAN="big"
-export SEGY__REVISION=0.0
+export SEGY__BINARY__SAMPLES_PER_TRACE=1001
+export SEGY__ENDIANNESS="big"
+export SEGY__REVISION=0
 ```
 
-The environment variables will override the defaults in the [SegyFileSettings]
+The environment variables will override the defaults in the [SegySettings]
 configuration, unless user overrides it again within Python.
 
 [endianness]: #Endianness
-[segyfilesettings]: #SegyFileSettings
+[segysettings]: #SegySettings
 [segyfile]: #SegyFile
-[segybinaryheadersettings]: #SegyBinaryHeaderSettings
+[segybinaryheadersettings]: #BinaryHeaderSettings

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from segy.schema.trace import TraceSpec
 
 
-class SegyStandard(Enum):
+class SegyStandard(float, Enum):
     """Allowed values for SEG-Y standards in SegySpec."""
 
     REV0 = 0.0
