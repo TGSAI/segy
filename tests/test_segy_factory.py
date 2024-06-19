@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import random
+import string
 from dataclasses import dataclass
 
 import numpy as np
@@ -68,19 +70,40 @@ def mock_segy_factory(request: pytest.FixtureRequest) -> SegyFactory:
 @pytest.mark.parametrize(
     "encoding", [TextHeaderEncoding.EBCDIC, TextHeaderEncoding.ASCII]
 )
-def test_textual_file_header(encoding: TextHeaderEncoding, default_text: str) -> None:
-    """Tests that the textual file header is written correctly."""
-    segy_spec = minimal_segy
-    segy_spec.text_header.encoding = encoding
-    factory = SegyFactory(segy_spec)
+class TestTextualFileHeader:
+    """Tests related to the text header writing."""
 
-    text_bytes = factory.create_textual_header()
+    def test_text_header_encoding(
+        self, encoding: TextHeaderEncoding, default_text: str
+    ) -> None:
+        """Tests the text header encoding/decoding works correctly."""
+        segy_spec = minimal_segy
+        segy_spec.text_header.encoding = encoding
+        factory = SegyFactory(segy_spec)
 
-    text_spec = factory.spec.text_header
-    text_actual = text_spec.decode(text_bytes)
+        text_bytes = factory.create_textual_header()
+        text_actual = segy_spec.text_header.decode(text_bytes)
 
-    # Compare first 5 lines because rest is dynamic.
-    assert text_actual[:400] == default_text[:400]
+        # Compare first 5 lines because rest is dynamic.
+        assert text_actual[:400] == default_text[:400]
+
+    def test_text_header_custom(self, encoding: TextHeaderEncoding) -> None:
+        """Test if custom header is encoded/decoded correctly."""
+        segy_spec = minimal_segy
+        segy_spec.text_header.encoding = encoding
+        factory = SegyFactory(segy_spec)
+
+        chars = string.ascii_uppercase + string.ascii_lowercase + string.ascii_letters
+        text_rows = []
+        for _ in range(40):
+            row_string = "".join([random.choice(chars) for _ in range(80)])  # noqa: S311
+            text_rows.append(row_string)
+        text_expected = "\n".join(text_rows)
+
+        text_bytes = factory.create_textual_header(text_expected)
+        text_actual = segy_spec.text_header.decode(text_bytes)
+
+        assert text_actual == text_expected
 
 
 @pytest.mark.parametrize(
