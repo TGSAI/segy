@@ -86,7 +86,7 @@ class SegyFactory:
         self.spec.trace.data.samples = samples_per_trace
 
     @property
-    def trace_sample_format(self) -> ScalarType:
+    def sample_format(self) -> ScalarType:
         """Trace sample format of the SEG-Y file."""
         return self.spec.trace.data.format
 
@@ -155,7 +155,7 @@ class SegyFactory:
         bin_header["orig_sample_interval"] = self.sample_interval
         bin_header["samples_per_trace"] = self.samples_per_trace
         bin_header["orig_samples_per_trace"] = self.samples_per_trace
-        bin_header["data_sample_format"] = SEGY_FORMAT_MAP[self.trace_sample_format]
+        bin_header["data_sample_format"] = SEGY_FORMAT_MAP[self.sample_format]
 
         if update is not None:
             for key, value in update.items():
@@ -205,7 +205,7 @@ class SegyFactory:
         trace_data_spec = self.spec.trace.data
         dtype = trace_data_spec.dtype
 
-        if self.trace_sample_format == ScalarType.IBM32:
+        if self.sample_format == ScalarType.IBM32:
             dtype = np.dtype(("float32", (self.samples_per_trace,)))
 
         return np.zeros(shape=size, dtype=dtype)
