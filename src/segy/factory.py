@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC
 from datetime import datetime
 from typing import TYPE_CHECKING
+from typing import cast
 
 import numpy as np
 
@@ -56,9 +57,8 @@ def get_default_text(spec: SegySpec) -> str:
     text_lines[7] = text_lines[7].format(revision=revision)
 
     # Populate sample interval and number of samples
-    text_lines[9] = text_lines[9].format(
-        sample_interval=spec.trace.data.interval // 1000
-    )
+    sample_interval = spec.trace.data.interval // 1000  # type: ignore[operator]
+    text_lines[9] = text_lines[9].format(sample_interval=sample_interval)
     text_lines[10] = text_lines[10].format(samples_per_trace=spec.trace.data.samples)
 
     text_lines = [line.ljust(80) for line in text_lines]
@@ -93,12 +93,14 @@ class SegyFactory:
     @property
     def sample_interval(self) -> int:
         """Return sample interval from spec."""
-        return self.spec.trace.data.interval
+        # We know its populated at this point and its int (not None)
+        return cast(int, self.spec.trace.data.interval)
 
     @property
     def samples_per_trace(self) -> int:
         """Return number of samples from spec."""
-        return self.spec.trace.data.samples
+        # We know its populated at this point and its int (not None)
+        return cast(int, self.spec.trace.data.samples)
 
     @property
     def segy_revision(self) -> SegyStandard | None:
