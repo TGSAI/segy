@@ -106,30 +106,57 @@ class TestTextualFileHeader:
         assert text_actual == text_expected
 
 
-@pytest.mark.parametrize(
-    "sample_format", [ScalarType.FLOAT32, ScalarType.IBM32, ScalarType.INT16]
-)
-def test_binary_file_header(
-    mock_segy_factory: SegyFactory, sample_format: ScalarType
-) -> None:
-    """Ensure the binary header is properly encoded and serialized."""
-    mock_segy_factory.spec.trace.data.format = sample_format
+class TestBinaryFileHeader:
+    """Tests related to the text header writing."""
 
-    binary_bytes = mock_segy_factory.create_binary_header()
-
-    bin_spec = mock_segy_factory.spec.binary_header
-    binary_actual = np.frombuffer(binary_bytes, dtype=bin_spec.dtype)
-    binary_expected = (
-        mock_segy_factory.sample_interval,
-        mock_segy_factory.sample_interval,
-        mock_segy_factory.samples_per_trace,
-        mock_segy_factory.samples_per_trace,
-        SEGY_FORMAT_MAP[mock_segy_factory.trace_sample_format],
-        mock_segy_factory.segy_revision.value * 256,  # type: ignore[union-attr]
-        0,  # fixed length trace flag
-        0,  # extended text headers
+    @pytest.mark.parametrize(
+        "sample_format", [ScalarType.FLOAT32, ScalarType.IBM32, ScalarType.INT16]
     )
-    assert binary_actual.item() == binary_expected
+    def test_binary_header_default(
+        self, mock_segy_factory: SegyFactory, sample_format: ScalarType
+    ) -> None:
+        """Ensure the binary header is properly encoded and serialized."""
+        mock_segy_factory.spec.trace.data.format = sample_format
+
+        binary_bytes = mock_segy_factory.create_binary_header()
+
+        bin_spec = mock_segy_factory.spec.binary_header
+        binary_actual = np.frombuffer(binary_bytes, dtype=bin_spec.dtype)
+        binary_expected = (
+            mock_segy_factory.sample_interval,
+            mock_segy_factory.sample_interval,
+            mock_segy_factory.samples_per_trace,
+            mock_segy_factory.samples_per_trace,
+            SEGY_FORMAT_MAP[mock_segy_factory.sample_format],
+            mock_segy_factory.segy_revision.value * 256,  # type: ignore[union-attr]
+            0,  # fixed length trace flag
+            0,  # extended text headers
+        )
+        assert binary_actual.item() == binary_expected
+
+    def test_binary_header_custom(self, mock_segy_factory: SegyFactory) -> None:
+        """Test if binary header encoding field update."""
+        mock_segy_factory.spec.trace.data.format = ScalarType.IBM32
+
+        update = {
+            "fixed_length_trace_flag": 1,
+            "num_extended_text_headers": 2,
+        }
+        binary_bytes = mock_segy_factory.create_binary_header(update=update)
+
+        bin_spec = mock_segy_factory.spec.binary_header
+        binary_actual = np.frombuffer(binary_bytes, dtype=bin_spec.dtype)
+        binary_expected = (
+            mock_segy_factory.sample_interval,
+            mock_segy_factory.sample_interval,
+            mock_segy_factory.samples_per_trace,
+            mock_segy_factory.samples_per_trace,
+            SEGY_FORMAT_MAP[mock_segy_factory.sample_format],
+            mock_segy_factory.segy_revision.value * 256,  # type: ignore[union-attr]
+            1,  # fixed length trace flag
+            2,  # extended text headers
+        )
+        assert binary_actual.item() == binary_expected
 
 
 @pytest.mark.parametrize("num_traces", [1, 42])
@@ -181,10 +208,10 @@ class TestSegyFactoryTraces:
 
         n_samples = mock_segy_factory.samples_per_trace
 
-        if mock_segy_factory.trace_sample_format == ScalarType.IBM32:
+        if mock_segy_factory.sample_format == ScalarType.IBM32:
             expected_dtype = np.dtype("float32")
         else:
-            expected_dtype = np.dtype(mock_segy_factory.trace_sample_format.char)
+            expected_dtype = np.dtype(mock_segy_factory.sample_format.char)
 
         expected_shape = (num_traces, n_samples)
         assert samples.dtype == expected_dtype
@@ -221,7 +248,7 @@ class TestSegyFactoryTraces:
         # 1. handle ibm float
         # 2. fill in trace struct
         # 3. handle endianness
-        if mock_segy_factory.trace_sample_format == ScalarType.IBM32:
+        if mock_segy_factory.sample_format == ScalarType.IBM32:
             rand_samples = ieee2ibm(rand_samples)
         trace_dtype_native = mock_segy_factory.spec.trace.dtype.newbyteorder("=")
         expected_traces = np.zeros(shape=num_traces, dtype=trace_dtype_native)
