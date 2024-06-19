@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from datetime import timezone
 from typing import TYPE_CHECKING
+from typing import cast
 
 import numpy as np
 
@@ -28,12 +31,38 @@ DEFAULT_TEXT_HEADER_LINES = [
     "C02",
     "C03 Website: https://segy.readthedocs.io",
     "C04 Source: https://github.com/TGSAI/segy",
+    "C05",
+    "C06 File written: {timestamp}",
+    "C07",
+    "C08 SEG-Y Revision: {revision}",
+    "C09",
+    "C10 Sample Interval: {sample_interval} ms",
+    "C11 Samples Per Trace: {samples_per_trace}",
 ]
 
-DEFAULT_TEXT_HEADER_LINES += [f"C{line_no:02}" for line_no in range(5, 40)]
+DEFAULT_TEXT_HEADER_LINES += [f"C{line_no:02}" for line_no in range(12, 40)]
 DEFAULT_TEXT_HEADER_LINES += ["C40 END TEXTUAL HEADER"]
-DEFAULT_TEXT_HEADER_LINES = [line.ljust(80) for line in DEFAULT_TEXT_HEADER_LINES]
-DEFAULT_TEXT_HEADER = "\n".join(DEFAULT_TEXT_HEADER_LINES)
+
+
+def get_default_text(spec: SegySpec) -> str:
+    """Dynamically generate default text header based on spec."""
+    text_lines = DEFAULT_TEXT_HEADER_LINES.copy()
+
+    # Populate write time
+    now = datetime.now(tz=timezone.utc).isoformat(timespec="seconds")
+    text_lines[5] = text_lines[5].format(timestamp=now)
+
+    # Populate revision
+    revision = "unknown" if spec.segy_standard is None else spec.segy_standard.value
+    text_lines[7] = text_lines[7].format(revision=revision)
+
+    # Populate sample interval and number of samples
+    sample_interval = spec.trace.data.interval // 1000  # type: ignore[operator]
+    text_lines[9] = text_lines[9].format(sample_interval=sample_interval)
+    text_lines[10] = text_lines[10].format(samples_per_trace=spec.trace.data.samples)
+
+    text_lines = [line.ljust(80) for line in text_lines]
+    return "\n".join(text_lines)
 
 
 class SegyFactory:
@@ -53,15 +82,25 @@ class SegyFactory:
     ) -> None:
         self.spec = spec
 
-        self.sample_interval = sample_interval
-        self.samples_per_trace = samples_per_trace
-
+        self.spec.trace.data.interval = sample_interval
         self.spec.trace.data.samples = samples_per_trace
 
     @property
     def trace_sample_format(self) -> ScalarType:
         """Trace sample format of the SEG-Y file."""
         return self.spec.trace.data.format
+
+    @property
+    def sample_interval(self) -> int:
+        """Return sample interval from spec."""
+        # We know its populated at this point and its int (not None)
+        return cast(int, self.spec.trace.data.interval)
+
+    @property
+    def samples_per_trace(self) -> int:
+        """Return number of samples from spec."""
+        # We know its populated at this point and its int (not None)
+        return cast(int, self.spec.trace.data.samples)
 
     @property
     def segy_revision(self) -> SegyStandard | None:
@@ -82,7 +121,8 @@ class SegyFactory:
         Returns:
             Bytes containing the encoded text header, ready to write.
         """
-        text = DEFAULT_TEXT_HEADER if text is None else text
+        if text is None:
+            text = get_default_text(self.spec)
 
         text_spec = self.spec.text_header
 
