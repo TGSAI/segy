@@ -16,7 +16,7 @@ from segy.standards.fields import trace
 # fmt: off
 SEGYIO_BIN_FIELD_MAP = {
     "JobID":                 binary.Rev0.JOB_ID,
-    "LineNumber":            binary.Rev0.JOB_ID,
+    "LineNumber":            binary.Rev0.LINE_NUM,
     "ReelNumber":            binary.Rev0.REEL_NUM,
     "Traces":                binary.Rev0.DATA_TRACES_PER_ENSEMBLE,
     "AuxTraces":             binary.Rev0.AUX_TRACES_PER_ENSEMBLE,
