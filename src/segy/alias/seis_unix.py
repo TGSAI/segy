@@ -84,6 +84,6 @@ SEIS_UNIX_TRACE_FIELD_MAP = {
     "grnofr": trace.Rev0.GROUP_NUM_FIRST_TRACE,
     "grnlof": trace.Rev0.GROUP_NUM_LAST_TRACE,
     "gaps": trace.Rev0.GAP_SIZE,
-    "ofrav": trace.Rev0.TAPER_OVERTRAVEL,
+    "otrav": trace.Rev0.TAPER_OVERTRAVEL,
 }
 # fmt: on
