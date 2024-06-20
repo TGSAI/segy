@@ -139,7 +139,7 @@ SEGYIO_TRACE_FIELD_MAP = {
     "ScalarTraceHeader":                      trace.Rev1.TIMES_SCALAR,
     "SourceType":                             trace.Rev1.SOURCE_TYPE_ORIENTATION,
     "SourceEnergyDirectionMantissa":          trace.Rev1.SOURCE_ENERGY_DIR_MANTISSA,
-    "SourceEnergyDirectionExponent":          trace.Rev1.SOURCE_ENERGY_DIR_MANTISSA,
+    "SourceEnergyDirectionExponent":          trace.Rev1.SOURCE_ENERGY_DIR_EXPONENT,
     "SourceMeasurementMantissa":              trace.Rev1.SOURCE_MEASUREMENT_MANTISSA,
     "SourceMeasurementExponent":              trace.Rev1.SOURCE_MEASUREMENT_EXPONENT,
     "SourceMeasurementUnit":                  trace.Rev1.SOURCE_MEASUREMENT_UNIT,
