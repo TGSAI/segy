@@ -54,12 +54,14 @@ class SegyArray(np.ndarray):  # type: ignore[type-arg]
         """Ensure return type is still SegyArray and subtypes if we run numpy funcs.
 
         Functions like `np.concatenate` come here, and to ensure we keep the type
-        as `SegyArray` when its run.
+        as `SegyArray` or its subclasses when its run.
         """
-        result = super().__array_function__(func, types, args, kwargs)
+        if not all(issubclass(t, SegyArray) for t in types):
+            return NotImplemented
 
-        if func == np.concatenate:
-            return SegyArray(result)
+        result = super().__array_function__(func, types, args, kwargs)
+        if isinstance(result, np.ndarray):
+            return result.view(type(self))
 
         return result
 
