@@ -21,6 +21,9 @@ from segy.alias.core import normalize_key
 from segy.alias.core import validate_key
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from collections.abc import Mapping
+    from typing import Callable
     from typing import Literal
 
     from numpy.typing import NDArray
@@ -40,6 +43,25 @@ class SegyArray(np.ndarray):  # type: ignore[type-arg]
         """Numpy subclass logic."""
         if obj is None:
             return
+
+    def __array_function__(
+        self,
+        func: Callable[..., Any],
+        types: Iterable[type],
+        args: Iterable[Any],
+        kwargs: Mapping[str, Any],
+    ) -> Any:  # noqa: ANN401
+        """Ensure return type is still SegyArray and subtypes if we run numpy funcs.
+
+        Functions like `np.concatenate` come here, and to ensure we keep the type
+        as `SegyArray` when its run.
+        """
+        result = super().__array_function__(func, types, args, kwargs)
+
+        if func == np.concatenate:
+            return SegyArray(result)
+
+        return result
 
     def copy(self, order: OrderKACF = "K") -> SegyArray:
         """Copy structured array preserving the padded bytes as is.
