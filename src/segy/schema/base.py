@@ -42,6 +42,10 @@ class CamelCaseModel(BaseModel):
         """Dump the model into a JSON string by alias."""
         return super().model_dump_json(*args, **kwargs, by_alias=True)
 
+    def _repr_json_(self) -> dict[str, Any]:
+        """Return JSON-able dictionary form of model to render in notebooks."""
+        return self.model_dump(mode="json")
+
 
 class BaseDataType(CamelCaseModel):
     """A base model for all SEG-Y Ninja types."""

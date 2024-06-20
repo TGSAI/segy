@@ -150,6 +150,9 @@ class TestSegyFile:
         assert segy_file.num_ext_text == 0
         assert_array_equal(segy_file.sample_labels, EXPECTED_SAMPLE_LABELS)
 
+        # Check if JSON-able dict representation is valid
+        assert segy_file.spec._repr_json_() == segy_file.spec.model_dump(mode="json")
+
     def test_text_file_header(
         self, mock_filesystem: MemoryFileSystem, default_text: str
     ) -> None:
