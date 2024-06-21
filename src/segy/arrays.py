@@ -126,7 +126,7 @@ class HeaderArray(SegyArray):
         if isinstance(item, str):
             item = self._normalize_and_validate_keys(item)
         elif isinstance(item, list) and all(isinstance(i, str) for i in item):
-            if all(key in item in self.dtype.names for key in item):
+            if all(key in self.dtype.names for key in item):
                 return super().__getitem__(item)
 
             item = self._normalize_and_validate_keys(item)
@@ -143,7 +143,7 @@ class HeaderArray(SegyArray):
             key = self._normalize_and_validate_keys(key)
 
         elif isinstance(key, list) and all(isinstance(i, str) for i in key):
-            if all(k in key in self.dtype.names for k in key):
+            if all(k in self.dtype.names for k in key):
                 super().__setitem__(key, value)  # type: ignore[no-untyped-call]
                 return
 
