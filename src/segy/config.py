@@ -8,7 +8,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 
-from segy.schema import Endianness
+from segy.schema import Endianness  # noqa: TCH001
 
 
 class SegyBaseSettings(BaseSettings):
@@ -45,8 +45,8 @@ class SegySettings(SegyBaseSettings):
         default_factory=BinaryHeaderSettings,
         description="Overrides for binary file header settings.",
     )
-    endianness: Endianness = Field(
-        default=Endianness.BIG,
+    endianness: Endianness | None = Field(
+        default=None,
         description="Override the inferred endianness of the file.",
     )
     storage_options: dict[str, Any] = Field(
