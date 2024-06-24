@@ -154,6 +154,14 @@ class TestSegyFile:
         # Check if JSON-able dict representation is valid
         assert segy_file.spec._repr_json_() == segy_file.spec.model_dump(mode="json")
 
+        # Test the other case where we exactly specify the spec.
+        spec_expected = get_segy_standard(standard)
+        spec_expected.endianness = endianness
+        spec_expected.trace.data.format = sample_format
+        segy_file_expected = SegyFile(test_config.uri, spec=spec_expected)
+
+        assert segy_file_expected.spec == segy_file.spec
+
     def test_text_file_header(
         self, mock_filesystem: MemoryFileSystem, default_text: str
     ) -> None:
@@ -314,8 +322,16 @@ class TestSegyFileSettingsOverride:
             endianness=Endianness.BIG,
         )
 
-        settings_dict = {"binary": {"revision": 1.0}, "endianness": "little"}
-        settings = SegySettings.model_validate(settings_dict)
+        # Ensure still infer correctly if endian not provided
+        settings_dict_rev_only = {"binary": {"revision": 1.0}}
+        settings = SegySettings.model_validate(settings_dict_rev_only)
+        segy_file = SegyFile(test_config.uri, settings=settings)
+
+        assert segy_file.spec.endianness == Endianness.BIG
+
+        # Now ensure overriding both
+        settings_dict_both = {"binary": {"revision": 1.0}, "endianness": "little"}
+        settings = SegySettings.model_validate(settings_dict_both)
         segy_file = SegyFile(test_config.uri, settings=settings)
 
         assert segy_file.spec.segy_standard == SegyStandard.REV1

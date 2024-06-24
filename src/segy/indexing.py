@@ -12,7 +12,6 @@ from fsspec.utils import merge_offset_ranges
 
 from segy.arrays import HeaderArray
 from segy.arrays import TraceArray
-from segy.config import SegySettings
 from segy.transforms import TransformPipeline
 
 if TYPE_CHECKING:
@@ -103,7 +102,6 @@ class AbstractIndexer(ABC):
         url: A string representing the URL of the file.
         spec: An instance of BaseDataType.
         max_value: An integer representing the maximum value of the index.
-        settings: Optional parsing settings.
         transform_pipeline: The transforms pipeline to apply for decoding.
     """
 
@@ -115,14 +113,12 @@ class AbstractIndexer(ABC):
         url: str,
         spec: BaseDataType,
         max_value: int,
-        settings: SegySettings | None = None,
         transform_pipeline: TransformPipeline | None = None,
     ):
         self.fs = fs
         self.url = url
         self.spec = spec
         self.max_value = max_value
-        self.settings = SegySettings() if settings is None else settings
 
         self.transform_pipeline = (
             TransformPipeline() if transform_pipeline is None else transform_pipeline

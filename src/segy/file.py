@@ -18,7 +18,6 @@ from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
 from segy.indexing import TraceIndexer
 from segy.schema import Endianness
-from segy.schema import HeaderSpec
 from segy.schema import ScalarType
 from segy.standards import get_segy_standard
 from segy.standards.mapping import SEGY_FORMAT_MAP
@@ -50,14 +49,19 @@ class SegyScanResult:
     sample_format: ScalarType
 
 
-def infer_endianness(buffer: bytes, bin_spec: HeaderSpec) -> SegyScanResult:
+def infer_endianness(
+    fs: AbstractFileSystem,
+    url: str,
+    spec: SegySpec,
+) -> SegyScanResult:
     """Infer endianness of a binary header buffer given header spec.
 
     The buffer length and binary header spec itemsize must be the same.
 
     Args:
-         buffer: Bytes buffer of binary header.
-         bin_spec: Header spec defining how to parse binary header.
+         fs: FSSpec filesystem instance.
+         url: Path to the SEG-Y file.
+         spec: SEG-Y spec containing how to parse binary header.
 
     Returns:
         A SegyScanResult instance filled with inferred endianness, revision, and format.
@@ -65,6 +69,9 @@ def infer_endianness(buffer: bytes, bin_spec: HeaderSpec) -> SegyScanResult:
     Raises:
         EndiannessInferenceError: When inference fails.
     """
+    bin_spec = spec.binary_header.model_copy(deep=True)  # we will mutate, so copy
+    buffer = fs.read_block(url, offset=bin_spec.offset, length=bin_spec.itemsize)
+
     for endianness in [Endianness.BIG, Endianness.LITTLE]:
         bin_spec.endianness = endianness
         bin_hdr = np.frombuffer(buffer, dtype=bin_spec.dtype)
@@ -91,15 +98,11 @@ def infer_endianness(buffer: bytes, bin_spec: HeaderSpec) -> SegyScanResult:
 
 def infer_spec(fs: AbstractFileSystem, url: str) -> SegySpec:
     """Try to infer SEG-Y file revision and endianness to build a SegySpec."""
-    bin_spec = get_segy_standard(1.0).binary_header
-
-    buffer = fs.read_block(url, offset=bin_spec.offset, length=bin_spec.itemsize)
-    scan_result = infer_endianness(buffer, bin_spec)
-
+    spec = get_segy_standard(1.0)
+    scan_result = infer_endianness(fs, url, spec)
     new_spec = get_segy_standard(scan_result.revision)
     new_spec.trace.data.format = scan_result.sample_format
     new_spec.endianness = scan_result.endianness
-
     return new_spec
 
 
@@ -129,11 +132,27 @@ class SegyFile:
         self.fs, self.url = url_to_fs(url, **self.settings.storage_options)
         self._info = self.fs.info(self.url)
 
+        # Spec setting overrides.
         if self.settings.binary.revision is not None:
             self.spec = get_segy_standard(self.settings.binary.revision)
-            self.spec.endianness = self.settings.endianness
+
+            # Override/Infer endianness
+            if self.settings.endianness is None:
+                scan_result = infer_endianness(self.fs, self.url, self.spec)
+                self.spec.endianness = scan_result.endianness
+            else:
+                self.spec.endianness = self.settings.endianness
+
+        # Default, infer if no spec provided.
+        elif spec is None:
+            self.spec = infer_spec(self.fs, self.url)
+
+        # If spec is provided set to it and update endianness if its None.
         else:
-            self.spec = spec if spec is not None else infer_spec(self.fs, self.url)
+            self.spec = spec
+            if self.spec.endianness is None:
+                scan_result = infer_endianness(self.fs, self.url, self.spec)
+                self.spec.endianness = scan_result.endianness
 
         self._update_spec()
         self.accessors = TraceAccessor(self.spec.trace)
@@ -249,7 +268,6 @@ class SegyFile:
             self.url,
             self.spec.trace,
             self.num_traces,
-            settings=self.settings,
             transform_pipeline=self.accessors.sample_decode_pipeline,
         )
 
@@ -261,7 +279,6 @@ class SegyFile:
             self.url,
             self.spec.trace,
             self.num_traces,
-            settings=self.settings,
             transform_pipeline=self.accessors.header_decode_pipeline,
         )
 
@@ -273,6 +290,5 @@ class SegyFile:
             self.url,
             self.spec.trace,
             self.num_traces,
-            settings=self.settings,
             transform_pipeline=self.accessors.trace_decode_pipeline,
         )
