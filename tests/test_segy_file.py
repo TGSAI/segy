@@ -14,6 +14,7 @@ from numpy.testing import assert_array_equal
 from segy import SegyFactory
 from segy import SegyFile
 from segy.config import SegySettings
+from segy.exceptions import EndiannessInferenceError
 from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.schema import SegyStandard
@@ -285,7 +286,9 @@ class TestSegyFileExceptions:
         fp.write(struct.pack(">h", int(standard_override * 256)))
         fp.close()
 
-        with pytest.raises(ValueError, match="Could not infer SEG-Y standard"):
+        with pytest.raises(
+            EndiannessInferenceError, match="Can't infer file endianness"
+        ):
             SegyFile(test_config.uri)
 
 

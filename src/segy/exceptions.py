@@ -5,6 +5,10 @@ class SegyError(Exception):
     """Base class for all exceptions in this library."""
 
 
+class EndiannessInferenceError(SegyError):
+    """Raised when endianness inference has failed."""
+
+
 class InvalidFieldError(SegyError):
     """Raised when a header key does not match known values."""
 

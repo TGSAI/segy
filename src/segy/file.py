@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING
 from typing import cast
@@ -12,10 +13,13 @@ from fsspec.core import url_to_fs
 from segy.accessors import TraceAccessor
 from segy.arrays import HeaderArray
 from segy.config import SegySettings
+from segy.exceptions import EndiannessInferenceError
 from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
 from segy.indexing import TraceIndexer
 from segy.schema import Endianness
+from segy.schema import HeaderSpec
+from segy.schema import ScalarType
 from segy.standards import get_segy_standard
 from segy.standards.mapping import SEGY_FORMAT_MAP
 from segy.transforms import TransformFactory
@@ -29,19 +33,41 @@ if TYPE_CHECKING:
     from segy.schema import SegySpec
 
 
-def infer_spec(fs: AbstractFileSystem, url: str) -> SegySpec:
-    """Try to infer SEG-Y file revision and endianness to build a SegySpec."""
-    spec = get_segy_standard(1.0)
+@dataclass
+class SegyScanResult:
+    """A scan result of a SEG-Y file.
 
-    buffer = fs.read_block(
-        url,
-        offset=spec.binary_header.offset,
-        length=spec.binary_header.itemsize,
-    )
+    Attributes:
+        endianness: Endianness of the file.
+        revision: SEG-Y revision as float.
+        sample_format: SEG-Y sample format.
+    """
 
+    __slots__ = ("endianness", "revision", "sample_format")
+
+    endianness: Endianness
+    revision: float
+    sample_format: ScalarType
+
+
+def infer_endianness(buffer: bytes, bin_spec: HeaderSpec) -> SegyScanResult:
+    """Infer endianness of a binary header buffer given header spec.
+
+    The buffer length and binary header spec itemsize must be the same.
+
+    Args:
+         buffer: Bytes buffer of binary header.
+         bin_spec: Header spec defining how to parse binary header.
+
+    Returns:
+        A SegyScanResult instance filled with inferred endianness, revision, and format.
+
+    Raises:
+        EndiannessInferenceError: When inference fails.
+    """
     for endianness in [Endianness.BIG, Endianness.LITTLE]:
-        spec.endianness = endianness
-        bin_hdr = np.frombuffer(buffer, dtype=spec.binary_header.dtype)
+        bin_spec.endianness = endianness
+        bin_hdr = np.frombuffer(buffer, dtype=bin_spec.dtype)
 
         revision = bin_hdr["segy_revision"].item() / 256.0
         sample_increment = bin_hdr["sample_interval"].item()
@@ -53,14 +79,28 @@ def infer_spec(fs: AbstractFileSystem, url: str) -> SegySpec:
         format_is_valid = sample_format_int in SEGY_FORMAT_MAP.values()
 
         if in_spec and increment_is_positive and format_is_valid:
-            new_spec = get_segy_standard(revision)
-            new_spec.trace.data.format = SEGY_FORMAT_MAP.inverse[sample_format_int]
-            new_spec.endianness = endianness
-            return new_spec
+            sample_format = SEGY_FORMAT_MAP.inverse[sample_format_int]
+            return SegyScanResult(endianness, revision, sample_format)
 
-    # If both fail, raise error.
-    msg = "Could not infer SEG-Y standard. Please provide spec."
-    raise ValueError(msg)
+    msg = (
+        f"Can't infer file endianness, please specify manually. "
+        f"Detected {revision=}, {sample_increment=}, and {sample_format_int=}."
+    )
+    raise EndiannessInferenceError(msg)
+
+
+def infer_spec(fs: AbstractFileSystem, url: str) -> SegySpec:
+    """Try to infer SEG-Y file revision and endianness to build a SegySpec."""
+    bin_spec = get_segy_standard(1.0).binary_header
+
+    buffer = fs.read_block(url, offset=bin_spec.offset, length=bin_spec.itemsize)
+    scan_result = infer_endianness(buffer, bin_spec)
+
+    new_spec = get_segy_standard(scan_result.revision)
+    new_spec.trace.data.format = scan_result.sample_format
+    new_spec.endianness = scan_result.endianness
+
+    return new_spec
 
 
 class SegyFile:
