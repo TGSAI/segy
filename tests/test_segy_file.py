@@ -314,6 +314,14 @@ class TestSegyFileSettingsOverride:
             endianness=Endianness.BIG,
         )
 
+        # Ensure still infer correctly if endian not provided
+        settings_dict = {"binary": {"revision": 1.0}}
+        settings = SegySettings.model_validate(settings_dict)
+        segy_file = SegyFile(test_config.uri, settings=settings)
+
+        assert segy_file.spec.endianness == Endianness.BIG
+
+        # Now ensure overriding both
         settings_dict = {"binary": {"revision": 1.0}, "endianness": "little"}
         settings = SegySettings.model_validate(settings_dict)
         segy_file = SegyFile(test_config.uri, settings=settings)
