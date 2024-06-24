@@ -154,6 +154,14 @@ class TestSegyFile:
         # Check if JSON-able dict representation is valid
         assert segy_file.spec._repr_json_() == segy_file.spec.model_dump(mode="json")
 
+        # Test the other case where we exactly specify the spec.
+        spec_expected = get_segy_standard(standard)
+        spec_expected.endianness = endianness
+        spec_expected.trace.data.format = sample_format
+        segy_file_expected = SegyFile(test_config.uri, spec=spec_expected)
+
+        assert segy_file_expected.spec == segy_file.spec
+
     def test_text_file_header(
         self, mock_filesystem: MemoryFileSystem, default_text: str
     ) -> None:
