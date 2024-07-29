@@ -2,7 +2,7 @@ sphinx==7.3.7
 sphinx-design==0.6.0
 sphinx-copybutton==0.5.2
 furo==2024.5.6
-myst-nb==1.1.0
+myst-nb==1.1.1
 linkify-it-py==2.0.3
 autodoc-pydantic==2.2.0
 sphinxcontrib-typer==0.3.1
