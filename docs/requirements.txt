@@ -6,5 +6,5 @@ myst-nb==1.1.1
 linkify-it-py==2.0.3
 autodoc-pydantic==2.2.0
 sphinxcontrib-typer==0.3.3
-matplotlib==3.9.1
+matplotlib==3.9.1.post1
 s3fs==2024.6.1
