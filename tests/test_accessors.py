@@ -13,6 +13,7 @@ from segy.schema import TraceDataSpec
 from segy.schema import TraceSpec
 from segy.transforms import Transform
 from segy.transforms import TransformFactory
+from segy.transforms import TransformPipeline
 
 
 def compare_transform(transform_a: Transform, transform_b: Transform) -> bool:
@@ -64,14 +65,13 @@ def mock_trace_spec(
         if sample_field_type != ScalarType.IBM32
         else [base_transform, TransformFactory.create("ibm_float", "to_ieee")]
     )
-    expected["trace"] = (
-        [base_transform]
-        if sample_field_type != ScalarType.IBM32
-        else [
-            base_transform,
-            TransformFactory.create("ibm_float", "to_ieee", ["data"]),
-        ]
-    )
+
+    hdr_pipeline = TransformPipeline()
+    map(hdr_pipeline.add_transform, expected["header"])
+    data_pipeline = TransformPipeline()
+    map(data_pipeline.add_transform, expected["data"])
+    expected["trace"] = [TransformFactory.create("trace", hdr_pipeline, data_pipeline)]
+
     return trace_spec, expected
 
 
