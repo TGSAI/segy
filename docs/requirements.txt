@@ -1,10 +1,10 @@
-sphinx==7.3.7
+sphinx==8.0.2
 sphinx-design==0.6.0
 sphinx-copybutton==0.5.2
-furo==2024.5.6
+furo==2024.7.18
 myst-nb==1.1.1
 linkify-it-py==2.0.3
 autodoc-pydantic==2.2.0
-sphinxcontrib-typer==0.3.1
-matplotlib==3.9.0
+sphinxcontrib-typer==0.3.3
+matplotlib==3.9.1
 s3fs==2024.6.1
