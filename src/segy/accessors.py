@@ -35,17 +35,18 @@ class TraceAccessor:
         endian_transform = TransformFactory.create("byte_swap", Endianness.LITTLE)
         self.header_decode_pipeline.add_transform(endian_transform)
         self.sample_decode_pipeline.add_transform(endian_transform)
-        self.trace_decode_pipeline.add_transform(endian_transform)
 
         if self.trace_spec.data.format == ScalarType.IBM32:
             ibm2ieee = TransformFactory.create("ibm_float", "to_ieee")
-            ibm2ieee_data = TransformFactory.create("ibm_float", "to_ieee", ["data"])
-
             self.sample_decode_pipeline.add_transform(ibm2ieee)
-            self.trace_decode_pipeline.add_transform(ibm2ieee_data)
 
         if len(self.header_ibm_keys) != 0:
             ibm2ieee = TransformFactory.create(
                 "ibm_float", "to_ieee", keys=self.header_ibm_keys
             )
             self.header_decode_pipeline.add_transform(ibm2ieee)
+
+        trace_transform = TransformFactory.create(
+            "trace", self.header_decode_pipeline, self.sample_decode_pipeline
+        )
+        self.trace_decode_pipeline.add_transform(trace_transform)

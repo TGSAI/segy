@@ -60,7 +60,7 @@ def _modify_dtype_field(
 
     # Handle the case where field to modify is a struct
     # For example; a Trace struct with "header" amd "data" fields.
-    if key_to_modify.kind == "V":
+    if isinstance(key_to_modify, np.dtype) and key_to_modify.kind == "V":
         new_type = np.dtype((new_type.str,) + key_to_modify.subdtype[1:])
 
     dtype_info["formats"][key_index] = new_type  # type: ignore[index]
@@ -197,12 +197,45 @@ class IbmFloatTransform(Transform):
         return func(data.astype(cast_dtype))  # type: ignore
 
 
+class TraceTransform(Transform):
+    """Composite transform to apply header and data pipeline to trace.
+
+    This transform is a workaround for a design flaw in applying transforms.
+    Please refactor this at some point! The problem is: if we have a trace
+    struct with "headers" and "data", and we want to apply another transform
+    to a header field within "headers", we can't. This is a problem with the
+    current Transform and TransformPipeline.
+
+    Args:
+        header_pipeline: Transform pipeline to apply to struct "header" field.
+        data_pipeline: Transform pipeline to apply to struct "header" field.
+    """
+
+    def __init__(
+        self, header_pipeline: TransformPipeline, data_pipeline: TransformPipeline
+    ) -> None:
+        super().__init__()
+        self.header_transform = Transform(["header"])
+        self.header_transform.transform = header_pipeline.apply
+
+        self.data_transform = Transform(["data"])
+        self.data_transform.transform = data_pipeline.apply
+
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Applies independent transform pipelines to trace struct."""
+        data = self.header_transform.apply(data)
+        data = self.data_transform.apply(data)
+
+        return data  # noqa: RET504
+
+
 class TransformFactory:
     """Factory class to generate transformation strategies."""
 
     transform_map: dict[str, type[Transform]] = {
         "byte_swap": ByteSwapTransform,
         "ibm_float": IbmFloatTransform,
+        "trace": TraceTransform,
     }
 
     @classmethod
