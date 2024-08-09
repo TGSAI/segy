@@ -61,7 +61,7 @@ def _modify_dtype_field(
     # Handle the case where field to modify is a struct
     # For example; a Trace struct with "header" amd "data" fields.
     if isinstance(key_to_modify, np.dtype) and key_to_modify.kind == "V":
-        new_type = np.dtype((new_type.str,) + key_to_modify.subdtype[1:])
+        new_type = np.dtype((new_type.str,) + key_to_modify.subdtype[1:])  # type: ignore
 
     dtype_info["formats"][key_index] = new_type  # type: ignore[index]
 
@@ -215,11 +215,11 @@ class TraceTransform(Transform):
         self, header_pipeline: TransformPipeline, data_pipeline: TransformPipeline
     ) -> None:
         super().__init__()
-        self.header_transform = Transform(["header"])
-        self.header_transform.transform = header_pipeline.apply
+        self.header_transform = Transform(["header"])  # type: ignore[abstract]
+        self.header_transform.transform = header_pipeline.apply  # type: ignore[method-assign]
 
-        self.data_transform = Transform(["data"])
-        self.data_transform.transform = data_pipeline.apply
+        self.data_transform = Transform(["data"])  # type: ignore[abstract]
+        self.data_transform.transform = data_pipeline.apply  # type: ignore[method-assign]
 
     def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Applies independent transform pipelines to trace struct."""

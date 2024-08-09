@@ -67,9 +67,9 @@ def mock_trace_spec(
     )
 
     hdr_pipeline = TransformPipeline()
-    [hdr_pipeline.add_transform(t) for t in expected["header"]]
+    map(hdr_pipeline.add_transform, expected["header"])
     data_pipeline = TransformPipeline()
-    [data_pipeline.add_transform(t) for t in expected["data"]]
+    map(data_pipeline.add_transform, expected["data"])
     expected["trace"] = [TransformFactory.create("trace", hdr_pipeline, data_pipeline)]
 
     return trace_spec, expected
