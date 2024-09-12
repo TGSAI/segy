@@ -211,9 +211,6 @@ class SegyRevisionTransform(Transform):
 
         major = SegyStandard(data["segy_revision"] // 256)
         data["segy_revision"] = major
-        if major >= SegyStandard.REV2:
-            msg = "Revision interpretation for Rev2+ is not implemented."
-            raise NotImplementedError(msg)
 
         return data
 
