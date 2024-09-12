@@ -206,7 +206,7 @@ class SegyRevisionTransform(Transform):
 
     def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Assume Rev1 parsed major and update minor if major is 2."""
-        if data["segy_revision"] == 0:
+        if "segy_revision" not in data.dtype.names:
             return data
 
         major = SegyStandard(data["segy_revision"] // 256)
