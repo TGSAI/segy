@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
 import pytest
 
 from segy.indexing import bounds_check
@@ -31,7 +32,7 @@ class TestBoundsCheckIndices:
     )
     def test_in_bounds(self, indices: list[int], size: int) -> None:
         """Test the case where indices are in bounds."""
-        bounds_check(indices, size, "trace")
+        bounds_check(np.asarray(indices), size, "trace")
 
     @pytest.mark.parametrize(
         ("indices", "size"),
@@ -43,7 +44,7 @@ class TestBoundsCheckIndices:
     def test_out_of_bounds(self, indices: list[int], size: int) -> None:
         """Test the case where indices out of bounds or negative."""
         with pytest.raises(IndexError, match="out of bounds"):
-            bounds_check(indices, size, "")
+            bounds_check(np.asarray(indices), size, "")
 
 
 class TestMergeCatFile:
