@@ -239,6 +239,9 @@ class SegyFile:
             little_endian = TransformFactory.create("byte_swap", Endianness.LITTLE)
             transforms.add_transform(little_endian)
 
+        interpret_revision = TransformFactory.create("segy_revision")
+        transforms.add_transform(interpret_revision)
+
         return HeaderArray(transforms.apply(bin_hdr))
 
     def _update_spec(self) -> None:

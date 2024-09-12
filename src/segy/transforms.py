@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from segy.schema import SegyStandard
 from segy.schema.base import Endianness
 
 if TYPE_CHECKING:
@@ -197,6 +198,23 @@ class IbmFloatTransform(Transform):
         return func(data.astype(cast_dtype))  # type: ignore
 
 
+class SegyRevisionTransform(Transform):
+    """Interpret the SEG-Y revision field in binary header."""
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Assume Rev1 parsed major and update minor if major is 2."""
+        major = SegyStandard(data["segy_revision"] // 256)
+        data["segy_revision"] = major
+        if major >= SegyStandard.REV2:
+            msg = "Revision interpretation for Rev2+ is not implemented."
+            raise NotImplementedError(msg)
+
+        return data
+
+
 class TraceTransform(Transform):
     """Composite transform to apply header and data pipeline to trace.
 
@@ -235,6 +253,7 @@ class TransformFactory:
     transform_map: dict[str, type[Transform]] = {
         "byte_swap": ByteSwapTransform,
         "ibm_float": IbmFloatTransform,
+        "segy_revision": SegyRevisionTransform,
         "trace": TraceTransform,
     }
 
