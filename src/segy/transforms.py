@@ -208,7 +208,8 @@ class SegyRevisionTransform(Transform):
 
     def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Parse SEG-Y standard from binary header."""
-        if "segy_revision" not in data.dtype.names:  # Rev0
+        if data.dtype.names is not None and "segy_revision" not in data.dtype.names:
+            # Rev0
             return data
 
         # Rev1 needs special treatment.
