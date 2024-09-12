@@ -23,6 +23,8 @@ if TYPE_CHECKING:
     from segy.schema import TraceSpec
     from segy.schema.base import BaseDataType
 
+    IntDType = np.signedinteger[Any]
+
 
 def merge_cat_file(
     fs: AbstractFileSystem,
@@ -63,7 +65,7 @@ def merge_cat_file(
     return bytearray(b"".join(buffer_bytes))
 
 
-def bounds_check(indices: NDArray[int], max_: int, type_: str) -> None:
+def bounds_check(indices: NDArray[IntDType], max_: int, type_: str) -> None:
     """Check if indices are out of bounds (negative, or more than max).
 
     Wrapping negative indices is not supported yet. The `type_` argument
@@ -122,7 +124,9 @@ class AbstractIndexer(ABC):
         )
 
     @abstractmethod
-    def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
+    def indices_to_byte_ranges(
+        self, indices: NDArray[IntDType]
+    ) -> tuple[NDArray[IntDType], NDArray[IntDType]]:
         """Logic to calculate start/end bytes."""
 
     @abstractmethod
@@ -133,7 +137,7 @@ class AbstractIndexer(ABC):
         """Apply transforms to the data after decoding."""
         return self.transform_pipeline.apply(data)
 
-    def __getitem__(self, item: int | list[int] | NDArray[int] | slice) -> Any:  # noqa: ANN401
+    def __getitem__(self, item: int | list[int] | NDArray[IntDType] | slice) -> Any:  # noqa: ANN401
         """Operator for integers, lists, and slices with bounds checking."""
         if isinstance(item, slice):
             if item.step == 0:
@@ -158,7 +162,7 @@ class AbstractIndexer(ABC):
         data = self.fetch(indices)
         return self.post_process(data)
 
-    def fetch(self, indices: list[int]) -> NDArray[Any]:
+    def fetch(self, indices: NDArray[IntDType]) -> NDArray[Any]:
         """Fetches and decodes binary data from the given indices.
 
         Args:
@@ -181,7 +185,7 @@ class AbstractIndexer(ABC):
         """
         index_order = np.argsort(indices)
         starts, ends = self.indices_to_byte_ranges(indices)
-        buffer = merge_cat_file(self.fs, self.url, starts, ends)
+        buffer = merge_cat_file(self.fs, self.url, starts.tolist(), ends.tolist())
         array = self.decode(buffer)
         return array[index_order].squeeze()
 
@@ -196,7 +200,9 @@ class TraceIndexer(AbstractIndexer):
     spec: TraceSpec
     kind: str = "trace"
 
-    def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
+    def indices_to_byte_ranges(
+        self, indices: NDArray[IntDType]
+    ) -> tuple[NDArray[IntDType], NDArray[IntDType]]:
         """Convert trace indices to byte ranges."""
         if self.spec.offset is None:
             msg = "Trace starting offset must be specified."
@@ -205,8 +211,8 @@ class TraceIndexer(AbstractIndexer):
         start_offset = self.spec.offset
         trace_itemsize = self.spec.dtype.itemsize
 
-        starts = [start_offset + i * trace_itemsize for i in indices]
-        ends = [start + trace_itemsize for start in starts]
+        starts = start_offset + indices * trace_itemsize
+        ends = starts + trace_itemsize
 
         return starts, ends
 
@@ -226,7 +232,9 @@ class HeaderIndexer(AbstractIndexer):
     spec: TraceSpec
     kind: str = "header"
 
-    def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
+    def indices_to_byte_ranges(
+        self, indices: NDArray[IntDType]
+    ) -> tuple[NDArray[IntDType], NDArray[IntDType]]:
         """Convert header indices to byte ranges (without trace data)."""
         trace_itemsize = self.spec.dtype.itemsize
         header_itemsize = self.spec.header.itemsize
@@ -237,8 +245,8 @@ class HeaderIndexer(AbstractIndexer):
 
         start_offset = self.spec.offset
 
-        starts = [start_offset + i * trace_itemsize for i in indices]
-        ends = [start + header_itemsize for start in starts]
+        starts = start_offset + indices * trace_itemsize
+        ends = starts + header_itemsize
 
         return starts, ends
 
@@ -257,7 +265,9 @@ class DataIndexer(AbstractIndexer):
     spec: TraceSpec
     kind: str = "data"
 
-    def indices_to_byte_ranges(self, indices: list[int]) -> tuple[list[int], list[int]]:
+    def indices_to_byte_ranges(
+        self, indices: NDArray[IntDType]
+    ) -> tuple[NDArray[IntDType], NDArray[IntDType]]:
         """Convert data indices to byte ranges (without trace headers)."""
         trace_itemsize = self.spec.itemsize
         data_itemsize = self.spec.data.itemsize
@@ -269,8 +279,8 @@ class DataIndexer(AbstractIndexer):
 
         start_offset = self.spec.offset + header_itemsize
 
-        starts = [start_offset + i * trace_itemsize for i in indices]
-        ends = [start + data_itemsize for start in starts]
+        starts = start_offset + indices * trace_itemsize
+        ends = starts + data_itemsize
 
         return starts, ends
 
