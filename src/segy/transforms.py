@@ -18,6 +18,8 @@ if TYPE_CHECKING:
     from numpy.typing import DTypeLike
     from numpy.typing import NDArray
 
+REV1_INT16 = 256
+
 
 def get_endianness(data: NDArray[Any]) -> Endianness:
     """Map the numpy byte order character to Endianness."""
@@ -205,12 +207,20 @@ class SegyRevisionTransform(Transform):
         super().__init__()
 
     def transform(self, data: NDArray[Any]) -> NDArray[Any]:
-        """Assume Rev1 parsed major and update minor if major is 2."""
-        if "segy_revision" not in data.dtype.names:
+        """Parse SEG-Y standard from binary header."""
+        if "segy_revision" not in data.dtype.names:  # Rev0
             return data
 
-        major = SegyStandard(data["segy_revision"] // 256)
-        data["segy_revision"] = major
+        # Rev1 needs special treatment.
+        # Rev1 is 16-bit with Q-point between the bytes. That means
+        # SEG-Y 1.0 is written as 00000001 00000000 in binary, 256 in base-2.
+        if data["segy_revision"] == REV1_INT16:  # noqa: PLR2004
+            data["segy_revision"] = SegyStandard.REV1
+
+        # Rev2 doesn't need special treatment because it splits into
+        # two 8-bit integers for major and minor versions.
+        # SEG-Y Rev2.0 is 00000010 00000000 in binary, (2, 0) in base-2
+        # SEG-Y Rev2.1 is 00000010 00000001 in binary, (2, 1) in base-2
 
         return data
 
