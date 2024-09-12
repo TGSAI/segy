@@ -147,9 +147,12 @@ class SegyFactory:
         binary_spec = self.spec.binary_header
         bin_header = HeaderArray(np.zeros(shape=1, dtype=binary_spec.dtype))
 
-        rev0 = self.segy_revision == SegyStandard.REV0
-        if self.segy_revision is not None and not rev0:
-            bin_header["segy_revision"] = self.segy_revision.value * 256
+        if self.segy_revision == SegyStandard.REV1:
+            bin_header["segy_revision"] = 256  # base-16
+        elif self.segy_revision >= SegyStandard.REV2:
+            minor, major = np.modf(self.segy_revision.value)
+            bin_header["segy_revision"] = major
+            bin_header["segy_revision_minor"] = minor
 
         bin_header["sample_interval"] = self.sample_interval
         bin_header["orig_sample_interval"] = self.sample_interval
