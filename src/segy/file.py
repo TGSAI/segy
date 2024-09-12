@@ -76,7 +76,7 @@ def infer_endianness(
         bin_spec.endianness = endianness
         bin_hdr = np.frombuffer(buffer, dtype=bin_spec.dtype)
 
-        revision = bin_hdr["segy_revision"].item() / 256.0
+        revision = bin_hdr["segy_revision"].item() / 256.0  # base-16
         sample_increment = bin_hdr["sample_interval"].item()
         sample_format_int = bin_hdr["data_sample_format"].item()
 
