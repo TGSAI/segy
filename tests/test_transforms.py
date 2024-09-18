@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from typing import Any
+from typing import cast
 
 import numpy as np
 import pytest
@@ -16,6 +16,8 @@ from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from numpy.typing import NDArray
 
 
@@ -154,20 +156,22 @@ class TestRevisionTransform:
         transform = TransformFactory.create("segy_revision")
         transformed_bin_header = transform.apply(bin_header)
 
+        header_fields = cast(tuple[str], transformed_bin_header.dtype.names)
+
         if revision == SegyStandard.REV0:
-            assert "segy_revision" not in transformed_bin_header.dtype.names
-            assert "segy_revision_major" not in transformed_bin_header.dtype.names
-            assert "segy_revision_minor" not in transformed_bin_header.dtype.names
+            assert "segy_revision" not in header_fields
+            assert "segy_revision_major" not in header_fields
+            assert "segy_revision_minor" not in header_fields
 
         elif revision == SegyStandard.REV1:
             assert transformed_bin_header["segy_revision"].squeeze() == major
-            assert "segy_revision_major" not in transformed_bin_header.dtype.names
-            assert "segy_revision_minor" not in transformed_bin_header.dtype.names
+            assert "segy_revision_major" not in header_fields
+            assert "segy_revision_minor" not in header_fields
 
         elif revision == SegyStandard.REV2:
             assert transformed_bin_header["segy_revision_major"].squeeze() == major
             assert transformed_bin_header["segy_revision_minor"].squeeze() == minor
-            assert "segy_revision" not in transformed_bin_header.dtype.names
+            assert "segy_revision" not in header_fields
 
 
 class TestTransformPipeline:
