@@ -8,7 +8,10 @@ from typing import Any
 import numpy as np
 import pytest
 
+from segy import SegyFactory
+from segy.schema import SegyStandard
 from segy.schema.base import Endianness
+from segy.standards import get_segy_standard
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
@@ -126,6 +129,45 @@ class TestIbmFloat:
         transformed_header = transform.apply(mock_header_ibm)
 
         assert transformed_header[0].item() == expected.item()
+
+
+class TestRevisionTransform:
+    """Test SEG-Y revision transforms. This tests both transform and factory."""
+
+    @pytest.mark.parametrize("endian", ["little", "big"])
+    @pytest.mark.parametrize(("major", "minor"), [(0, 0), (1, 0), (2, 0)])
+    def test_rev_parse(self, endian: str, major: int, minor: int) -> None:
+        """Test array scaling."""
+        # Set parameters
+        rev_float = float(f"{major}.{minor}")
+        revision = SegyStandard(rev_float)
+        endianness = Endianness(endian)
+
+        # Create binary header with factory
+        spec = get_segy_standard(revision)
+        spec.endianness = endianness
+        segy_factory = SegyFactory(spec)
+        bin_header_bytes = bytearray(segy_factory.create_binary_header())
+        bin_header = np.frombuffer(bin_header_bytes, dtype=spec.binary_header)
+
+        # Set up and apply transform
+        transform = TransformFactory.create("segy_revision")
+        transformed_bin_header = transform.apply(bin_header)
+
+        if revision == SegyStandard.REV0:
+            assert "segy_revision" not in transformed_bin_header.dtype.names
+            assert "segy_revision_major" not in transformed_bin_header.dtype.names
+            assert "segy_revision_minor" not in transformed_bin_header.dtype.names
+
+        elif revision == SegyStandard.REV1:
+            assert transformed_bin_header["segy_revision"].squeeze() == major
+            assert "segy_revision_major" not in transformed_bin_header.dtype.names
+            assert "segy_revision_minor" not in transformed_bin_header.dtype.names
+
+        elif revision == SegyStandard.REV2:
+            assert transformed_bin_header["segy_revision_major"].squeeze() == major
+            assert transformed_bin_header["segy_revision_minor"].squeeze() == minor
+            assert "segy_revision" not in transformed_bin_header.dtype.names
 
 
 class TestTransformPipeline:

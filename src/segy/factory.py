@@ -11,6 +11,7 @@ import numpy as np
 
 from segy.arrays import HeaderArray
 from segy.arrays import TraceArray
+from segy.constants import REV1_BASE16
 from segy.schema.base import Endianness
 from segy.schema.format import ScalarType
 from segy.schema.segy import SegyStandard
@@ -150,10 +151,10 @@ class SegyFactory:
         if self.segy_revision is None:
             pass
         elif self.segy_revision == SegyStandard.REV1:
-            bin_header["segy_revision"] = 256  # base-16
+            bin_header["segy_revision"] = REV1_BASE16  # base-16
         elif self.segy_revision >= SegyStandard.REV2:
             minor, major = np.modf(self.segy_revision)
-            bin_header["segy_revision"] = major
+            bin_header["segy_revision_major"] = major
             bin_header["segy_revision_minor"] = minor
 
         bin_header["sample_interval"] = self.sample_interval

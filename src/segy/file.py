@@ -13,6 +13,7 @@ from fsspec.core import url_to_fs
 from segy.accessors import TraceAccessor
 from segy.arrays import HeaderArray
 from segy.config import SegySettings
+from segy.constants import REV1_BASE16
 from segy.exceptions import EndiannessInferenceError
 from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
@@ -76,7 +77,7 @@ def infer_endianness(
         bin_spec.endianness = endianness
         bin_hdr = np.frombuffer(buffer, dtype=bin_spec.dtype)
 
-        revision = bin_hdr["segy_revision"].item() / 256.0  # base-16
+        revision = bin_hdr["segy_revision"].item() / REV1_BASE16
         sample_increment = bin_hdr["sample_interval"].item()
         sample_format_int = bin_hdr["data_sample_format"].item()
 

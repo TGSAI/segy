@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from segy.constants import REV1_BASE16
 from segy.schema import SegyStandard
 from segy.schema.base import Endianness
 
@@ -17,8 +18,6 @@ if TYPE_CHECKING:
     from numpy._typing._dtype_like import _DTypeDict
     from numpy.typing import DTypeLike
     from numpy.typing import NDArray
-
-REV1_INT16 = 256
 
 
 def get_endianness(data: NDArray[Any]) -> Endianness:
@@ -209,13 +208,12 @@ class SegyRevisionTransform(Transform):
     def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Parse SEG-Y standard from binary header."""
         if data.dtype.names is not None and "segy_revision" not in data.dtype.names:
-            # Rev0
-            return data
+            return data  # rev0, no-op
 
         # Rev1 needs special treatment.
         # Rev1 is 16-bit with Q-point between the bytes. That means
         # SEG-Y 1.0 is written as 00000001 00000000 in binary, 256 in base-2.
-        if data["segy_revision"] == REV1_INT16:  # noqa: PLR2004
+        if data["segy_revision"] == REV1_BASE16:
             data["segy_revision"] = SegyStandard.REV1
 
         # Rev2 doesn't need special treatment because it splits into
