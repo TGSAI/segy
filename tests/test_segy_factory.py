@@ -128,7 +128,7 @@ class TestBinaryFileHeader:
             mock_segy_factory.samples_per_trace,
             mock_segy_factory.samples_per_trace,
             SEGY_FORMAT_MAP[mock_segy_factory.sample_format],
-            mock_segy_factory.segy_revision.value * 256,  # type: ignore[union-attr]
+            mock_segy_factory.segy_revision.value * 256,
             0,  # fixed length trace flag
             0,  # extended text headers
         )
@@ -152,7 +152,7 @@ class TestBinaryFileHeader:
             mock_segy_factory.samples_per_trace,
             mock_segy_factory.samples_per_trace,
             SEGY_FORMAT_MAP[mock_segy_factory.sample_format],
-            mock_segy_factory.segy_revision.value * 256,  # type: ignore[union-attr]
+            mock_segy_factory.segy_revision.value * 256,
             1,  # fixed length trace flag
             2,  # extended text headers
         )

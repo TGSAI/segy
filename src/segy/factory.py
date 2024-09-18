@@ -104,8 +104,11 @@ class SegyFactory:
         return cast(int, self.spec.trace.data.samples)
 
     @property
-    def segy_revision(self) -> SegyStandard | None:
+    def segy_revision(self) -> SegyStandard:
         """Revision of the SEG-Y file."""
+        if self.spec.segy_standard is None:
+            return SegyStandard.REV0
+
         return self.spec.segy_standard
 
     def create_textual_header(self, text: str | None = None) -> bytes:
@@ -148,10 +151,8 @@ class SegyFactory:
         binary_spec = self.spec.binary_header
         bin_header = HeaderArray(np.zeros(shape=1, dtype=binary_spec.dtype))
 
-        if self.segy_revision is None:
-            pass
-        elif self.segy_revision == SegyStandard.REV1:
-            bin_header["segy_revision"] = REV1_BASE16  # base-16
+        if self.segy_revision == SegyStandard.REV1:
+            bin_header["segy_revision"] = REV1_BASE16
         elif self.segy_revision >= SegyStandard.REV2:
             minor, major = np.modf(self.segy_revision)
             bin_header["segy_revision_major"] = major
