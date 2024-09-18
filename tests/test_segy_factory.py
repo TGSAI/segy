@@ -25,13 +25,14 @@ from segy.standards.minimal import minimal_segy
 class SegyFactoryTestConfig:
     """Dataclass to configure common test patterns."""
 
-    segy_standard: SegyStandard
+    segy_standard: SegyStandard | None
     endianness: Endianness
     sample_interval: int
     samples_per_trace: int
 
 
 SEGY_FACTORY_TEST_CONFIGS = [
+    SegyFactoryTestConfig(None, Endianness.BIG, 2000, 51),
     SegyFactoryTestConfig(SegyStandard.REV0, Endianness.BIG, 2000, 51),
     SegyFactoryTestConfig(SegyStandard.REV1, Endianness.LITTLE, 3000, 1),
     SegyFactoryTestConfig(SegyStandard.REV0, Endianness.BIG, 5000, 10),
