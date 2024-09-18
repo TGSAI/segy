@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from segy.constants import REV1_BASE16
+from segy.schema import SegyStandard
 from segy.schema.base import Endianness
 
 if TYPE_CHECKING:
@@ -197,6 +199,31 @@ class IbmFloatTransform(Transform):
         return func(data.astype(cast_dtype))  # type: ignore
 
 
+class SegyRevisionTransform(Transform):
+    """Interpret the SEG-Y revision field in binary header."""
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Parse SEG-Y standard from binary header."""
+        if data.dtype.names is not None and "segy_revision" not in data.dtype.names:
+            return data  # rev0, no-op
+
+        # Rev1 needs special treatment.
+        # Rev1 is 16-bit with Q-point between the bytes. That means
+        # SEG-Y 1.0 is written as 00000001 00000000 in binary, 256 in base-2.
+        if data["segy_revision"] == REV1_BASE16:
+            data["segy_revision"] = SegyStandard.REV1
+
+        # Rev2 doesn't need special treatment because it splits into
+        # two 8-bit integers for major and minor versions.
+        # SEG-Y Rev2.0 is 00000010 00000000 in binary, (2, 0) in base-2
+        # SEG-Y Rev2.1 is 00000010 00000001 in binary, (2, 1) in base-2
+
+        return data
+
+
 class TraceTransform(Transform):
     """Composite transform to apply header and data pipeline to trace.
 
@@ -235,6 +262,7 @@ class TransformFactory:
     transform_map: dict[str, type[Transform]] = {
         "byte_swap": ByteSwapTransform,
         "ibm_float": IbmFloatTransform,
+        "segy_revision": SegyRevisionTransform,
         "trace": TraceTransform,
     }
 

@@ -25,13 +25,14 @@ from segy.standards.minimal import minimal_segy
 class SegyFactoryTestConfig:
     """Dataclass to configure common test patterns."""
 
-    segy_standard: SegyStandard
+    segy_standard: SegyStandard | None
     endianness: Endianness
     sample_interval: int
     samples_per_trace: int
 
 
 SEGY_FACTORY_TEST_CONFIGS = [
+    SegyFactoryTestConfig(None, Endianness.BIG, 2000, 51),
     SegyFactoryTestConfig(SegyStandard.REV0, Endianness.BIG, 2000, 51),
     SegyFactoryTestConfig(SegyStandard.REV1, Endianness.LITTLE, 3000, 1),
     SegyFactoryTestConfig(SegyStandard.REV0, Endianness.BIG, 5000, 10),
@@ -128,7 +129,7 @@ class TestBinaryFileHeader:
             mock_segy_factory.samples_per_trace,
             mock_segy_factory.samples_per_trace,
             SEGY_FORMAT_MAP[mock_segy_factory.sample_format],
-            mock_segy_factory.segy_revision.value * 256,  # type: ignore[union-attr]
+            mock_segy_factory.segy_revision.value * 256,
             0,  # fixed length trace flag
             0,  # extended text headers
         )
@@ -152,7 +153,7 @@ class TestBinaryFileHeader:
             mock_segy_factory.samples_per_trace,
             mock_segy_factory.samples_per_trace,
             SEGY_FORMAT_MAP[mock_segy_factory.sample_format],
-            mock_segy_factory.segy_revision.value * 256,  # type: ignore[union-attr]
+            mock_segy_factory.segy_revision.value * 256,
             1,  # fixed length trace flag
             2,  # extended text headers
         )
