@@ -154,11 +154,12 @@ class SegyFile:
             self.spec = spec
 
             # Override/Infer endianness
-            if self.settings.endianness is None:
-                scan_result = infer_endianness(self.fs, self.url, self.spec)
-                self.spec.endianness = scan_result.endianness
-            else:
-                self.spec.endianness = self.settings.endianness
+            if self.spec.endianness is None:
+                if self.settings.endianness is None:
+                    scan_result = infer_endianness(self.fs, self.url, self.spec)
+                    self.spec.endianness = scan_result.endianness
+                else:
+                    self.spec.endianness = self.settings.endianness
 
         self._update_spec()
         self.accessors = TraceAccessor(self.spec.trace)
