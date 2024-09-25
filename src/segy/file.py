@@ -134,6 +134,7 @@ class SegyFile:
         self._info = self.fs.info(self.url)
 
         # Spec setting overrides.
+        # The control flow here is terrible; needs a refactor.
         if self.settings.binary.revision is not None:
             self.spec = get_segy_standard(self.settings.binary.revision)
 
@@ -151,9 +152,13 @@ class SegyFile:
         # If spec is provided set to it and update endianness if its None.
         else:
             self.spec = spec
-            if self.spec.endianness is None:
+
+            # Override/Infer endianness
+            if self.settings.endianness is None:
                 scan_result = infer_endianness(self.fs, self.url, self.spec)
                 self.spec.endianness = scan_result.endianness
+            else:
+                self.spec.endianness = self.settings.endianness
 
         self._update_spec()
         self.accessors = TraceAccessor(self.spec.trace)
