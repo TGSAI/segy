@@ -31,9 +31,15 @@ class ScalarType(StrEnum):
     @property
     def char(self) -> str:
         """Returns the numpy character code for a given data type string."""
+        # IBM Float
         if self.value == "ibm32":
             return np.sctype2char("uint32")  # noqa: NPY201
 
+        # String
+        if self.name.startswith("STRING"):
+            return str(self.value)
+
+        # Everything Else
         return np.sctype2char(str(self.value))  # noqa: NPY201
 
 
