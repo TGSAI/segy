@@ -36,8 +36,8 @@ class ScalarType(StrEnum):
             return np.sctype2char("uint32")  # noqa: NPY201
 
         # String
-        if self.value.startswith("S"):
-            return self.value
+        if self.name.startswith("STRING"):
+            return str(self.value)
 
         # Everything Else
         return np.sctype2char(str(self.value))  # noqa: NPY201
