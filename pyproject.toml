@@ -3,19 +3,13 @@ name = "segy"
 version = "0.2.2"
 description = "The Ultimate Python SEG-Y I/O with Cloud Support and Schemas"
 authors = ["TGS <sys-opensource@tgs.com>"]
-maintainers = [
-    "Altay Sansal <altay.sansal@tgs.com>",
-]
+maintainers = ["Altay Sansal <altay.sansal@tgs.com>"]
 license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/TGSAI/segy"
 documentation = "https://segy.readthedocs.io"
-classifiers = [
-    "Development Status :: 4 - Beta",
-]
-packages = [
-    { include = "segy", from = "src" },
-]
+classifiers = ["Development Status :: 4 - Beta"]
+packages = [{ include = "segy", from = "src" }]
 keywords = ["segy", "seismic", "data", "geophysics"]
 
 [tool.poetry.dependencies]
@@ -24,25 +18,25 @@ fsspec = ">=2024.9.0"
 numpy = "^1.26.4"
 pydantic = "^2.9.0"
 pydantic-settings = "^2.4.0"
-numba = "^0.60.0"
+numba = ">=0.59.1, <0.70.0"
 pandas = "^2.2.2"
 bidict = "^0.23.1"
 typer = "^0.12.5"
 rapidfuzz = "^3.9.7"
-gcsfs = {version = ">=2024.9.0.post1", optional = true}
-s3fs = {version = ">=2024.9.0", optional = true}
-adlfs = {version = ">=2024.7.0", optional = true}
-eval-type-backport = {version = "^0.2.0", python = "<3.10"}
+gcsfs = { version = ">=2024.9.0.post1", optional = true }
+s3fs = { version = ">=2024.9.0", optional = true }
+adlfs = { version = ">=2024.7.0", optional = true }
+eval-type-backport = { version = "^0.2.0", python = "<3.10" }
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.6.4"
-coverage = {version = "^7.5.3", extras = ["toml"]}
+coverage = { version = "^7.5.3", extras = ["toml"] }
 mypy = "^1.11.2"
 pytest = "^8.3.2"
 pre-commit = "^3.8.0"
 pre-commit-hooks = "^4.6.0"
 typeguard = "^4.3.0"
-urllib3 = "^1.26.18" # Workaround for poetry-plugin-export/issues/183
+urllib3 = "^1.26.18"                                 # Workaround for poetry-plugin-export/issues/183
 pandas-stubs = "^2.2.2.240807"
 
 [tool.poetry.group.docs.dependencies]
@@ -68,38 +62,38 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = [
-    "E",  # pycodestyle
+    "E",   # pycodestyle
     "F",   # pyflakes
-    "B",  # bugbear
-    "I",  # isort
+    "B",   # bugbear
+    "I",   # isort
     "UP",  # pyupgrade
-    "N",  # pep8-naming
+    "N",   # pep8-naming
     "D",   # pydocstyle
-    "ANN",  # annotations
-    "S",  # bandit
-    "A",  # builtins
+    "ANN", # annotations
+    "S",   # bandit
+    "A",   # builtins
     "C4",  # comprehensions
-    "DTZ",  # datetimez
+    "DTZ", # datetimez
     "EM",  # errmsg
-    "ICN",  # import-conventions
-    "PIE",  # pie
+    "ICN", # import-conventions
+    "PIE", # pie
     "PT",  # pytest-style
-    "RSE",  # raise
-    "RET",  # return
-    "SIM",  # simplify
-    "TID",  # tidy-imports
-    "TCH",  # type-checking
-    "ARG",  # unused-arguments
-    "PTH",  # use-pathlib
+    "RSE", # raise
+    "RET", # return
+    "SIM", # simplify
+    "TID", # tidy-imports
+    "TCH", # type-checking
+    "ARG", # unused-arguments
+    "PTH", # use-pathlib
     "TD",  # todos
     "PL",  # pylint
     "FLY", # flynt
-    "NPY",  # numpy
+    "NPY", # numpy
 ]
 
 ignore = [
-    "ANN101",  # Missing type annotation for `self`
-    "D107",  # Missing docstring in __init__ ; should be in class docstring
+    "ANN101", # Missing type annotation for `self`
+    "D107",   # Missing docstring in __init__ ; should be in class docstring
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -141,7 +135,7 @@ exclude_also = [
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
     "def __repr__",
-    "raise NotImplementedError"
+    "raise NotImplementedError",
 ]
 
 [tool.mypy]
