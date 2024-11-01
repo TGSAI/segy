@@ -7,4 +7,4 @@ linkify-it-py==2.0.3
 autodoc-pydantic==2.2.0
 sphinxcontrib-typer==0.5.0
 matplotlib==3.9.2
-s3fs==2024.9.0
+s3fs==2024.10.0
