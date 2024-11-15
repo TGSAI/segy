@@ -15,7 +15,7 @@ from segy.constants import REV1_BASE16
 from segy.schema.base import Endianness
 from segy.schema.format import ScalarType
 from segy.schema.segy import SegyStandard
-from segy.standards.mapping import SEGY_FORMAT_MAP
+from segy.standards.codes import DataSampleFormatCode
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
@@ -162,7 +162,7 @@ class SegyFactory:
         bin_header["orig_sample_interval"] = self.sample_interval
         bin_header["samples_per_trace"] = self.samples_per_trace
         bin_header["orig_samples_per_trace"] = self.samples_per_trace
-        bin_header["data_sample_format"] = SEGY_FORMAT_MAP[self.sample_format]
+        bin_header["data_sample_format"] = DataSampleFormatCode[self.sample_format.name]
 
         if update is not None:
             for key, value in update.items():

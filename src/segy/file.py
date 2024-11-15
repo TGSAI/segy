@@ -21,7 +21,7 @@ from segy.indexing import TraceIndexer
 from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.standards import get_segy_standard
-from segy.standards.mapping import SEGY_FORMAT_MAP
+from segy.standards.codes import DataSampleFormatCode
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
@@ -84,11 +84,12 @@ def infer_endianness(
         # Validate the inferred values.
         in_spec = revision in {0.0, 1.0, 2.0}
         increment_is_positive = sample_increment > 0
-        format_is_valid = sample_format_int in SEGY_FORMAT_MAP.values()
+        format_is_valid = sample_format_int in DataSampleFormatCode
 
         if in_spec and increment_is_positive and format_is_valid:
-            sample_format = SEGY_FORMAT_MAP.inverse[sample_format_int]
-            return SegyScanResult(endianness, revision, sample_format)
+            sample_format_code = DataSampleFormatCode(sample_format_int)
+            scalar_type = ScalarType[sample_format_code.name]
+            return SegyScanResult(endianness, revision, scalar_type)
 
     msg = (
         f"Can't infer file endianness, please specify manually. "

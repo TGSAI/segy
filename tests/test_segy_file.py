@@ -19,7 +19,7 @@ from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.schema import SegyStandard
 from segy.standards import get_segy_standard
-from segy.standards.mapping import SEGY_FORMAT_MAP
+from segy.standards.codes import DataSampleFormatCode
 
 if TYPE_CHECKING:
     from typing import Any
@@ -194,7 +194,7 @@ class TestSegyFile:
         segy_file = SegyFile(test_config.uri)
         binary_header = segy_file.binary_header
 
-        expected_sample_format = SEGY_FORMAT_MAP[test_config.sample_format]
+        expected_sample_format = DataSampleFormatCode[test_config.sample_format.name]
         assert binary_header["sample_interval"] == SAMPLE_INTERVAL
         assert binary_header["orig_sample_interval"] == SAMPLE_INTERVAL
         assert binary_header["samples_per_trace"] == SAMPLES_PER_TRACE
