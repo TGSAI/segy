@@ -84,7 +84,11 @@ def infer_endianness(
         # Validate the inferred values.
         in_spec = revision in {0.0, 1.0, 2.0}
         increment_is_positive = sample_increment > 0
-        format_is_valid = sample_format_int in DataSampleFormatCode
+
+        # After python3.12 is minimum, we can simply replace this with
+        # `format_is_valid = sample_format_int in DataSampleFormatCode`
+        valid_formats = DataSampleFormatCode._value2member_map_.keys()
+        format_is_valid = sample_format_int in valid_formats
 
         if in_spec and increment_is_positive and format_is_valid:
             sample_format_code = DataSampleFormatCode(sample_format_int)
