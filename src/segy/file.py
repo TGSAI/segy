@@ -192,16 +192,9 @@ class SegyFile:
         self.fs, self.url = url_to_fs(url, **self.settings.storage_options)
         self._info = self.fs.info(self.url)
 
-        if spec is None:
-            scan_result = self._infer_spec()
-            self.spec = get_segy_standard(scan_result.revision)
-            self.spec.endianness = scan_result.endianness
-
-        if self.spec.endianness is None:
-            scan_result = self._infer_spec()
-            self.spec.endianness = scan_result.endianness
-
+        self.spec = self._initialize_spec(spec)
         self._update_spec()
+
         self.accessors = TraceAccessor(self.spec.trace)
 
     @property
@@ -291,7 +284,19 @@ class SegyFile:
 
         return HeaderArray(transforms.apply(bin_hdr))
 
+    def _initialize_spec(self, spec: SegySpec | None) -> SegySpec:
+        """Initialize the spec based on the settings and/or file contents."""
+        if spec is None:
+            scan_result = self._infer_spec()
+            inferred_spec = get_segy_standard(scan_result.revision)
+            inferred_spec.endianness = scan_result.endianness
+            spec = inferred_spec
+        if spec.endianness is None:
+            spec.endianness = self._infer_spec().endianness
+        return spec
+
     def _infer_spec(self) -> SegyInferResult:
+        """Scan the file and infer the endianness and SEG-Y standard."""
         bin_header_buffer = self.fs.read_block(fn=self.url, offset=3200, length=400)
         endianness_action = infer_endianness(bin_header_buffer, self.settings)
         revision = infer_revision(bin_header_buffer, endianness_action, self.settings)
