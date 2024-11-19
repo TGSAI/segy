@@ -24,12 +24,6 @@ class BinaryHeaderSettings(SegyBaseSettings):
     the binary header in the actual file.
     """
 
-    samples_per_trace: int | None = Field(
-        default=None, description="Override samples per trace."
-    )
-    sample_interval: int | None = Field(
-        default=None, description="Override sample interval."
-    )
     ext_text_header: int | None = Field(
         default=None, description="Override extended text headers."
     )

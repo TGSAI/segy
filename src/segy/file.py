@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
+from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING
 from typing import cast
@@ -13,20 +15,22 @@ from fsspec.core import url_to_fs
 from segy.accessors import TraceAccessor
 from segy.arrays import HeaderArray
 from segy.config import SegySettings
-from segy.constants import REV1_BASE16
 from segy.exceptions import EndiannessInferenceError
 from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
 from segy.indexing import TraceIndexer
 from segy.schema import Endianness
 from segy.schema import ScalarType
+from segy.schema import SegyStandard
 from segy.standards import get_segy_standard
-from segy.standards.mapping import SEGY_FORMAT_MAP
+from segy.standards.codes import DataSampleFormatCode
+from segy.standards.codes import SegyEndianCode
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
+    from numpy.typing import DTypeLike
     from numpy.typing import NDArray
 
     from segy.indexing import AbstractIndexer
@@ -34,77 +38,132 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class SegyScanResult:
+class SegyInferResult:
     """A scan result of a SEG-Y file.
 
     Attributes:
         endianness: Endianness of the file.
         revision: SEG-Y revision as float.
-        sample_format: SEG-Y sample format.
     """
 
-    __slots__ = ("endianness", "revision", "sample_format")
+    __slots__ = ("endianness", "revision")
 
     endianness: Endianness
     revision: float
-    sample_format: ScalarType
+
+
+class EndiannessAction(Enum):
+    """Descriptive flag enum for endianness reversal."""
+
+    REVERSE = True
+    KEEP = False
 
 
 def infer_endianness(
-    fs: AbstractFileSystem,
-    url: str,
-    spec: SegySpec,
-) -> SegyScanResult:
-    """Infer endianness of a binary header buffer given header spec.
-
-    The buffer length and binary header spec itemsize must be the same.
+    buffer: bytes,
+    settings: SegySettings,
+) -> EndiannessAction:
+    """Infer if we need to reverse the endianness of the seismic data.
 
     Args:
-         fs: FSSpec filesystem instance.
-         url: Path to the SEG-Y file.
-         spec: SEG-Y spec containing how to parse binary header.
+        buffer: Bytes representing the binary header.
+        settings: Settings instance to configure / override.
 
     Returns:
-        A SegyScanResult instance filled with inferred endianness, revision, and format.
+        A boolean indicating if the endianness need to be reversed.
 
     Raises:
         EndiannessInferenceError: When inference fails.
     """
-    bin_spec = spec.binary_header.model_copy(deep=True)  # we will mutate, so copy
-    buffer = fs.read_block(url, offset=bin_spec.offset, length=bin_spec.itemsize)
+    # Use endianness from settings if provided
+    if settings.endianness is not None:
+        return EndiannessAction(settings.endianness != sys.byteorder)
 
-    for endianness in [Endianness.BIG, Endianness.LITTLE]:
-        bin_spec.endianness = endianness
-        bin_hdr = np.frombuffer(buffer, dtype=bin_spec.dtype)
+    # Define offsets and data types
+    endian_offset = 96
+    format_offset = 24
+    endian_dtype = np.dtype("uint32")
+    format_dtype = np.dtype("uint16")
+    supported_formats = set(DataSampleFormatCode._value2member_map_.keys())
 
-        revision = bin_hdr["segy_revision"].item() / REV1_BASE16
-        sample_increment = bin_hdr["sample_interval"].item()
-        sample_format_int = bin_hdr["data_sample_format"].item()
+    # Attempt to read explicit endianness code (SEGY Rev2+)
+    endian_code = np.frombuffer(buffer, endian_dtype, offset=endian_offset, count=1)[0]
 
-        # Validate the inferred values.
-        in_spec = revision in {0.0, 1.0, 2.0}
-        increment_is_positive = sample_increment > 0
-        format_is_valid = sample_format_int in SEGY_FORMAT_MAP.values()
+    if endian_code == SegyEndianCode.NATIVE:
+        return EndiannessAction.KEEP
+    if endian_code == SegyEndianCode.REVERSE:
+        return EndiannessAction.REVERSE
+    if endian_code == SegyEndianCode.PAIRWISE_SWAP:
+        msg = "File bytes are pairwise swapped. Currently not supported."
+        raise NotImplementedError(msg)
+    if endian_code != 0:
+        msg = (
+            f"Explicit endianness code has ambiguous value: {endian_code}. "
+            "Expected one of {{16909060, 67305985, 33620995}} at byte 97. "
+            "Provide endianness using SegyFileSettings or SegySpec."
+        )
+        raise EndiannessInferenceError(msg)
 
-        if in_spec and increment_is_positive and format_is_valid:
-            sample_format = SEGY_FORMAT_MAP.inverse[sample_format_int]
-            return SegyScanResult(endianness, revision, sample_format)
+    # Legacy method for SEGY Rev <2.0
+    def check_format_code(dtype: DTypeLike) -> bool:
+        format_value = np.frombuffer(buffer, dtype, offset=format_offset, count=1)[0]
+        return format_value in supported_formats
 
+    # Check with native machine endianness
+    if check_format_code(format_dtype):
+        return EndiannessAction.KEEP
+
+    # Check with reverse machine endianness
+    if check_format_code(format_dtype.newbyteorder()):
+        return EndiannessAction.REVERSE
+
+    # Inference failed
     msg = (
-        f"Can't infer file endianness, please specify manually. "
-        f"Detected {revision=}, {sample_increment=}, and {sample_format_int=}."
+        "Cannot automatically infer file endianness using explicit or legacy "
+        "methods. Please provide it using SegyFileSettings or SegySpec."
     )
     raise EndiannessInferenceError(msg)
 
 
-def infer_spec(fs: AbstractFileSystem, url: str) -> SegySpec:
-    """Try to infer SEG-Y file revision and endianness to build a SegySpec."""
-    spec = get_segy_standard(1.0)
-    scan_result = infer_endianness(fs, url, spec)
-    new_spec = get_segy_standard(scan_result.revision)
-    new_spec.trace.data.format = scan_result.sample_format
-    new_spec.endianness = scan_result.endianness
-    return new_spec
+def infer_revision(
+    buffer: bytes,
+    endianness_action: EndiannessAction,
+    settings: SegySettings,
+) -> int | float:
+    """Infer the revision number from the binary header of a SEG-Y file.
+
+    Args:
+        buffer: The binary header buffer.
+        endianness_action: The action to take for endianness.
+        settings: The SegySettings, which may override the revision.
+
+    Returns:
+        The revision number as a float (e.g., 1.0, 1.2, 2.0).
+    """
+    # Handle override from settings
+    if settings.binary.revision is not None:
+        return settings.binary.revision
+
+    # Rev2+ defines major and minor version as 1-byte fields. Read major first.
+    major_dtype, minor_dtype = np.dtype("uint8"), np.dtype("uint8")
+    revision_major = np.frombuffer(buffer, major_dtype, offset=300, count=1)[0]
+
+    # If major is 2, read remaining (minor)
+    if revision_major >= SegyStandard.REV2:
+        revision_minor = np.frombuffer(buffer, minor_dtype, offset=301, count=1)[0]
+
+    # Legacy (Revision <2.0) fallback
+    # Read revision from 2-byte field with correct endian
+    else:
+        revision_dtype = np.dtype("uint16")
+        if endianness_action == EndiannessAction.REVERSE:
+            revision_dtype = revision_dtype.newbyteorder()
+
+        revision = np.frombuffer(buffer, revision_dtype, offset=300, count=1)[0]
+        revision_major = revision >> 8
+        revision_minor = revision & 0xFF
+
+    return int(revision_major) + int(revision_minor) / 10
 
 
 class SegyFile:
@@ -133,35 +192,9 @@ class SegyFile:
         self.fs, self.url = url_to_fs(url, **self.settings.storage_options)
         self._info = self.fs.info(self.url)
 
-        # Spec setting overrides.
-        # The control flow here is terrible; needs a refactor.
-        if self.settings.binary.revision is not None:
-            self.spec = get_segy_standard(self.settings.binary.revision)
-
-            # Override/Infer endianness
-            if self.settings.endianness is None:
-                scan_result = infer_endianness(self.fs, self.url, self.spec)
-                self.spec.endianness = scan_result.endianness
-            else:
-                self.spec.endianness = self.settings.endianness
-
-        # Default, infer if no spec provided.
-        elif spec is None:
-            self.spec = infer_spec(self.fs, self.url)
-
-        # If spec is provided set to it and update endianness if its None.
-        else:
-            self.spec = spec
-
-            # Override/Infer endianness
-            if self.spec.endianness is None:
-                if self.settings.endianness is None:
-                    scan_result = infer_endianness(self.fs, self.url, self.spec)
-                    self.spec.endianness = scan_result.endianness
-                else:
-                    self.spec.endianness = self.settings.endianness
-
+        self.spec = self._initialize_spec(spec)
         self._update_spec()
+
         self.accessors = TraceAccessor(self.spec.trace)
 
     @property
@@ -251,6 +284,33 @@ class SegyFile:
 
         return HeaderArray(transforms.apply(bin_hdr))
 
+    def _initialize_spec(self, spec: SegySpec | None) -> SegySpec:
+        """Initialize the spec based on the settings and/or file contents."""
+        if spec is None:
+            scan_result = self._infer_spec()
+            inferred_spec = get_segy_standard(scan_result.revision)
+            inferred_spec.endianness = scan_result.endianness
+            spec = inferred_spec
+        if spec.endianness is None:
+            spec.endianness = self._infer_spec().endianness
+        return spec
+
+    def _infer_spec(self) -> SegyInferResult:
+        """Scan the file and infer the endianness and SEG-Y standard."""
+        bin_header_buffer = self.fs.read_block(fn=self.url, offset=3200, length=400)
+        endianness_action = infer_endianness(bin_header_buffer, self.settings)
+        revision = infer_revision(bin_header_buffer, endianness_action, self.settings)
+
+        if endianness_action == EndiannessAction.REVERSE:
+            byte_order = "big" if sys.byteorder == "little" else "little"
+        else:
+            byte_order = sys.byteorder
+
+        return SegyInferResult(
+            endianness=Endianness(byte_order),
+            revision=revision,
+        )
+
     def _update_spec(self) -> None:
         """Parse the binary header and apply some rules."""
         if self.spec.ext_text_header is not None:
@@ -261,6 +321,10 @@ class SegyFile:
                 settings_num_ext_text = self.settings.binary.ext_text_header
                 self.spec.ext_text_header.count = settings_num_ext_text
 
+        sample_format_value = self.binary_header["data_sample_format"]
+        sample_format_code = DataSampleFormatCode(sample_format_value)
+        sample_format = ScalarType[sample_format_code.name]
+        self.spec.trace.data.format = sample_format
         self.spec.trace.data.samples = self.binary_header["samples_per_trace"].item()
         self.spec.trace.data.interval = self.binary_header["sample_interval"].item()
 

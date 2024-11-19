@@ -17,7 +17,7 @@ from segy.schema import HeaderField
 from segy.schema import ScalarType
 from segy.schema import SegyStandard
 from segy.schema import TextHeaderEncoding
-from segy.standards.mapping import SEGY_FORMAT_MAP
+from segy.standards.codes import DataSampleFormatCode
 from segy.standards.minimal import minimal_segy
 
 
@@ -128,7 +128,7 @@ class TestBinaryFileHeader:
             mock_segy_factory.sample_interval,
             mock_segy_factory.samples_per_trace,
             mock_segy_factory.samples_per_trace,
-            SEGY_FORMAT_MAP[mock_segy_factory.sample_format],
+            DataSampleFormatCode[mock_segy_factory.sample_format.name],
             mock_segy_factory.segy_revision.value * 256,
             0,  # fixed length trace flag
             0,  # extended text headers
@@ -152,7 +152,7 @@ class TestBinaryFileHeader:
             mock_segy_factory.sample_interval,
             mock_segy_factory.samples_per_trace,
             mock_segy_factory.samples_per_trace,
-            SEGY_FORMAT_MAP[mock_segy_factory.sample_format],
+            DataSampleFormatCode[mock_segy_factory.sample_format.name],
             mock_segy_factory.segy_revision.value * 256,
             1,  # fixed length trace flag
             2,  # extended text headers
