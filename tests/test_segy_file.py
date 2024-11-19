@@ -119,7 +119,9 @@ def generate_test_segy(
 class TestSegyFile:
     """Test the usage of SegyFile class."""
 
-    @pytest.mark.parametrize("standard", [SegyStandard.REV0, SegyStandard.REV1])
+    @pytest.mark.parametrize(
+        "standard", [SegyStandard.REV0, SegyStandard.REV1, SegyStandard.REV2]
+    )
     @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
     @pytest.mark.parametrize("sample_format", [ScalarType.IBM32, ScalarType.FLOAT32])
     def test_infer_spec(
