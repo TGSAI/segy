@@ -120,7 +120,7 @@ def infer_endianness(
     # Inference failed
     msg = (
         "Cannot automatically infer file endianness using explicit or legacy "
-        "methods. Please provide it using SegyFileSettings."
+        "methods. Please provide it using SegyFileSettings or SegySpec."
     )
     raise EndiannessInferenceError(msg)
 
