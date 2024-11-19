@@ -45,7 +45,7 @@ class SegyInferResult:
         revision: SEG-Y revision as float.
     """
 
-    __slots__ = ("endianness", "revision", "sample_format")
+    __slots__ = ("endianness", "revision")
 
     endianness: Endianness
     revision: float
