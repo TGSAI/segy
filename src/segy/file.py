@@ -30,6 +30,7 @@ from segy.transforms import TransformPipeline
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
+    from numpy.typing import DTypeLike
     from numpy.typing import NDArray
 
     from segy.indexing import AbstractIndexer
@@ -104,7 +105,7 @@ def infer_endianness(
         raise EndiannessInferenceError(msg)
 
     # Legacy method for SEGY Rev <2.0
-    def check_format_code(dtype: np.dtype) -> bool:
+    def check_format_code(dtype: DTypeLike) -> bool:
         format_value = np.frombuffer(buffer, dtype, offset=format_offset, count=1)[0]
         return format_value in supported_formats
 
@@ -128,7 +129,7 @@ def infer_revision(
     buffer: bytes,
     endianness_action: EndiannessAction,
     settings: SegySettings,
-) -> float:
+) -> int | float:
     """Infer the revision number from the binary header of a SEG-Y file.
 
     Args:
@@ -144,12 +145,12 @@ def infer_revision(
         return settings.binary.revision
 
     # Rev2+ defines major and minor version as 1-byte fields. Read major first.
-    revision_dtype = np.dtype("uint8")
-    revision_major = np.frombuffer(buffer, revision_dtype, offset=300, count=1)[0]
+    major_dtype, minor_dtype = np.dtype("uint8"), np.dtype("uint8")
+    revision_major = np.frombuffer(buffer, major_dtype, offset=300, count=1)[0]
 
     # If major is 2, read remaining (minor)
     if revision_major >= SegyStandard.REV2:
-        revision_minor = np.frombuffer(buffer, revision_dtype, offset=301, count=1)[0]
+        revision_minor = np.frombuffer(buffer, minor_dtype, offset=301, count=1)[0]
 
     # Legacy (Revision <2.0) fallback
     # Read revision from 2-byte field with correct endian
@@ -162,7 +163,7 @@ def infer_revision(
         revision_major = revision >> 8
         revision_minor = revision & 0xFF
 
-    return revision_major + revision_minor / 10
+    return int(revision_major) + int(revision_minor) / 10
 
 
 class SegyFile:
@@ -186,13 +187,12 @@ class SegyFile:
         spec: SegySpec | None = None,
         settings: SegySettings | None = None,
     ):
-        self.spec = spec
         self.settings = settings if settings is not None else SegySettings()
 
         self.fs, self.url = url_to_fs(url, **self.settings.storage_options)
         self._info = self.fs.info(self.url)
 
-        if self.spec is None:
+        if spec is None:
             scan_result = self._infer_spec()
             self.spec = get_segy_standard(scan_result.revision)
             self.spec.endianness = scan_result.endianness
