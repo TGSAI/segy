@@ -279,35 +279,34 @@ class TestSegyFile:
 class TestSegyFileExceptions:
     """Test exceptions for SegyFile."""
 
-    @pytest.mark.parametrize(
-        ("standard_override", "sample_increment_override", "sample_format_override"),
-        [
-            (0.5, 2000, 1),  # bad revision, ok increment, ok format
-            (1.0, -100, 1),  # ok revision, bad increment, ok format
-            (1.0, 2000, 100),  # ok revision, ok increment, bad format
-        ],
-    )
-    def test_spec_inference_failure(
-        self,
-        mock_filesystem: MemoryFileSystem,
-        standard_override: float,
-        sample_format_override: int,
-        sample_increment_override: int,
+    def test_explicit_endian_error(self, mock_filesystem: MemoryFileSystem) -> None:
+        """Test bad values in binary header triggering spec inference error."""
+        test_config = generate_test_segy(filesystem=mock_filesystem)
+
+        with mock_filesystem.open(test_config.uri, mode="r+b") as fp:
+            fp.seek(3296)
+            fp.write(struct.pack("I", 999))
+
+        with pytest.raises(
+            EndiannessInferenceError,
+            match="Explicit endianness code has ambiguous value",
+        ):
+            SegyFile(test_config.uri)
+
+    def test_legacy_endian_infer_failure(
+        self, mock_filesystem: MemoryFileSystem
     ) -> None:
         """Test bad values in binary header triggering spec inference error."""
         test_config = generate_test_segy(filesystem=mock_filesystem)
 
         fp = mock_filesystem.open(test_config.uri, mode="r+b")
-        fp.seek(3216)
-        fp.write(struct.pack(">h", sample_increment_override))
         fp.seek(3224)
-        fp.write(struct.pack(">h", sample_format_override))
-        fp.seek(3500)
-        fp.write(struct.pack(">h", int(standard_override * 256)))
+        fp.write(struct.pack("I", 420))  # invalid sample format
         fp.close()
 
         with pytest.raises(
-            EndiannessInferenceError, match="Can't infer file endianness"
+            EndiannessInferenceError,
+            match="Cannot automatically infer file endianness",
         ):
             SegyFile(test_config.uri)
 
@@ -325,6 +324,7 @@ class TestSegyFileSettingsOverride:
         segy_file = SegyFile(test_config.uri, settings=settings)
 
         assert segy_file.spec.segy_standard == SegyStandard.REV1
+        assert segy_file.binary_header["segy_revision"] == 0
 
     def test_revision_endian_override(self, mock_filesystem: MemoryFileSystem) -> None:
         """Make big-rev0 file and open it as little-rev1 from settings override."""
@@ -333,24 +333,14 @@ class TestSegyFileSettingsOverride:
             segy_standard=SegyStandard.REV0,
             endianness=Endianness.BIG,
         )
-
-        # Ensure still infer correctly if endian not provided
-        settings_dict_rev_only = {"binary": {"revision": 1.0}}
-        settings = SegySettings.model_validate(settings_dict_rev_only)
-        segy_file = SegyFile(test_config.uri, settings=settings)
-
-        assert segy_file.spec.endianness == Endianness.BIG
-
-        # Now ensure overriding both
-        settings_dict_both = {"binary": {"revision": 1.0}, "endianness": "little"}
+        # Now ensure overriding endian works. This should raise an
+        # error because with little endian the sample format will be
+        # interpreted incorrectly from binary header.
+        settings_dict_both = {"endianness": "little"}
         settings = SegySettings.model_validate(settings_dict_both)
-        segy_file = SegyFile(test_config.uri, settings=settings)
 
-        assert segy_file.spec.segy_standard == SegyStandard.REV1
-        assert segy_file.spec.endianness == Endianness.LITTLE
-        # Rev1 should have below field, but the value will be zero
-        assert "segy_revision" in segy_file.binary_header.dtype.names
-        assert segy_file.binary_header["segy_revision"] == 0
+        with pytest.raises(ValueError, match="is not a valid DataSampleFormatCode"):
+            SegyFile(test_config.uri, settings=settings)
 
     @pytest.mark.parametrize("num_ext_text", [1])
     def test_ext_text_header_override(
