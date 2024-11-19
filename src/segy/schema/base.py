@@ -72,13 +72,11 @@ class Endianness(StrEnum):
 
     BIG = "big"
     LITTLE = "little"
-    NATIVE = "native"
 
     def __init__(self, _: str) -> None:
         self._symbol_map = {
             "big": ">",
             "little": "<",
-            "native": "=",
         }
 
     @property

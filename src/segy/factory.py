@@ -183,7 +183,7 @@ class SegyFactory:
             Array containing the trace header template.
         """
         trace_header_spec = self.spec.trace.header
-        dtype = trace_header_spec.dtype.newbyteorder(Endianness.NATIVE.symbol)
+        dtype = trace_header_spec.dtype.newbyteorder("=")
 
         header_template = HeaderArray(np.zeros(shape=size, dtype=dtype))
 
