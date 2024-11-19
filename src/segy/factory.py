@@ -155,6 +155,7 @@ class SegyFactory:
             bin_header["segy_revision"] = REV1_BASE16
         elif self.segy_revision >= SegyStandard.REV2:
             minor, major = np.modf(self.segy_revision.value)
+            minor = int(minor * 10)  # fraction to int
             bin_header["segy_revision_major"] = major
             bin_header["segy_revision_minor"] = minor
 
