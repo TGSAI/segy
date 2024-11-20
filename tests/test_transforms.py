@@ -37,7 +37,9 @@ def mock_header_little() -> NDArray[Any]:
 @pytest.fixture()
 def mock_header_big(mock_header_little: NDArray[Any]) -> NDArray[Any]:
     """Generate a mock structured array to test transforms with big endian."""
-    return mock_header_little.byteswap().newbyteorder()
+    data = mock_header_little.byteswap()
+    swapped_dtype = data.dtype.newbyteorder()
+    return data.view(swapped_dtype)
 
 
 @pytest.fixture()
@@ -62,7 +64,9 @@ def mock_data_little() -> NDArray[Any]:
 @pytest.fixture()
 def mock_data_big(mock_data_little: NDArray[Any]) -> NDArray[Any]:
     """Generate a mock big endian structured array to test transforms."""
-    return mock_data_little.byteswap().newbyteorder()
+    data = mock_data_little.byteswap()
+    swapped_dtype = data.dtype.newbyteorder()
+    return data.view(swapped_dtype)
 
 
 class TestByteSwap:

@@ -55,8 +55,8 @@ class HeaderField(BaseDataType):
 
     @property
     def dtype(self) -> np.dtype[Any]:
-        """Converts the byte order and data type of the object into a NumPy dtype."""
-        return np.dtype(self.format.char)
+        """Converts the data type of the object into a NumPy dtype."""
+        return self.format.dtype
 
 
 class HeaderSpec(BaseDataType):

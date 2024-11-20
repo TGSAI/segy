@@ -166,7 +166,9 @@ class ByteSwapTransform(Transform):
         source_order = get_endianness(data)
 
         if source_order != self.target_order:
-            data = data.byteswap(inplace=True).newbyteorder(self.target_order.symbol)
+            data = data.byteswap(inplace=True)
+            swapped_dtype = data.dtype.newbyteorder(self.target_order.symbol)
+            data = data.view(swapped_dtype)
 
         return data
 

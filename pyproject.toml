@@ -14,27 +14,27 @@ keywords = ["segy", "seismic", "data", "geophysics"]
 
 [tool.poetry.dependencies]
 python = ">=3.9, <3.13"
-fsspec = ">=2024.9.0"
-numpy = "^1.26.4"
-pydantic = "^2.9.0"
-pydantic-settings = "^2.4.0"
+fsspec = "^2024.10.0"
+numpy = "^2.0.0"
+pydantic = "^2.9.2"
+pydantic-settings = "^2.6.1"
 numba = ">=0.59.1, <0.70.0"
 pandas = "^2.2.2"
-typer = "^0.12.5"
-rapidfuzz = "^3.9.7"
-gcsfs = { version = ">=2024.9.0.post1", optional = true }
-s3fs = { version = ">=2024.9.0", optional = true }
-adlfs = { version = ">=2024.7.0", optional = true }
+typer = "^0.13.1"
+rapidfuzz = "^3.10.1"
+gcsfs = {version = "^2024.10.0", optional = true}
+s3fs = {version = "^2024.10.0", optional = true}
+adlfs = {version = "^2024.7.0", optional = true}
 eval-type-backport = { version = "^0.2.0", python = "<3.10" }
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.6.4"
-coverage = { version = "^7.5.3", extras = ["toml"] }
-mypy = "^1.11.2"
-pytest = "^8.3.2"
-pre-commit = "^3.8.0"
-pre-commit-hooks = "^4.6.0"
-typeguard = "^4.3.0"
+ruff = "^0.7.4"
+coverage = {version = "^7.6.7", extras = ["toml"]}
+mypy = "^1.13.0"
+pytest = "^8.3.3"
+pre-commit = "^4.0.1"
+pre-commit-hooks = "^5.0.0"
+typeguard = "^4.4.1"
 urllib3 = "^1.26.18"                                 # Workaround for poetry-plugin-export/issues/183
 pandas-stubs = "^2.2.2.240807"
 
@@ -87,7 +87,7 @@ select = [
     "TD",  # todos
     "PL",  # pylint
     "FLY", # flynt
-    "NPY", # numpy
+    "NPY201", # numpy
 ]
 
 ignore = [

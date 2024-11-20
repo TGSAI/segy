@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from segy.compat import StrEnum
+
+if TYPE_CHECKING:
+    from typing import Any
 
 
 class ScalarType(StrEnum):
@@ -29,18 +34,13 @@ class ScalarType(StrEnum):
         return f"{self.__class__.__name__}.{self._name_}"
 
     @property
-    def char(self) -> str:
-        """Returns the numpy character code for a given data type string."""
-        # IBM Float
+    def dtype(self) -> np.dtype[Any]:
+        """Return numpy dtype of the format."""
+        # Special case for IBM 32-bit float
         if self.value == "ibm32":
-            return np.sctype2char("uint32")  # noqa: NPY201
+            return np.dtype("uint32")
 
-        # String
-        if self.name.startswith("STRING"):
-            return str(self.value)
-
-        # Everything Else
-        return np.sctype2char(str(self.value))  # noqa: NPY201
+        return np.dtype(self.value)
 
 
 class TextHeaderEncoding(StrEnum):
