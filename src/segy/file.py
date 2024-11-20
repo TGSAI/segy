@@ -159,22 +159,19 @@ def infer_revision(
 
     if major_revision >= SegyStandard.REV2:
         minor_revision = np.frombuffer(buffer, "uint8", offset=301, count=1)[0]
-        revision_float = int(major_revision) + int(minor_revision) / 10
-        logger.info("Detected revision as %s", revision_float)
-        return revision_float
+    else:
+        # Method 3: Major/minor from 16-bit integer (SEG-Y <Rev2)
+        logger.debug("File is SEG-Y <Rev2, reading revision from 16-bits.")
+        dtype = np.dtype("uint16")
+        if endianness_action == EndiannessAction.REVERSE:
+            dtype = dtype.newbyteorder()
 
-    # Method 3: Major/minor from 16-bit integer (SEG-Y <Rev2)
-    logger.debug("File is SEG-Y <Rev2, reading revision from 16-bits.")
-    dtype = np.dtype("uint16")
-    if endianness_action == EndiannessAction.REVERSE:
-        dtype = dtype.newbyteorder()
-
-    revision = np.frombuffer(buffer, dtype, offset=300, count=1)[0]
-    major_revision = revision >> 8
-    minor_revision = revision & 0xFF
+        revision = np.frombuffer(buffer, dtype, offset=300, count=1)[0]
+        major_revision = revision >> 8
+        minor_revision = revision & 0xFF
 
     revision_float = int(major_revision) + int(minor_revision) / 10
-    logger.info("Detected revision as %s", revision_float)
+    logger.info("Detected revision from binary header as %s", revision_float)
     return revision_float
 
 
@@ -317,10 +314,10 @@ class SegyFile:
         revision = infer_revision(bin_header_buffer, endianness_action, self.settings)
 
         if endianness_action == EndiannessAction.REVERSE:
-            logger.info("File not machine endianness, will reverse endian.")
+            logger.debug("File not machine endianness, will reverse endian.")
             byte_order = "big" if sys.byteorder == "little" else "little"
         else:
-            logger.info("File is same as machine endianness, will read as-is.")
+            logger.debug("File is same as machine endianness, will read as-is.")
             byte_order = sys.byteorder
 
         return SegyInferResult(
@@ -365,7 +362,7 @@ class SegyFile:
         trace_count = (self.file_size - trace_offset) // trace_itemsize
 
         # Ensure trace count and all other offsets match file size
-        logger.debug("Calculated trace count: %s", self.spec.trace.count)
+        logger.debug("Calculated trace count: %s", trace_count)
         inferred_size = trace_offset + trace_count * trace_itemsize
         actual_size = self.file_size
         if inferred_size != actual_size:
