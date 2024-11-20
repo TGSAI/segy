@@ -57,10 +57,16 @@ class Rev2(SegStandardEnum):
     BYTE_ORDER                        = (97, "int32")
     SEGY_REVISION_MAJOR               = (301, "uint8")
     SEGY_REVISION_MINOR               = (302, "uint8")
-    MAX_EXTENDED_TRACE_HEADERS        = (307, "int16")
-    SURVEY_TYPE                       = (309, "int16")
+    MAX_EXTENDED_TRACE_HEADERS        = (307, "int32")
     TIME_BASIS_CODE                   = (311, "int16")
     NUM_TRACES                        = (313, "uint64")
     BYTE_OFFSET_FIRST_TRACE           = (321, "uint64")
     NUM_DATA_TRAILER_STANZAS          = (329, "int32")
+
+
+class Rev21(SegStandardEnum):
+    """Definition of SEG-Y Rev2 binary headers."""
+
+    MAX_EXTENDED_TRACE_HEADERS        = (307, "int16")
+    SURVEY_TYPE                       = (309, "int16")
 # fmt:on

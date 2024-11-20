@@ -105,8 +105,10 @@ are still in progress and not all validation logic is implemented yet:
 
 - ✅ Rev 0 (1975)
 - ✅ Rev 1 (2002)
-- ✅ Rev 2 (2017)
-- 🔲 Rev 2.1 (2023)
+- ✅ Rev 2 (2017)\*\*
+- ✅ Rev 2.1 (2023)\*\*
+
+\*\* The XML stanzas and extended trace headers are not currently supported.
 
 ### Custom SEG-Y Standards
 
