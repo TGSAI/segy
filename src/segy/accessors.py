@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from segy.schema import Endianness
@@ -13,6 +14,9 @@ if TYPE_CHECKING:
     from segy.schema import TraceSpec
 
 
+logger = logging.getLogger(__name__)
+
+
 class TraceAccessor:
     """Accessor for applying required transforms for reading SegyArrays and subclasses.
 
@@ -20,12 +24,15 @@ class TraceAccessor:
     """
 
     def __init__(self, trace_spec: TraceSpec) -> None:
+        logger.debug("Initializing %s", self.__class__.__name__)
+
         self.trace_spec = trace_spec
         self.header_ibm_keys = [
             field.name
             for field in self.trace_spec.header.fields
             if field.format == ScalarType.IBM32
         ]
+
         self.header_decode_pipeline = TransformPipeline()
         self.sample_decode_pipeline = TransformPipeline()
         self.trace_decode_pipeline = TransformPipeline()

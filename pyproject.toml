@@ -88,6 +88,9 @@ select = [
     "PL",  # pylint
     "FLY", # flynt
     "NPY201", # numpy
+    "LOG", # logging
+    "G", # logging-format
+    "PERF", # perflint
 ]
 
 ignore = [

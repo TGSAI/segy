@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from abc import ABC
 from abc import abstractmethod
 from typing import TYPE_CHECKING
@@ -24,6 +25,9 @@ if TYPE_CHECKING:
     from segy.schema.base import BaseDataType
 
     IntDType = np.signedinteger[Any]
+
+
+logger = logging.getLogger(__name__)
 
 
 def merge_cat_file(
