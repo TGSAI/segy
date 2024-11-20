@@ -149,9 +149,9 @@ def infer_revision(
 
     # Method 1: Use settings if available
     if settings.binary.revision is not None:
-        revision = settings.binary.revision
-        logger.info("Using provided revision from settings: %s", revision)
-        return revision
+        settings_rev = settings.binary.revision
+        logger.info("Using provided revision from settings: %s", settings_rev)
+        return settings_rev
 
     # Method 2: Major/minor from single byte integers (SEG-Y Rev2+)
     logger.debug("Checking if file is SEG-Y Rev2+.")

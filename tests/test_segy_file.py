@@ -13,6 +13,7 @@ from numpy.testing import assert_array_equal
 
 from segy import SegyFactory
 from segy import SegyFile
+from segy.config import BinaryHeaderSettings
 from segy.config import SegySettings
 from segy.exceptions import EndiannessInferenceError
 from segy.exceptions import SegyFileSpecMismatchError
@@ -296,12 +297,11 @@ class TestSegyFileExceptions:
         test_config = generate_test_segy(
             filesystem=mock_filesystem,
             segy_standard=SegyStandard.REV1,
-            endianness=Endianness.BIG,
         )
 
         with mock_filesystem.open(test_config.uri, mode="r+b") as fp:
             fp.seek(3296)
-            fp.write(struct.pack("I", 999))
+            fp.write(struct.pack(">I", 999))
 
         file = SegyFile(test_config.uri)
 
@@ -312,15 +312,12 @@ class TestSegyFileExceptions:
         """Test bad values in binary header triggering spec inference failure."""
         test_config = generate_test_segy(filesystem=mock_filesystem)
 
-        fp = mock_filesystem.open(test_config.uri, mode="r+b")
-        fp.seek(3224)
-        fp.write(struct.pack(">H", 420))  # invalid sample format
-        fp.close()
+        with mock_filesystem.open(test_config.uri, mode="r+b") as fp:
+            fp.seek(3224)
+            fp.write(struct.pack(">H", 420))  # invalid sample format
 
-        with pytest.raises(
-            EndiannessInferenceError,
-            match="Endianness inference failed after attempting all methods.",
-        ):
+        error_message = "Endianness inference failed after attempting all methods."
+        with pytest.raises(EndiannessInferenceError, match=error_message):
             SegyFile(test_config.uri)
 
 
@@ -380,7 +377,8 @@ class TestSegyFileSettingsOverride:
             SegyFile(test_config.uri)
 
         # Make it work with override
-        settings = SegySettings(binary={"ext_text_header": num_extended_text_headers})
+        bin_override = BinaryHeaderSettings(ext_text_header=num_extended_text_headers)
+        settings = SegySettings(binary=bin_override)
         segy_file = SegyFile(test_config.uri, settings=settings)
 
         assert segy_file.num_ext_text == num_extended_text_headers
