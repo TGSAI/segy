@@ -171,15 +171,15 @@ This is how we can get three header fields for a few traces.
 ```console
 $ segy dump trace-header s3://open.source.geoscience/open_data/stratton/segy/navmerged/swath_1_geometry.sgy \
     --index 100 --index 101 --index 500 --index 501 \
-    --field src_x --field src_y \
-    --field rec_x --field rec_y \
-    --field scalar_apply_coords
-                src_x      src_y     rec_x      rec_y  scalar_apply_coords
+    --field source_coord_x --field source_coord_y \
+    --field group_coord_x --field group_coord_y \
+    --field coordinate_scalar
+             source_coord_x  source_coord_y  group_coord_x  group_coord_y  coordinate_scalar
 trace_index
-100          70628086  219412572  70616707  218875760                 -100
-101          70628086  219412572  70616695  218864765                 -100
-500          70650057  219412488  70880968  219271571                 -100
-501          70650057  219412488  70880940  219260587                 -100
+100                70628086       219412572       70616707      218875760               -100
+101                70628086       219412572       70616695      218864765               -100
+500                70650057       219412488       70880968      219271571               -100
+501                70650057       219412488       70880940      219260587               -100
 ```
 
 (env-configuration-options)=
