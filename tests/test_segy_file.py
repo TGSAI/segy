@@ -289,6 +289,12 @@ class TestSegyFile:
         assert_array_equal(traces.header, test_config.expected_headers[index])
         assert_array_almost_equal(traces.sample, test_config.expected_samples[index])
 
+        # Test random access with duplicates
+        index = [5, 3, 0, 5, 5, 3]
+        traces = segy_file.trace[index]
+        assert_array_equal(traces.header, test_config.expected_headers[index])
+        assert_array_almost_equal(traces.sample, test_config.expected_samples[index])
+
 
 class TestSegyFileExceptions:
     """Test exceptions for SegyFile."""
