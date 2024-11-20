@@ -38,11 +38,16 @@ See the [documentation][read the docs] for more information.
 
 This is not an official TGS product.
 
-## Features
+## Key Features
 
-The library utilizes `numpy` and `fsspec`, includes the reading from various local
-and remote resources at a high speed. It also allows the users to build their own
-SEG-Y specifications.
+- Thrive for SEG-Y correctness while allowing flexibility.
+- Utilize fast decoding and parsing logic (`numpy` + `numba`).
+- Use `fsspec` ecosystem to read / write files to and from disk, cloud, `http`, `ftp`.
+- Support legacy and current SEG-Y standards.
+- Allow users to specify and register their customizations as new "standards".
+- Header field names are canonical and interactive alias recommendation based on popular libraries.
+- Automatic detection of file endianness and SEG-Y revision.
+- Configuration mechanism to override bad headers that hinders automatic parsing.
 
 ## Installing `segy`
 
