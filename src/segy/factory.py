@@ -18,6 +18,7 @@ from segy.schema.base import Endianness
 from segy.schema.format import ScalarType
 from segy.schema.segy import SegyStandard
 from segy.standards.codes import DataSampleFormatCode
+from segy.standards.codes import SegyEndianCode
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
@@ -164,6 +165,7 @@ class SegyFactory:
             minor = int(minor * 10)  # fraction to int
             bin_header["segy_revision_major"] = major
             bin_header["segy_revision_minor"] = minor
+            bin_header["byte_order"] = SegyEndianCode.NATIVE
 
         bin_header["sample_interval"] = self.sample_interval
         bin_header["orig_sample_interval"] = self.sample_interval
