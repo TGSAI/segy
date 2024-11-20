@@ -131,7 +131,8 @@ class TestSegyFile:
     """Test the usage of SegyFile class."""
 
     @pytest.mark.parametrize(
-        "standard", [SegyStandard.REV0, SegyStandard.REV1, SegyStandard.REV2]
+        "standard",
+        [SegyStandard.REV0, SegyStandard.REV1, SegyStandard.REV2, SegyStandard.REV21],
     )
     @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
     @pytest.mark.parametrize("sample_format", [ScalarType.IBM32, ScalarType.FLOAT32])
