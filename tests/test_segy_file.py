@@ -15,6 +15,7 @@ from segy import SegyFactory
 from segy import SegyFile
 from segy.config import SegySettings
 from segy.exceptions import EndiannessInferenceError
+from segy.exceptions import SegyFileSpecMismatchError
 from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.schema import SegyStandard
@@ -80,6 +81,7 @@ def generate_test_segy(
     segy_standard: SegyStandard = SegyStandard.REV0,
     endianness: Endianness = Endianness.BIG,
     sample_format: ScalarType = ScalarType.IBM32,
+    num_extended_text_headers: int = 0,
 ) -> SegyFileTestConfig:
     """Function for mocking a SEG-Y file with in memory URI."""
     spec = get_segy_standard(segy_standard)
@@ -92,8 +94,12 @@ def generate_test_segy(
         samples_per_trace=SAMPLES_PER_TRACE,
     )
 
+    binary_update_dict = {}
+    if num_extended_text_headers > 0 and segy_standard > SegyStandard.REV0:
+        binary_update_dict["num_extended_text_headers"] = num_extended_text_headers
+
     text_file_hdr_bytes = factory.create_textual_header()
-    bin_file_hdr_bytes = factory.create_binary_header()
+    bin_file_hdr_bytes = factory.create_binary_header(binary_update_dict)
 
     headers = factory.create_trace_header_template(NUM_TRACES)
     samples = factory.create_trace_sample_template(NUM_TRACES)
@@ -109,6 +115,10 @@ def generate_test_segy(
 
     fp.write(text_file_hdr_bytes)
     fp.write(bin_file_hdr_bytes)
+
+    for _ in range(num_extended_text_headers):
+        fp.write(factory.create_textual_header())
+
     fp.write(trace_bytes)
 
     return SegyFileTestConfig(
@@ -281,34 +291,35 @@ class TestSegyFile:
 class TestSegyFileExceptions:
     """Test exceptions for SegyFile."""
 
-    def test_explicit_endian_error(self, mock_filesystem: MemoryFileSystem) -> None:
-        """Test bad values in binary header triggering spec inference error."""
-        test_config = generate_test_segy(filesystem=mock_filesystem)
+    def test_endian_code_err_handling(self, mock_filesystem: MemoryFileSystem) -> None:
+        """Test bad values in binary header endian code triggering legacy inference."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem,
+            segy_standard=SegyStandard.REV1,
+            endianness=Endianness.BIG,
+        )
 
         with mock_filesystem.open(test_config.uri, mode="r+b") as fp:
             fp.seek(3296)
             fp.write(struct.pack("I", 999))
 
-        with pytest.raises(
-            EndiannessInferenceError,
-            match="Explicit endianness code has ambiguous value",
-        ):
-            SegyFile(test_config.uri)
+        file = SegyFile(test_config.uri)
 
-    def test_legacy_endian_infer_failure(
-        self, mock_filesystem: MemoryFileSystem
-    ) -> None:
-        """Test bad values in binary header triggering spec inference error."""
+        assert file.spec.endianness == Endianness.BIG
+        assert file.spec.segy_standard == SegyStandard.REV1
+
+    def test_endian_infer_failure(self, mock_filesystem: MemoryFileSystem) -> None:
+        """Test bad values in binary header triggering spec inference failure."""
         test_config = generate_test_segy(filesystem=mock_filesystem)
 
         fp = mock_filesystem.open(test_config.uri, mode="r+b")
         fp.seek(3224)
-        fp.write(struct.pack("I", 420))  # invalid sample format
+        fp.write(struct.pack(">H", 420))  # invalid sample format
         fp.close()
 
         with pytest.raises(
             EndiannessInferenceError,
-            match="Cannot automatically infer file endianness",
+            match="Endianness inference failed after attempting all methods.",
         ):
             SegyFile(test_config.uri)
 
@@ -344,19 +355,32 @@ class TestSegyFileSettingsOverride:
         with pytest.raises(ValueError, match="is not a valid DataSampleFormatCode"):
             SegyFile(test_config.uri, settings=settings)
 
-    @pytest.mark.parametrize("num_ext_text", [1])
+    @pytest.mark.parametrize("num_extended_text_headers", [0, 2])
     def test_ext_text_header_override(
-        self, mock_filesystem: MemoryFileSystem, num_ext_text: int
+        self,
+        mock_filesystem: MemoryFileSystem,
+        num_extended_text_headers: int,
     ) -> None:
         """Test if settings override for extended header count work for SegyFile."""
+        # Create file with zero extended text headers
         test_config = generate_test_segy(
             mock_filesystem,
             segy_standard=SegyStandard.REV1,
+            num_extended_text_headers=num_extended_text_headers,
         )
 
-        settings = SegySettings.model_validate(
-            {"binary": {"ext_text_header": num_ext_text}}
-        )
+        # Mess up and write 42 headers
+        with mock_filesystem.open(test_config.uri, mode="r+b") as fp:
+            fp.seek(3504)
+            fp.write(struct.pack(">H", 42))  # invalid sample format
+
+        # Ensure failure as is
+        error_message = "doesn't match parsed spec"
+        with pytest.raises(SegyFileSpecMismatchError, match=error_message):
+            SegyFile(test_config.uri)
+
+        # Make it work with override
+        settings = SegySettings(binary={"ext_text_header": num_extended_text_headers})
         segy_file = SegyFile(test_config.uri, settings=settings)
 
-        assert segy_file.num_ext_text == num_ext_text
+        assert segy_file.num_ext_text == num_extended_text_headers

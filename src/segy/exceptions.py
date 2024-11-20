@@ -5,6 +5,10 @@ class SegyError(Exception):
     """Base class for all exceptions in this library."""
 
 
+class SegyFileSpecMismatchError(SegyError):
+    """Raised when file spec with parsed fields don't match file size."""
+
+
 class EndiannessInferenceError(SegyError):
     """Raised when endianness inference has failed."""
 
