@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from numpy.typing import DTypeLike
     from numpy.typing import NDArray
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -165,7 +166,7 @@ class ByteSwapTransform(Transform):
     def __init__(self, target_order: Endianness) -> None:
         super().__init__()
         self.target_order = target_order
-        logging.debug("Converting to %s endian.", self.target_order.value)
+        logger.debug("Converting to %s endian.", self.target_order.value)
 
     def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Byte swap numpy array given target order."""
@@ -196,7 +197,7 @@ class IbmFloatTransform(Transform):
     def __init__(self, direction: str, keys: list[str] | None = None) -> None:
         super().__init__(keys)
         self.direction = direction
-        logging.debug("Converting to %s.", self.direction)
+        logger.debug("Converting %s.", self.direction)
 
     def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Convert floats between IEEE and IBM."""
@@ -285,7 +286,7 @@ class TransformFactory:
         """Create an instance of transformation and return it."""
         if transform_type not in cls.transform_map:
             msg = f"Unsupported transformation type: {transform_type}"
-            logging.error(msg)
+            logger.error(msg)
             raise KeyError(msg)
 
         return cls.transform_map[transform_type](*args, **kwargs)
