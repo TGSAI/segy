@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from datetime import timezone
 from typing import TYPE_CHECKING
@@ -12,6 +13,7 @@ import numpy as np
 from segy.arrays import HeaderArray
 from segy.arrays import TraceArray
 from segy.constants import REV1_BASE16
+from segy.exceptions import NonSpecFieldError
 from segy.schema.base import Endianness
 from segy.schema.format import ScalarType
 from segy.schema.segy import SegyStandard
@@ -25,6 +27,9 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
     from segy.schema import SegySpec
+
+
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_TEXT_HEADER_LINES = [
@@ -130,6 +135,7 @@ class SegyFactory:
 
         text_spec = self.spec.text_header
 
+        logger.info("Serialized text header according to SEG-Y spec.")
         return text_spec.encode(text)
 
     def create_binary_header(self, update: dict[str, Any] | None = None) -> bytes:
@@ -167,8 +173,10 @@ class SegyFactory:
 
         if update is not None:
             for key, value in update.items():
+                logger.debug("Updating binary header field %s to %s", key, value)
                 bin_header[key] = value
 
+        logger.info("Serialized binary header according to SEG-Y spec.")
         return bin_header.tobytes()
 
     def create_trace_header_template(
@@ -189,12 +197,15 @@ class SegyFactory:
         header_template = HeaderArray(np.zeros(shape=size, dtype=dtype))
 
         # 'names' assumed not None by data structure (type ignores).
-        field_names = header_template.dtype.names
-        if "sample_interval" in field_names:
+        try:
             header_template["sample_interval"] = self.sample_interval
+        except NonSpecFieldError:
+            logger.warning("'sample_interval' not found in binary fields, skipping.")
 
-        if "samples_per_trace" in field_names:
+        try:
             header_template["samples_per_trace"] = self.samples_per_trace
+        except NonSpecFieldError:
+            logger.warning("'samples_per_trace' not found in binary fields, skipping.")
 
         return header_template
 
@@ -246,14 +257,17 @@ class SegyFactory:
                 "Data array must be 2-dimensional with rows as traces "
                 "and columns as data samples."
             )
+            logger.error(msg)
             raise AttributeError(msg)
 
         if samples.shape[1] != self.samples_per_trace:
             msg = f"Trace length must be {self.samples_per_trace}."
+            logger.error(msg)
             raise ValueError(msg)
 
         if len(headers) != len(samples):
             msg = "Header array must have the same number of rows as data array."
+            logger.error(msg)
             raise ValueError(msg)
 
         header_pipeline = TransformPipeline()
@@ -263,11 +277,13 @@ class SegyFactory:
         target_format = trace_spec.data.format
 
         if target_endian == Endianness.BIG:
+            logger.debug("Added big endian conversion before serialization.")
             byte_swap = TransformFactory.create("byte_swap", target_endian)
             header_pipeline.add_transform(byte_swap)
             data_pipeline.add_transform(byte_swap)
 
         if target_format == ScalarType.IBM32:
+            logger.debug("Added IBM float conversion before serialization.")
             ibm_float = TransformFactory.create("ibm_float", "to_ibm")
             data_pipeline.add_transform(ibm_float)
 
@@ -275,4 +291,5 @@ class SegyFactory:
         trace["header"] = header_pipeline.apply(headers)
         trace["data"] = data_pipeline.apply(samples)
 
+        logger.info("Serialized %s traces according to SEG-Y spec.", len(samples))
         return trace.tobytes()

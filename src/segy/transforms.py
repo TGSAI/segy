@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import sys
 from abc import abstractmethod
 from typing import TYPE_CHECKING
@@ -18,6 +19,8 @@ if TYPE_CHECKING:
     from numpy._typing._dtype_like import _DTypeDict
     from numpy.typing import DTypeLike
     from numpy.typing import NDArray
+
+logger = logging.getLogger(__name__)
 
 
 def get_endianness(data: NDArray[Any]) -> Endianness:
@@ -102,6 +105,8 @@ class Transform:
     def __init__(self, keys: list[str] | None = None, copy: bool = False) -> None:
         self.keys = keys
         self.copy = copy
+
+        logger.debug("Initialized %s.", self.__class__.__name__)
 
     def apply(self, data: NDArray[Any]) -> NDArray[Any]:
         """Applies transformation based on ndarray or struct array.
