@@ -169,6 +169,10 @@ class AbstractIndexer(ABC):
     def fetch(self, indices: NDArray[IntDType]) -> NDArray[Any]:
         """Fetches and decodes binary data from the given indices.
 
+        It supports duplicates in the indices, and it will also preserve
+        the order of the request. If you want a sorted order, please sort
+        the trace indices first.
+
         Args:
             indices: A list of integers representing the indices.
 
@@ -182,12 +186,22 @@ class AbstractIndexer(ABC):
                 file specified by the 'url' parameter. However, this is fastest
                 if minimize the amount of reads. Here we combine starts and
                 stops that are adjacent to each other. This requires a sort.
-            - The indices users request may be out of order, so we ensure we
-                save the index order and then use it to sort the read buffer back
-                to user's requested shape.
             - The fetched data is then decoded and squeezed before being returned.
         """
-        index_order = np.argsort(indices)
+        unique_indices, index_order, counts = np.unique(
+            indices,
+            return_inverse=True,
+            return_counts=True,
+        )
+
+        # Warn user about duplicates in the request
+        if len(indices) != len(unique_indices):
+            duplicate_mask = counts > 1
+            values = unique_indices[duplicate_mask]
+            counts = counts[duplicate_mask]
+            duplicates = {int(v): int(c) for v, c in zip(values, counts)}
+            logger.warning("Duplicate indices requested with counts %s:", duplicates)
+
         starts, ends = self.indices_to_byte_ranges(indices)
         buffer = merge_cat_file(self.fs, self.url, starts.tolist(), ends.tolist())
         array = self.decode(buffer)
