@@ -212,7 +212,7 @@ class TestSegyFactoryTraces:
         if mock_segy_factory.sample_format == ScalarType.IBM32:
             expected_dtype = np.dtype("float32")
         else:
-            expected_dtype = np.dtype(mock_segy_factory.sample_format.char)
+            expected_dtype = mock_segy_factory.sample_format.dtype
 
         expected_shape = (num_traces, n_samples)
         assert samples.dtype == expected_dtype
@@ -257,7 +257,9 @@ class TestSegyFactoryTraces:
         for field_name, values in rand_fields.items():
             expected_traces["header"][field_name] = values
         if mock_segy_factory.spec.endianness == Endianness.BIG:
-            expected_traces = expected_traces.byteswap(inplace=True).newbyteorder(">")
+            expected_traces = expected_traces.byteswap(inplace=True)
+            expected_dtype = expected_traces.dtype.newbyteorder(">")
+            expected_traces = expected_traces.view(expected_dtype)
 
         assert trace_bytes == expected_traces.tobytes()
 

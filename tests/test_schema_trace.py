@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import numpy as np
 import pytest
 
 from segy.schema import Endianness
@@ -47,7 +46,7 @@ class TestTraceSpec:
 
         expected_itemsize = header_spec.dtype.itemsize + data_spec.dtype.itemsize
         expected_header_itemsize = header_spec.dtype.itemsize
-        expected_sample_subtype = (np.dtype(sample_format.char), (samples_per_trace,))
+        expected_sample_subtype = (sample_format.dtype, (samples_per_trace,))
         assert trace_spec.dtype.itemsize == expected_itemsize
         assert trace_spec.header.dtype.names == ("h1", "h2")
         assert trace_spec.header.dtype.itemsize == expected_header_itemsize

@@ -32,8 +32,8 @@ class TraceDataSpec(BaseDataType):
 
     @property
     def dtype(self) -> np.dtype[Any]:
-        """Get numpy dtype."""
-        dtype = (self.format.char, (self.samples,))
+        """Get numpy dtype with # of samples."""
+        dtype = (self.format.dtype, (self.samples,))
         return np.dtype(dtype)
 
 
