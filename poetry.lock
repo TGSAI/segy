@@ -4189,13 +4189,13 @@ typing-extensions = ">=3.7.4.3"
 
 [[package]]
 name = "typer-slim"
-version = "0.13.1"
+version = "0.14.0"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "typer_slim-0.13.1-py3-none-any.whl", hash = "sha256:13f23cf414fb3de3d9163c4beebe0c6569eabcb85b71c89ffe42887a5332eb3b"},
-    {file = "typer_slim-0.13.1.tar.gz", hash = "sha256:cc880af8c1d4fafff9dbbbae0b37348372f8633bb0e7d1baa46074c4fcdde810"},
+    {file = "typer_slim-0.14.0-py3-none-any.whl", hash = "sha256:710d23c5956583aed4662871df759232f38f30bfa2c91b1aea54e4a1ce027c54"},
+    {file = "typer_slim-0.14.0.tar.gz", hash = "sha256:28e9a54502e74fe3da66c51c9e4730e615eeb796ef33dbcc424dd2269f53838a"},
 ]
 
 [package.dependencies]
