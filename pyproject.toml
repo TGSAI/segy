@@ -18,7 +18,7 @@ fsspec = ">=2024.1.0"
 numpy = ">=2.0.0"
 pydantic = "^2.9.2"
 pydantic-settings = "^2.7.0"
-numba = {version = ">=0.54", allow-prereleases = true}
+numba = {version = ">=0.60.0", allow-prereleases = true}
 pandas = ">=2.2.3"
 typer = "^0.15.1"
 rapidfuzz = "^3.11.0"
