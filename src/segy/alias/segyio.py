@@ -10,6 +10,7 @@ Sources:
 https://segyio.readthedocs.io/en/latest/segyio.html#trace-header-keys
 https://segyio.readthedocs.io/en/latest/segyio.html#binary-header-keys
 """
+
 from segy.standards.fields import binary
 from segy.standards.fields import trace
 
@@ -47,7 +48,7 @@ SEGYIO_BIN_FIELD_MAP = {
     "ExtSamples":            binary.Rev2.EXTENDED_SAMPLES_PER_TRACE,
     "ExtSamplesOriginal":    binary.Rev2.EXTENDED_ORIG_SAMPLES_PER_TRACE,
     "ExtEnsembleFold":       binary.Rev2.EXTENDED_ENSEMBLE_FOLD,
-    "SEGYRevision":          binary.Rev1.SEGY_REVISION,
+    "SEGYRevision":          binary.Rev2.SEGY_REVISION_MAJOR,
     "SEGYRevisionMinor":     binary.Rev2.SEGY_REVISION_MINOR,
     "TraceFlag":             binary.Rev1.FIXED_LENGTH_TRACE_FLAG,
     "ExtendedHeaders":       binary.Rev1.NUM_EXTENDED_TEXT_HEADERS,
