@@ -341,7 +341,7 @@ class TestSegyFileSettingsOverride:
         segy_file = SegyFile(test_config.uri, settings=settings)
 
         assert segy_file.spec.segy_standard == SegyStandard.REV1
-        assert segy_file.binary_header["segy_revision"] == 0
+        assert segy_file.binary_header["segy_revision_major"] == 0
 
     def test_revision_endian_override(self, mock_filesystem: MemoryFileSystem) -> None:
         """Make big-rev0 file and open it as little-rev1 from settings override."""

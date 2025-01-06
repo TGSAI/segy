@@ -8,8 +8,9 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 import numpy as np
+from numpy.lib import recfunctions as rfn
 
-from segy.constants import REV1_BASE16
+from segy.inference import interpret_revision
 from segy.schema import SegyStandard
 from segy.schema.base import Endianness
 
@@ -217,21 +218,29 @@ class SegyRevisionTransform(Transform):
 
     def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Parse SEG-Y standard from binary header."""
-        if data.dtype.names is not None and "segy_revision" not in data.dtype.names:
-            return data  # rev0, no-op
+        revision = interpret_revision(data.tobytes())
+        minor, major = np.modf(revision)
+        minor = int(minor * 10)  # fraction to int
 
-        # Rev1 needs special treatment.
-        # Rev1 is 16-bit with Q-point between the bytes. That means
-        # SEG-Y 1.0 is written as 00000001 00000000 in binary, 256 in base-2.
-        if data["segy_revision"] == REV1_BASE16:
-            data["segy_revision"] = SegyStandard.REV1
+        # Well defined in Rev2+, don't modify
+        if revision >= SegyStandard.REV0:
+            return data
 
-        # Rev2 doesn't need special treatment because it splits into
-        # two 8-bit integers for major and minor versions.
-        # SEG-Y Rev2.0 is 00000010 00000000 in binary, (2, 0) in base-2
-        # SEG-Y Rev2.1 is 00000010 00000001 in binary, (2, 1) in base-2
+        # Normalize it all to rev2+
+        # It is ambiguous due to SEG-Y and segyio conventions
+        data = rfn.drop_fields(
+            data,
+            drop_names=["segy_revision", "segy_revision_major", "segy_revision_minor"],
+            usemask=False,
+        )
 
-        return data
+        return rfn.append_fields(
+            data,
+            names=["segy_revision_major", "segy_revision_minor"],
+            data=[major, minor],
+            dtypes=["uint8", "uint8"],
+            usemask=False,
+        )
 
 
 class TraceTransform(Transform):
