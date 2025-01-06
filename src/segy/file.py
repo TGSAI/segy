@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import logging
 import sys
-from dataclasses import dataclass
-from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING
 from typing import cast
@@ -16,23 +14,23 @@ from fsspec.core import url_to_fs
 from segy.accessors import TraceAccessor
 from segy.arrays import HeaderArray
 from segy.config import SegySettings
-from segy.exceptions import EndiannessInferenceError
 from segy.exceptions import SegyFileSpecMismatchError
 from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
 from segy.indexing import TraceIndexer
+from segy.inference import EndiannessAction
+from segy.inference import SegyInferResult
+from segy.inference import infer_endianness
+from segy.inference import interpret_revision
 from segy.schema import Endianness
 from segy.schema import ScalarType
-from segy.schema import SegyStandard
 from segy.standards import get_segy_standard
 from segy.standards.codes import DataSampleFormatCode
-from segy.standards.codes import SegyEndianCode
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
 if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
-    from numpy.typing import DTypeLike
     from numpy.typing import NDArray
 
     from segy.indexing import AbstractIndexer
@@ -40,139 +38,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class SegyInferResult:
-    """A scan result of a SEG-Y file.
-
-    Attributes:
-        endianness: Endianness of the file.
-        revision: SEG-Y revision as float.
-    """
-
-    __slots__ = ("endianness", "revision")
-
-    endianness: Endianness
-    revision: float
-
-
-class EndiannessAction(Enum):
-    """Descriptive flag enum for endianness reversal."""
-
-    REVERSE = True
-    KEEP = False
-
-
-def infer_endianness(
-    buffer: bytes,
-    settings: SegySettings,
-) -> EndiannessAction:
-    """Infer if we need to reverse the endianness of the seismic data.
-
-    Args:
-        buffer: Bytes representing the binary header.
-        settings: Settings instance to configure / override.
-
-    Returns:
-        A boolean indicating if the endianness need to be reversed.
-
-    Raises:
-        EndiannessInferenceError: When inference fails.
-    """
-    logger.debug("Starting endianness inference.")
-
-    # Method 1: Use settings if available
-    if settings.endianness is not None:
-        logger.info("Using provided endianness from settings: %s", settings.endianness)
-        return EndiannessAction(settings.endianness != sys.byteorder)
-
-    # Method 2: Explicit endianness code (SEG-Y Rev2+)
-    logger.debug("Trying explicit endianness code (SEGY Rev2+).")
-    endian_code = np.frombuffer(buffer, "uint32", offset=96, count=1)[0]
-
-    if endian_code == SegyEndianCode.NATIVE:
-        logger.info("Detected native endianness.")
-        return EndiannessAction.KEEP
-    if endian_code == SegyEndianCode.REVERSE:
-        logger.info("Detected reverse endianness.")
-        return EndiannessAction.REVERSE
-    if endian_code == SegyEndianCode.PAIRWISE_SWAP:
-        msg = "Pairwise swapped endianness detected. Not supported."
-        logger.error(msg)
-        raise NotImplementedError(msg)
-    if endian_code != 0:
-        logger.warning("Ambiguous explicit endianness code: %s", endian_code)
-
-    # Method 3: Legacy method using sample format for inference (SEG-Y <Rev2)
-    logger.debug("Trying legacy method for SEGY Rev <2.0.")
-    format_dtype = np.dtype("uint16")
-    supported_formats = set(DataSampleFormatCode._value2member_map_.keys())
-
-    def _is_supported_format(dtype: DTypeLike) -> bool:
-        format_value = np.frombuffer(buffer, dtype, offset=24, count=1)[0]
-        return format_value in supported_formats
-
-    if _is_supported_format(format_dtype):
-        logger.info("Detected native endianness using legacy method.")
-        return EndiannessAction.KEEP
-
-    if _is_supported_format(format_dtype.newbyteorder()):
-        logger.info("Detected reverse endianness using legacy method.")
-        return EndiannessAction.REVERSE
-
-    # If all methods fail
-    error_message = (
-        "Endianness inference failed after attempting all methods. "
-        "Ensure the file is valid or provide explicit settings."
-    )
-    logger.error(error_message)
-    raise EndiannessInferenceError(error_message)
-
-
-def infer_revision(
-    buffer: bytes,
-    endianness_action: EndiannessAction,
-    settings: SegySettings,
-) -> int | float:
-    """Infer the revision number from the binary header of a SEG-Y file.
-
-    Args:
-        buffer: The binary header buffer.
-        endianness_action: The action to take for endianness.
-        settings: The SegySettings, which may override the revision.
-
-    Returns:
-        The revision number as a float (e.g., 1.0, 1.2, 2.0).
-    """
-    logger.debug("Starting revision inference.")
-
-    # Method 1: Use settings if available
-    if settings.binary.revision is not None:
-        settings_rev = settings.binary.revision
-        logger.info("Using provided revision from settings: %s", settings_rev)
-        return settings_rev
-
-    # Method 2: Major/minor from single byte integers (SEG-Y Rev2+)
-    logger.debug("Checking if file is SEG-Y Rev2+.")
-    major_revision = np.frombuffer(buffer, "uint8", offset=300, count=1)[0]
-
-    if major_revision >= SegyStandard.REV2:
-        minor_revision = np.frombuffer(buffer, "uint8", offset=301, count=1)[0]
-    else:
-        # Method 3: Major/minor from 16-bit integer (SEG-Y <Rev2)
-        logger.debug("File is SEG-Y <Rev2, reading revision from 16-bits.")
-        dtype = np.dtype("uint16")
-        if endianness_action == EndiannessAction.REVERSE:
-            dtype = dtype.newbyteorder()
-
-        revision = np.frombuffer(buffer, dtype, offset=300, count=1)[0]
-        major_revision = revision >> 8
-        minor_revision = revision & 0xFF
-
-    revision_float = int(major_revision) + int(minor_revision) / 10
-    logger.info("Detected revision from binary header as %s", revision_float)
-    return revision_float
 
 
 class SegyFile:
@@ -311,7 +176,9 @@ class SegyFile:
         logger.info("Scanning binary header to infer SEG-Y standard and endianness.")
         bin_header_buffer = self.fs.read_block(fn=self.url, offset=3200, length=400)
         endianness_action = infer_endianness(bin_header_buffer, self.settings)
-        revision = infer_revision(bin_header_buffer, endianness_action, self.settings)
+        revision = interpret_revision(
+            bin_header_buffer, endianness_action, self.settings
+        )
 
         if endianness_action == EndiannessAction.REVERSE:
             logger.debug("File not machine endianness, will reverse endian.")
