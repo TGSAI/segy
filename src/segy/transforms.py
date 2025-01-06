@@ -234,7 +234,7 @@ class SegyRevisionTransform(Transform):
             usemask=False,
         )
 
-        return rfn.append_fields(
+        return rfn.append_fields(  # type: ignore
             data,
             names=["segy_revision_major", "segy_revision_minor"],
             data=[major, minor],
