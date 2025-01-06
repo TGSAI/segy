@@ -223,7 +223,7 @@ class SegyRevisionTransform(Transform):
         minor = int(minor * 10)  # fraction to int
 
         # Well defined in Rev2+, don't modify
-        if revision >= SegyStandard.REV0:
+        if revision >= SegyStandard.REV2:
             return data
 
         # Normalize it all to rev2+
