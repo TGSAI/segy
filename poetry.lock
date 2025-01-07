@@ -5031,4 +5031,4 @@ cloud = ["adlfs", "gcsfs", "s3fs"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "bdf97830ef7f51def52b71a6dffb1dfe5b74a84c9b08be6f7d62ae173646d50a"
+content-hash = "2498c9f036338f223e63dc85db3c247e4b128f400381ee1eab14b4c962ef857e"
