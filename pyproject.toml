@@ -51,7 +51,6 @@ pytest = "^8.3.3"
 pre-commit = "^4.0.1"
 pre-commit-hooks = "^5.0.0"
 typeguard = "^4.4.1"
-urllib3 = "^1.26.18"                                 # Workaround for poetry-plugin-export/issues/183
 pandas-stubs = "^2.2.2.240807"
 
 [tool.poetry.group.docs.dependencies]

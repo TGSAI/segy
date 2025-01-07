@@ -4619,12 +4619,12 @@ version = "1.26.20"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
-groups = ["main", "dev", "docs"]
-markers = "python_version <= \"3.11\" or python_version >= \"3.12\""
+groups = ["main", "docs"]
 files = [
     {file = "urllib3-1.26.20-py2.py3-none-any.whl", hash = "sha256:0ed14ccfbf1c30a9072c7ca157e4319b70d65f623e91e7b32fadb2853431016e"},
     {file = "urllib3-1.26.20.tar.gz", hash = "sha256:40c2dc0c681e47eb8f90e7e27bf6ff7df2e677421fd46756da1161c39ca70d32"},
 ]
+markers = {main = "(python_version <= \"3.11\" or python_version >= \"3.12\") and extra == \"cloud\"", docs = "python_version <= \"3.11\" or python_version >= \"3.12\""}
 
 [package.extras]
 brotli = ["brotli (==1.0.9)", "brotli (>=1.0.9)", "brotlicffi (>=0.8.0)", "brotlipy (>=0.6.0)"]
@@ -5053,4 +5053,4 @@ cloud = ["adlfs", "gcsfs", "s3fs"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<3.13"
-content-hash = "5f0013773e56d33011c2f6c05e5bbf40aa6c8a37a0b1058bfcc1f049b5b21567"
+content-hash = "bd6e2494c6b5e7816b63984fef41249326469e8e1b367f210ac2e416256b5b3b"
