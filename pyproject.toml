@@ -5,7 +5,6 @@ description = "The Ultimate Python SEG-Y I/O with Cloud Support and Schemas"
 authors = [{ name = "Altay Sansal", email = "altay.sansal@tgs.com" }]
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/TGSAI/segy"
 keywords = ["segy", "seismic", "data", "geophysics"]
 requires-python = ">=3.10,<3.13"
 dependencies = [
@@ -27,8 +26,7 @@ cloud = [
 ]
 
 [project.urls]
-homepage = "https://mdio.dev/"
-repository = "https://github.com/TGSAI/mdio-python"
+repository = "https://github.com/TGSAI/segy"
 documentation = "https://segy.readthedocs.io"
 
 [project.scripts]
