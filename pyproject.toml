@@ -5,11 +5,10 @@ description = "The Ultimate Python SEG-Y I/O with Cloud Support and Schemas"
 authors = [{ name = "Altay Sansal", email = "altay.sansal@tgs.com" }]
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/TGSAI/segy"
 keywords = ["segy", "seismic", "data", "geophysics"]
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "fsspec (>=2024.10.0,<2025.0.0)",
+    "fsspec (>=2024.10.0)",
     "numpy (>=2.0.0,<3.0.0)",
     "pydantic (>=2.9.2,<3.0.0)",
     "pydantic-settings (>=2.6.1,<3.0.0)",
@@ -21,14 +20,13 @@ dependencies = [
 
 [project.optional-dependencies]
 cloud = [
-    "s3fs>=2024.10.0",
-    "gcsfs>=2024.10.0",
-    "adlfs>=2024.7.0"
+    "s3fs (>=2024.10.0)",
+    "gcsfs (>=2024.10.0)",
+    "adlfs (>=2024.7.0)"
 ]
 
 [project.urls]
-homepage = "https://mdio.dev/"
-repository = "https://github.com/TGSAI/mdio-python"
+repository = "https://github.com/TGSAI/segy"
 documentation = "https://segy.readthedocs.io"
 
 [project.scripts]
