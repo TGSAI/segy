@@ -7,7 +7,7 @@ license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/TGSAI/segy"
 keywords = ["segy", "seismic", "data", "geophysics"]
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     "fsspec (>=2024.10.0,<2025.0.0)",
     "numpy (>=2.0.0,<3.0.0)",
@@ -17,7 +17,6 @@ dependencies = [
     "pandas (>=2.2.2,<3.0.0)",
     "typer (>=0.13.1,<0.14.0)",
     "rapidfuzz (>=3.10.1,<4.0.0)",
-    "eval-type-backport (>=0.2.0,<0.3.0) ; python_version < '3.10'",
 ]
 
 [project.optional-dependencies]
