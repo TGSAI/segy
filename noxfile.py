@@ -23,8 +23,8 @@ except ImportError:
 
 
 package = "segy"
-python_versions = ["3.12", "3.11", "3.10"]
-nox.needs_version = ">=2023.04.22"
+python_versions = ["3.13", "3.12", "3.11", "3.10"]
+nox.needs_version = ">=2024.10.9"
 nox.options.sessions = (
     "pre-commit",
     "mypy",
