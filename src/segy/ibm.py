@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import Any
+from typing import Callable
 
 import numba as nb
 import numpy as np
@@ -12,6 +14,15 @@ if TYPE_CHECKING:
 
     NDArrayUint32 = NDArray[np.uint32]
     NDArrayFloat32 = NDArray[np.float32]
+
+
+try:
+    from typeguard import typeguard_ignore  # type: ignore[import-not-found]
+except ImportError:
+
+    def typeguard_ignore(func: Callable[..., Any]) -> Callable[..., Any]:
+        """Dummy decorator to avoid errors if typeguard is not installed."""
+        return func
 
 
 # IEEE to IBM MASKS ETC
@@ -25,6 +36,7 @@ IBM32_EXPONENT = np.uint32(0x7F000000)
 IBM32_FRACTION = np.uint32(0xFFFFFF)
 
 
+@typeguard_ignore  # type: ignore
 @nb.njit(  # type: ignore
     "uint32(float32)",
     nogil=True,
@@ -89,6 +101,7 @@ def ieee2ibm_single(ieee: nb.float32) -> nb.uint32:
     return sign | exponent | ibm_mantissa
 
 
+@typeguard_ignore  # type: ignore
 @nb.njit(  # type: ignore
     "float32(uint32)",
     cache=True,
