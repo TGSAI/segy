@@ -29,7 +29,7 @@ def test_segy_array_copy() -> None:
 
 
 @pytest.mark.parametrize(
-    "keys,aliases,values",
+    ("keys", "aliases", "values"),
     [
         (["samples_per_trace", "sample_interval"], ["ns", "interval"], (5, 2)),
         (["samples_per_trace", "sample_interval"], ["Samples", "dt"], (1, 6)),
