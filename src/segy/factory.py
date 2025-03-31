@@ -101,13 +101,13 @@ class SegyFactory:
     def sample_interval(self) -> int:
         """Return sample interval from spec."""
         # We know its populated at this point and its int (not None)
-        return cast(int, self.spec.trace.data.interval)
+        return cast("int", self.spec.trace.data.interval)
 
     @property
     def samples_per_trace(self) -> int:
         """Return number of samples from spec."""
         # We know its populated at this point and its int (not None)
-        return cast(int, self.spec.trace.data.samples)
+        return cast("int", self.spec.trace.data.samples)
 
     @property
     def segy_revision(self) -> SegyStandard:
@@ -248,8 +248,7 @@ class SegyFactory:
 
         Raises:
             AttributeError: if data dimensions are wrong (not 2D trace,samples).
-            ValueError: if there is a shape mismatch between headers.
-            ValueError: if there is a shape mismatch number of samples.
+            ValueError: if there is a shape mismatch between headers or num samples.
         """
         trace_spec = self.spec.trace
         trace_spec.data.samples = self.samples_per_trace

@@ -1,9 +1,10 @@
 """Command line interface for segy."""
+
 import logging
 import sys
 
 import typer
-from rich import print
+from rich import print  # noqa: A004
 from rich.logging import RichHandler
 
 from segy.cli.common import JsonFileOutOption

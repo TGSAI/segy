@@ -64,6 +64,10 @@ class BaseDataType(CamelCaseModel):
 class Endianness(StrEnum):
     """Enumeration class with three possible endianness values.
 
+    Attributes:
+        BIG: Big endian.
+        LITTLE: Little endian.
+
     Examples:
         >>> endian = Endianness.BIG
         >>> print(endian.symbol)
@@ -82,4 +86,4 @@ class Endianness(StrEnum):
     @property
     def symbol(self) -> Literal["<", ">", "="]:
         """Get the numpy symbol for the endianness from mapping."""
-        return cast(Literal["<", ">", "="], self._symbol_map[self.value])
+        return cast("Literal['<', '>', '=']", self._symbol_map[self.value])

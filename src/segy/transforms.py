@@ -187,6 +187,9 @@ class IbmFloatTransform(Transform):
     Args:
         direction: IBM Float conversion direction.
         keys: Optional list of keys to apply the transform.
+
+    Attributes:
+        ibm_func_map: Mapping of ibm conversion direction and function.
     """
 
     # To map user parameter to compiled function and its expected type.
