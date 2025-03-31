@@ -106,6 +106,9 @@ class AbstractIndexer(ABC):
         spec: An instance of BaseDataType.
         max_value: An integer representing the maximum value of the index.
         transform_pipeline: The transforms pipeline to apply for decoding.
+
+    Attributes:
+        kind: A string representing the kind of data being indexed.
     """
 
     kind: str = "Abstract"

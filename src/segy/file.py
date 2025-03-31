@@ -50,6 +50,10 @@ class SegyFile:
             SEG-Y standard from the binary header.
         settings: A settings instance to configure / override
             the SEG-Y parsing logic. Optional.
+
+    Attributes:
+        fs: The filesystem instance used to access the file.
+        url: The URL of the SEG-Y file on the filesystem.
     """
 
     fs: AbstractFileSystem
@@ -80,12 +84,12 @@ class SegyFile:
     @property
     def samples_per_trace(self) -> int:
         """Return samples per trace in file based on spec."""
-        return cast(int, self.spec.trace.data.samples)  # we know for sure its int
+        return cast("int", self.spec.trace.data.samples)  # we know for sure its int
 
     @property
     def sample_interval(self) -> int:
         """Return samples interval in file based on spec."""
-        return cast(int, self.spec.trace.data.interval)  # we know for sure its int
+        return cast("int", self.spec.trace.data.interval)  # we know for sure its int
 
     @property
     def sample_labels(self) -> NDArray[np.int32]:
@@ -104,7 +108,7 @@ class SegyFile:
     @property
     def num_traces(self) -> int:
         """Return number of traces in file based on size and spec."""
-        return cast(int, self.spec.trace.count)  # we know for sure its int
+        return cast("int", self.spec.trace.count)  # we know for sure its int
 
     @cached_property
     def text_header(self) -> str:
@@ -224,7 +228,7 @@ class SegyFile:
 
         self.spec.update_offsets()
 
-        trace_offset = cast(int, self.spec.trace.offset)  # we know for sure not None
+        trace_offset = cast("int", self.spec.trace.offset)  # we know for sure not None
         trace_itemsize = self.spec.trace.itemsize
         trace_count = (self.file_size - trace_offset) // trace_itemsize
 

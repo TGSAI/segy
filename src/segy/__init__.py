@@ -1,4 +1,5 @@
 """'The' SEG-Y implementation."""
+
 from importlib import metadata
 
 from segy.factory import SegyFactory

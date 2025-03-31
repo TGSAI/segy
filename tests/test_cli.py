@@ -12,7 +12,7 @@ from segy.cli.segy import app
 runner = CliRunner()
 
 
-@pytest.fixture()
+@pytest.fixture
 def s3_path() -> str:
     """Fixture for Stratton dataset on S3 (SEG Wiki)."""
     return "s3://open.source.geoscience/open_data/stratton/segy/navmerged/swath_1_geometry.sgy"
