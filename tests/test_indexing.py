@@ -63,5 +63,7 @@ class TestMergeCatFile:
 
         result = merge_cat_file(mock_filesystem, uri, starts, ends)
 
-        expected_result = b"".join(test_data[s:e] for s, e in zip(starts, ends))
+        expected_result = b"".join(
+            test_data[s:e] for s, e in zip(starts, ends, strict=True)
+        )
         assert result == expected_result

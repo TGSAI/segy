@@ -33,7 +33,7 @@ class TestHeaderSpec:
         """Test HeaderSpec and its methods."""
         fields = [
             HeaderField(name=name, byte=byte, format=format_)
-            for name, byte, format_ in zip(names, bytes_, formats)
+            for name, byte, format_ in zip(names, bytes_, formats, strict=True)
         ]
 
         header_spec = HeaderSpec(
@@ -163,7 +163,7 @@ class TestHeaderSpecExceptions:
         """Test validation where the max field size exceeds the item size."""
         fields = [
             HeaderField(name=name, byte=byte, format=format_)
-            for name, byte, format_ in zip(names, bytes_, formats)
+            for name, byte, format_ in zip(names, bytes_, formats, strict=True)
         ]
         with pytest.raises(ValueError, match="Offsets exceed allowed header size."):
             HeaderSpec(fields=fields, item_size=itemsize)
