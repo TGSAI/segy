@@ -202,7 +202,7 @@ class AbstractIndexer(ABC):
             duplicate_mask = counts > 1
             values = unique_indices[duplicate_mask]
             counts = counts[duplicate_mask]
-            duplicates = {int(v): int(c) for v, c in zip(values, counts)}
+            duplicates = {int(v): int(c) for v, c in zip(values, counts, strict=True)}
             logger.warning("Duplicate indices requested with counts %s:", duplicates)
 
         starts, ends = self.indices_to_byte_ranges(indices)
