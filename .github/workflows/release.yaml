@@ -15,20 +15,11 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Set up Python
-        uses: actions/setup-python@v5.4.0
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.13"
-
-      - name: Upgrade pip
-        run: |
-          pip install --constraint=.github/workflows/constraints.txt pip
-          pip --version
-
-      - name: Install uv
-        run: |
-          pip install --constraint=.github/workflows/constraints.txt uv
-          uv --version
+          python-version: 3.13
+          pyproject-file: "${{ github.workspace }}/pyproject.toml"
 
       - name: Install bumpversion
         run: |

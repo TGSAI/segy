@@ -62,6 +62,9 @@ docs = [
 target-version = "py310"
 src = ["src"]
 
+[tool.uv]
+required-version = "0.6.11"
+
 [tool.ruff.lint]
 select = [
     "E",   # pycodestyle
@@ -179,7 +182,6 @@ serialize = [
     "{major}.{minor}.{patch}.dev{dev}",  # For dev releases
     "{major}.{minor}.{patch}"            # For stable releases
 ]
-
 
 [build-system]
 requires = ["setuptools", "wheel", "fastentrypoints"]

@@ -42,15 +42,11 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v5.4.0
-        with:
-          python-version: ${{ matrix.python }}
-
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "0.6.11"
+          python-version: ${{ matrix.python }}
+          pyproject-file: ${{ github.workspace }}/pyproject.toml
 
       - name: Install Nox
         run: |
@@ -107,15 +103,11 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5.4.0
-        with:
-          python-version: "3.13"
-
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "0.6.11"
+          python-version: 3.13
+          pyproject-file: "${{ github.workspace }}/pyproject.toml"
 
       - name: Install Nox
         run: |
