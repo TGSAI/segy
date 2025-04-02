@@ -21,9 +21,9 @@ from segy.alias.core import normalize_key
 from segy.alias.core import validate_key
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from collections.abc import Iterable
     from collections.abc import Mapping
-    from typing import Callable
     from typing import Literal
 
     from numpy.typing import NDArray
@@ -113,7 +113,7 @@ class HeaderArray(SegyArray):
         elif isinstance(key, list):
             original_keys = copy(key)
             key = [normalize_key(k) for k in key]
-            for k, orig_k in zip(key, original_keys):
+            for k, orig_k in zip(key, original_keys, strict=True):
                 validate_key(k, orig_k, self.dtype.names)
 
         return key
