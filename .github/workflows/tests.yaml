@@ -42,7 +42,7 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Install the latest version of uv
+      - name: Install the pinned version of uv
         uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python }}
@@ -103,7 +103,7 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Install the latest version of uv
+      - name: Install the pinned version of uv
         uses: astral-sh/setup-uv@v5
         with:
           python-version: 3.13
