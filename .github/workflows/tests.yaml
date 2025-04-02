@@ -47,25 +47,10 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Upgrade pip
-        run: |
-          pip install -c "${{ github.workspace }}/.github/workflows/constraints.txt" pip
-          pip --version
-
-      - name: Upgrade pip in virtual environments
-        shell: python
-        run: |
-          import os
-          import pip
-
-          with open(os.environ["GITHUB_ENV"], mode="a") as io:
-              print(f"VIRTUALENV_PIP={pip.__version__}", file=io)
-
-      - name: Install uv
-        run: |
-          pip install -c "${{ github.workspace }}/.github/workflows/constraints.txt" uv
-          uv tool update-shell
-          uv --version
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.6.11"
 
       - name: Install Nox
         run: |
@@ -127,15 +112,10 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Upgrade pip
-        run: |
-          pip install -c "${{ github.workspace }}/.github/workflows/constraints.txt" pip
-          pip --version
-
-      - name: Install uv
-        run: |
-          pip install -c "${{ github.workspace }}/.github/workflows/constraints.txt" uv
-          uv --version
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.6.11"
 
       - name: Install Nox
         run: |
