@@ -52,7 +52,7 @@ def session_install_uv(
     if install_docs:
         args.extend(["--group", "docs"])
 
-    session.run_install(*args, silent=False, env=env)
+    session.run_install(*args, silent=True, env=env)
 
 
 def session_install_uv_package(session: Session, packages: list[str]) -> None:
