@@ -142,6 +142,7 @@ tests = ["tests", "*/tests"]
 [tool.coverage.run]
 branch = true
 source = ["segy", "tests"]
+relative_files = true
 
 [tool.coverage.report]
 show_missing = true
