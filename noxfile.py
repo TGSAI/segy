@@ -65,9 +65,7 @@ def session_install_uv_package(session: Session, packages: list[str]) -> None:
     session.run_install(*export_args, silent=True, env=env)
 
     # Install requested packages with requirements.txt constraints
-    pip_args = ["uv", "pip", "install", "--constraints", requirements_tmp]
-    pip_args.extend(packages)
-    session.run_install(*pip_args, silent=False, env=env)
+    session.install(*packages, "--constraints", requirements_tmp)
 
 
 def activate_virtualenv_in_precommit_hooks(session: Session) -> None:
