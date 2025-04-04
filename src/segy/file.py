@@ -213,7 +213,7 @@ class SegyFile:
                 )
                 ext_text_header_spec.count = settings_num_ext_text
 
-        sample_format_value = self.binary_header["data_sample_format"]
+        sample_format_value = self.binary_header["data_sample_format"].item()
         data_sample_format_code = DataSampleFormatCode(sample_format_value)
         sample_format = ScalarType[data_sample_format_code.name]
 
