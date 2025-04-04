@@ -3,7 +3,7 @@ name = "segy"
 version = "0.4.1.post1"  # Don't manually update; use bump-my-version
 description = "The Ultimate Python SEG-Y I/O with Cloud Support and Schemas"
 authors = [{ name = "Altay Sansal", email = "altay.sansal@tgs.com" }]
-license = "Apache-2.0"
+license = { "text" = "Apache-2.0" }
 readme = "README.md"
 keywords = ["segy", "seismic", "data", "geophysics"]
 requires-python = ">=3.10,<3.14"
@@ -13,6 +13,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: Apache Software License",
     "Development Status :: 4 - Beta"
 ]
 
