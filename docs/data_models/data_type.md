@@ -34,6 +34,11 @@
     :member-order: bysource
 ```
 
+The enumeration also includes ``ScalarType.BYTE`` which represents a single byte
+of raw data that is preserved without any endianness conversion. This is useful
+for unknown or vendor specific trace header fields that need to maintain bitwise
+fidelity.
+
 ```{eval-rst}
 .. autopydantic_model:: HeaderSpec
     :inherited-members: BaseModel

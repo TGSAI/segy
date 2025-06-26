@@ -24,6 +24,7 @@ class ScalarType(StrEnum):
     UINT32 = "uint32"
     UINT16 = "uint16"
     UINT8 = "uint8"
+    BYTE = "V1"
     FLOAT64 = "float64"
     FLOAT32 = "float32"
     FLOAT16 = "float16"
@@ -39,6 +40,9 @@ class ScalarType(StrEnum):
         # Special case for IBM 32-bit float
         if self.value == "ibm32":
             return np.dtype("uint32")
+
+        if self.value == "V1":
+            return np.dtype("|V1")
 
         return np.dtype(self.value)
 
