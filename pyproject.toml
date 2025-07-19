@@ -112,7 +112,6 @@ select = [
 ]
 
 ignore = [
-    "ANN101", # Missing type annotation for `self`
     "D107",   # Missing docstring in __init__ ; should be in class docstring
 ]
 
