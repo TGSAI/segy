@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC
 from datetime import datetime
-from datetime import timezone
 from typing import TYPE_CHECKING
 from typing import cast
 
@@ -56,7 +56,7 @@ def get_default_text(spec: SegySpec) -> str:
     text_lines = DEFAULT_TEXT_HEADER_LINES.copy()
 
     # Populate write time
-    now = datetime.now(tz=timezone.utc).isoformat(timespec="seconds")
+    now = datetime.now(tz=UTC).isoformat(timespec="seconds")
     text_lines[5] = text_lines[5].format(timestamp=now)
 
     # Populate revision
