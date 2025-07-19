@@ -75,6 +75,25 @@ class SegyFile:
 
         self.accessors = TraceAccessor(self.spec.trace)
 
+    def __getstate__(self) -> dict:
+        """Prepare the state for pickling by excluding the filesystem instance.
+
+        This ensures that the filesystem (fs) is not pickled and will be
+        re-initialized upon unpickling, which is necessary when passing
+        the filesystem object between processes safely.
+        """
+        url = self.fs.unstrip_protocol(self.url)
+        return {"url": url, "spec": self.spec, "settings": self.settings}
+
+    def __setstate__(self, state: dict) -> None:
+        """Restore the state after unpickling by re-initializing the object.
+
+        This re-initializes the filesystem (fs) using the stored URL and
+        other attributes, ensuring compatibility when the object is passed
+        between processes.
+        """
+        self.__init__(**state)
+
     @property
     def file_size(self) -> int:
         """Return file size in bytes."""
