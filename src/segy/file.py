@@ -93,7 +93,7 @@ class SegyFile:
         other attributes, ensuring compatibility when the object is passed
         between processes.
         """
-        SegyFile.__init__(**state)
+        self.__init__(**state)
 
     @property
     def file_size(self) -> int:
