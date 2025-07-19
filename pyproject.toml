@@ -75,7 +75,7 @@ target-version = "py310"
 src = ["src"]
 
 [tool.uv]
-required-version = "0.6.11"
+required-version = ">=0.6.11"
 
 [tool.ruff.lint]
 select = [
