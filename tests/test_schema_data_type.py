@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
 from segy.schema import Endianness
@@ -18,6 +19,7 @@ class TestHeaderSpec:
         ("names", "bytes_", "formats", "itemsize"),
         [
             (["f1"], [1], [ScalarType.INT32], None),
+            (["f1"], [1], [ScalarType.BYTE], None),
             (["f1", "f2"], [1, 9], [ScalarType.UINT8, ScalarType.INT32], None),
             (["f1", "f2"], [1, 13], [ScalarType.UINT8, ScalarType.INT16], 20),
         ],
@@ -47,6 +49,34 @@ class TestHeaderSpec:
             assert not header_spec.dtype.isnative
         if itemsize is not None:
             assert header_spec.dtype.itemsize == itemsize
+
+    def test_byte_dtype(self) -> None:
+        """Ensure endianless byte fields produce a ``|V1`` dtype."""
+        field = HeaderField(name="f1", byte=1, format=ScalarType.BYTE)
+        spec = HeaderSpec(fields=[field])
+
+        actual_dtype = spec.dtype.fields["f1"][0]
+        assert actual_dtype == np.dtype("|V1")
+
+    def test_byte_integrity_across_endianness(self) -> None:
+        """Byte fields keep their value regardless of struct endianness."""
+        fields = [
+            HeaderField(name="foo", byte=1, format=ScalarType.INT16),
+            HeaderField(name="cat", byte=3, format=ScalarType.BYTE),
+        ]
+
+        little_spec = HeaderSpec(fields=fields, endianness=Endianness.LITTLE)
+        big_spec = HeaderSpec(fields=fields, endianness=Endianness.BIG)
+
+        little_arr = np.zeros(1, dtype=little_spec.dtype)
+        little_arr["foo"] = np.int16(0x1234)
+        little_arr["cat"] = np.uint8(0xAB)
+
+        raw = little_arr.tobytes()
+        big_arr = np.frombuffer(raw, dtype=big_spec.dtype)
+        expected_foo = 0x3412
+        assert big_arr["foo"][0] == expected_foo
+        assert big_arr["cat"][0] == little_arr["cat"][0]
 
     def test_add_field(self) -> None:
         """Test adding fields to header spec with and without overwrite."""
