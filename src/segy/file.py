@@ -30,12 +30,13 @@ from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from fsspec import AbstractFileSystem
     from numpy.typing import NDArray
 
     from segy.indexing import AbstractIndexer
     from segy.schema import SegySpec
-
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,7 @@ class SegyFile:
 
         self.accessors = TraceAccessor(self.spec.trace)
 
-    def __getstate__(self) -> dict:
+    def __getstate__(self) -> dict[str, Any]:
         """Prepare the state for pickling by excluding the filesystem instance.
 
         This ensures that the filesystem (fs) is not pickled and will be
@@ -85,14 +86,14 @@ class SegyFile:
         url = self.fs.unstrip_protocol(self.url)
         return {"url": url, "spec": self.spec, "settings": self.settings}
 
-    def __setstate__(self, state: dict) -> None:
+    def __setstate__(self, state: dict[str, Any]) -> None:
         """Restore the state after unpickling by re-initializing the object.
 
         This re-initializes the filesystem (fs) using the stored URL and
         other attributes, ensuring compatibility when the object is passed
         between processes.
         """
-        self.__init__(**state)
+        SegyFile.__init__(**state)
 
     @property
     def file_size(self) -> int:
