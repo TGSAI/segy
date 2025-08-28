@@ -62,7 +62,6 @@ class TestSegySpecCustomize:
             # Check that the custom field's byte position appears exactly once in the list
             assert all_start_bytes.count(field.byte) == 1
 
-
     def test_custom_trace_headers(self, segy_spec: SegySpec) -> None:
         """Test customizing trace header spec."""
         custom_fields = [
@@ -74,7 +73,9 @@ class TestSegySpecCustomize:
 
         expected_itemsize = segy_spec.trace.header.dtype.itemsize
         assert custom_spec.segy_standard is None
-        assert len(custom_spec.trace.header.fields) == len(segy_spec.trace.header.fields)
+        assert len(custom_spec.trace.header.fields) == len(
+            segy_spec.trace.header.fields
+        )
         assert custom_spec.trace.header.dtype.itemsize == expected_itemsize
 
         all_start_bytes = [field.byte for field in custom_spec.trace.header.fields]
