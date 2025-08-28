@@ -40,18 +40,28 @@ class TestSegySpecCustomize:
     def test_custom_binary_file_headers(self, segy_spec: SegySpec) -> None:
         """Test customizing binary file header spec."""
         custom_fields = [
+            # Replace Sample Interval in microseconds with custom field f1
             HeaderField(name="f1", format=ScalarType.UINT8, byte=17),
+            # Replace Sweep Frequency at Start with custom field f2
             HeaderField(name="f2", format=ScalarType.INT16, byte=33),
+            # Replace SEG-Y Revision Number + Fixed length trace flag with custom field f3
             HeaderField(name="f3", format=ScalarType.UINT32, byte=301),
+            # Above header field will add for Rev0 and replace 2 fields in Rev1
         ]
 
         custom_spec = segy_spec.customize(binary_header_fields=custom_fields)
 
         expected_itemsize = segy_spec.binary_header.dtype.itemsize
         assert custom_spec.segy_standard is None
-        assert len(custom_spec.binary_header.fields) == len(custom_fields)
-        assert custom_spec.binary_header.dtype.names == ("f1", "f2", "f3")
         assert custom_spec.binary_header.dtype.itemsize == expected_itemsize
+
+        all_start_bytes = [field.byte for field in custom_spec.binary_header.fields]
+
+        for field in custom_fields:
+            assert field in custom_spec.binary_header.fields
+            # Check that the custom field's byte position appears exactly once in the list
+            assert all_start_bytes.count(field.byte) == 1
+
 
     def test_custom_trace_headers(self, segy_spec: SegySpec) -> None:
         """Test customizing trace header spec."""
@@ -64,9 +74,14 @@ class TestSegySpecCustomize:
 
         expected_itemsize = segy_spec.trace.header.dtype.itemsize
         assert custom_spec.segy_standard is None
-        assert len(custom_spec.trace.header.fields) == len(custom_fields)
-        assert custom_spec.trace.header.dtype.names == ("f1", "f2")
+        assert len(custom_spec.trace.header.fields) == len(segy_spec.trace.header.fields)
         assert custom_spec.trace.header.dtype.itemsize == expected_itemsize
+
+        all_start_bytes = [field.byte for field in custom_spec.trace.header.fields]
+
+        for field in custom_fields:
+            assert field in custom_spec.trace.header.fields
+            assert all_start_bytes.count(field.byte) == 1
 
     def test_custom_extended_text_header(self, segy_spec: SegySpec) -> None:
         """Test customizing extended text header spec."""

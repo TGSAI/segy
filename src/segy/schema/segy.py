@@ -73,6 +73,98 @@ class SegySpec(CamelCaseModel):
         if self.trace.offset is None:
             self.trace.offset = cursor
 
+    def _overlap(self, range1: tuple[int, int], range2: tuple[int, int]) -> bool:
+        """Checks if two right half-open ranges overlap."""
+        return range1[0] < range2[1] and range1[1] > range2[0]
+
+    def _merge_headers_by_name(self, existing_fields: list[HeaderField], new_fields: list[HeaderField]) -> list[HeaderField]:
+        """Replaces existing headers with new headers that have the same name.
+
+        Args:
+            existing_fields: List of existing header fields.
+            new_fields: List of new header fields.
+
+        Returns:
+            List of header fields with duplicates removed.
+        """
+        if not existing_fields:
+            return new_fields
+        if not new_fields:
+            return existing_fields
+
+        new_names = {field.name for field in new_fields}
+
+        filtered_fields = [field for field in new_fields]  # Copy to ensure we don't mutate the input list.
+        for field in existing_fields:
+            if field.name not in new_names:
+                filtered_fields.append(field)
+        return filtered_fields
+
+    def _merge_headers_by_byte_offset(self, existing_fields: list[HeaderField], new_fields: list[HeaderField]) -> list[HeaderField]:
+        """Removes existing headers that have bytes that would have been overlapped by new headers.
+        
+        Intended to be run AFTER _merge_headers_by_name.
+        This algorithm will ensure all neighboring headers are not overlapped.
+        
+        An overlap is defined as a 
+
+        Args:
+            existing_fields: List of existing header fields. State AFTER _merge_headers_by_name.
+            new_fields: List of new header fields.
+
+        Returns:
+            List of header fields with duplicates removed.
+        """
+        ranges = [(field.name, field.range) for field in existing_fields]
+        ranges.sort(key=lambda range_tuple: range_tuple[1][0])
+        indices_to_remove = []
+        for i in range(len(ranges) - 1):
+            current_key, current_range = ranges[i]
+            next_key, next_range = ranges[i+1]
+            if self._overlap(current_range, next_range):
+                for field in new_fields:
+                    if field.name == current_key:
+                        indices_to_remove.append(i+1)  # Remove next header, not current
+                        break
+        # Sort indices in reverse order to avoid index shifting when removing elements
+        indices_to_remove.sort(reverse=True)
+        for idx in indices_to_remove:
+            if 0 <= idx < len(existing_fields):
+                header_name, header_range = ranges[idx]
+                # Find and remove the header by name
+                for i, elem in enumerate(existing_fields):
+                    if elem.name == header_name:
+                        existing_fields.pop(i)
+                        break
+        return existing_fields
+
+
+    def _validate_non_overlapping_headers(self, new_fields: list[HeaderField]) -> None:
+        """Validates that a list of new headers have unique names and do not overlap one-another.
+
+        Args:
+            new_fields: List of new header fields.
+
+        Raises:
+            ValueError: If duplicate header field names are detected.
+            ValueError: If header fields overlap.
+        """
+        if not new_fields:
+            return None
+
+        names = [field.name for field in new_fields]
+        if len(names) != len(set(names)):
+            raise ValueError("Duplicate header field names detected!")
+
+        ranges = [field.range for field in new_fields]
+        ranges.sort(key=lambda range_tuple: range_tuple[0])
+
+        for i in range(len(ranges) - 1):
+            if self._overlap(ranges[i], ranges[i + 1]):
+                raise ValueError("Header fields overlap!")
+
+        return None
+
     def customize(  # noqa: PLR0913
         self: SegySpec,
         text_header_spec: TextHeaderSpec | None = None,
@@ -100,16 +192,18 @@ class SegySpec(CamelCaseModel):
             new_spec.text_header = text_header_spec
 
         # Update binary header fields if specified; else will revert to default.
-        if binary_header_fields:
-            new_spec.binary_header.fields = binary_header_fields
+        self._validate_non_overlapping_headers(binary_header_fields)
+        new_spec.binary_header.fields = self._merge_headers_by_name(new_spec.binary_header.fields, binary_header_fields)
+        new_spec.binary_header.fields = self._merge_headers_by_byte_offset(new_spec.binary_header.fields, binary_header_fields)
 
         # Update extended text spec if its specified; else will revert to default.
         if ext_text_spec:
             new_spec.ext_text_header = ext_text_spec
 
         # Update trace header spec if its specified; else will revert to default.
-        if trace_header_fields:
-            new_spec.trace.header.fields = trace_header_fields
+        self._validate_non_overlapping_headers(trace_header_fields)
+        new_spec.trace.header.fields = self._merge_headers_by_name(new_spec.trace.header.fields, trace_header_fields)
+        new_spec.trace.header.fields = self._merge_headers_by_byte_offset(new_spec.trace.header.fields, trace_header_fields)
 
         # Update trace data spec if its specified; else will revert to default.
         if trace_data_spec:

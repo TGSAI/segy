@@ -58,6 +58,14 @@ class HeaderField(BaseDataType):
         """Converts the data type of the object into a NumPy dtype."""
         return self.format.dtype
 
+    @property
+    def range(self) -> tuple[int, int, str]:
+        """Return the start and stop byte location of the field.
+        
+        Note: This return is Fortran-style and right half-open. [start, stop)
+        """
+        return (self.byte, self.byte + self.dtype.itemsize, self.name)
+
 
 class HeaderSpec(BaseDataType):
     """A class representing a header specification.
