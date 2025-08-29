@@ -39,340 +39,124 @@ def segy_spec(request: pytest.FixtureRequest) -> SegySpec:
 class TestHeaderFieldRange:
     """Tests for the new range property on HeaderField."""
 
-    def test_range_property_basic(self) -> None:
-        """Test that range property returns correct start, stop, and name."""
-        field = HeaderField(name="test_field", format=ScalarType.INT32, byte=10)
-        start, stop, name = field.range
-
-        assert start == 10  # noqa: PLR2004
-        assert stop == 14  # noqa: PLR2004
-        assert name == "test_field"
-
     @pytest.mark.parametrize(
-        ("format_type", "expected_size"),
+        "field_name,format_type,byte_pos,expected_size",
         [
-            (ScalarType.UINT8, 1),
-            (ScalarType.INT16, 2),
-            (ScalarType.UINT16, 2),
-            (ScalarType.INT32, 4),
-            (ScalarType.UINT32, 4),
-            (ScalarType.FLOAT32, 4),
-            (ScalarType.FLOAT64, 8),
+            # Basic test case
+            ("test_field", ScalarType.INT32, 10, 4),
+            # Different types
+            ("field", ScalarType.UINT8, 100, 1),
+            ("field", ScalarType.INT16, 100, 2),
+            ("field", ScalarType.UINT16, 100, 2),
+            ("field", ScalarType.INT32, 100, 4),
+            ("field", ScalarType.UINT32, 100, 4),
+            ("field", ScalarType.FLOAT32, 100, 4),
+            ("field", ScalarType.FLOAT64, 100, 8),
+            # Different byte positions
+            ("test", ScalarType.INT16, 1, 2),
+            ("test", ScalarType.INT16, 50, 2),
+            ("test", ScalarType.INT16, 200, 2),
+            ("test", ScalarType.INT16, 400, 2),
         ],
     )
-    def test_range_property_different_types(
-        self, format_type: ScalarType, expected_size: int
+    def test_range_property(
+        self, 
+        field_name: str, 
+        format_type: ScalarType, 
+        byte_pos: int, 
+        expected_size: int
     ) -> None:
-        """Test range property with different data types."""
-        field = HeaderField(name="field", format=format_type, byte=100)
+        """Test range property with different field configurations."""
+        field = HeaderField(name=field_name, format=format_type, byte=byte_pos)
         start, stop, name = field.range
 
-        assert start == 100  # noqa: PLR2004
-        assert stop == 100 + expected_size  # noqa: PLR2004
-        assert name == "field"
-
-    @pytest.mark.parametrize("byte_pos", [1, 50, 100, 200, 400])
-    def test_range_property_different_byte_positions(self, byte_pos: int) -> None:
-        """Test range property with different starting byte positions."""
-        field = HeaderField(name="test", format=ScalarType.INT16, byte=byte_pos)
-        start, stop, name = field.range
-
-        assert start == byte_pos  # noqa: PLR2004
-        assert stop == byte_pos + 2  # noqa: PLR2004
-        assert name == "test"
+        assert start == byte_pos
+        assert stop == byte_pos + expected_size
+        assert name == field_name
 
 
-class TestOverlapMethod:
-    """Tests for the _overlap method in SegySpec."""
+class TestHeaderFieldOperations:
+    """Consolidated tests for header field operations (merge, validation, overlap)."""
 
-    # Test data for overlap scenarios
-    OVERLAP_TEST_CASES = [
-        # (range1, range2, expected_overlap, description)
-        ((1, 5), (10, 15), False, "separated ranges"),
-        ((1, 5), (5, 10), False, "adjacent ranges"),
-        ((1, 10), (5, 15), True, "partial overlap"),
-        ((1, 10), (3, 8), True, "complete overlap"),
-        ((5, 10), (5, 10), True, "identical ranges"),
-        ((1, 6), (5, 10), True, "single byte overlap"),
-        ((0, 4), (2, 6), True, "middle overlap"),
-        ((10, 20), (15, 25), True, "end overlap"),
-        ((5, 15), (0, 10), True, "start overlap"),
-        ((100, 200), (150, 250), True, "large number overlap"),
-        ((5, 6), (6, 7), False, "single byte adjacent"),
-        # Edge cases
-        ((5, 5), (5, 5), False, "zero width ranges"),
-    ]
-
-    @pytest.mark.parametrize(
-        "range1,range2,expected_overlap,description", OVERLAP_TEST_CASES
-    )
-    def test_overlap_scenarios(
-        self,
-        segy_spec: SegySpec,
-        range1: tuple[int, int],
-        range2: tuple[int, int],
-        expected_overlap: bool,
-        description: str,
-    ) -> None:
-        """Test overlap detection for various range scenarios."""
-        # Test both directions (range1 vs range2 and range2 vs range1)
-        assert segy_spec._overlap(range1, range2) == expected_overlap, (
-            f"Failed for {description}: {range1} vs {range2}"
-        )
-        assert segy_spec._overlap(range2, range1) == expected_overlap, (
-            f"Failed for {description}: {range2} vs {range1}"
-        )
-
-
-class TestMergeHeadersByName:
-    """Tests for the _merge_headers_by_name method."""
-
-    # Test data for merge scenarios - covering the core logic without redundancy
-    MERGE_TEST_CASES = [
-        # (existing_fields, new_fields, expected_fields, description)
-        (
-            [],  # existing_fields
-            [
-                HeaderField(name="field1", format=ScalarType.INT32, byte=1),
-                HeaderField(name="field2", format=ScalarType.INT16, byte=10),
-            ],  # new_fields
-            [
-                HeaderField(name="field1", format=ScalarType.INT32, byte=1),
-                HeaderField(name="field2", format=ScalarType.INT16, byte=10),
-            ],  # expected_fields
-            "empty existing fields"
-        ),
-        (
-            [
-                HeaderField(name="existing1", format=ScalarType.INT32, byte=10),
-                HeaderField(name="existing2", format=ScalarType.INT16, byte=1),
-            ],  # existing_fields
-            [],  # new_fields
-            [
-                HeaderField(name="existing1", format=ScalarType.INT32, byte=10),
-                HeaderField(name="existing2", format=ScalarType.INT16, byte=1),
-            ],  # expected_fields
-            "empty new fields"
-        ),
-        (
-            [
-                HeaderField(name="existing1", format=ScalarType.INT32, byte=1),
-                HeaderField(name="existing2", format=ScalarType.INT16, byte=10),
-            ],  # existing_fields
-            [
-                HeaderField(name="new1", format=ScalarType.UINT32, byte=20),
-                HeaderField(name="new2", format=ScalarType.FLOAT32, byte=30),
-            ],  # new_fields
-            [
-                HeaderField(name="new1", format=ScalarType.UINT32, byte=20),
-                HeaderField(name="new2", format=ScalarType.FLOAT32, byte=30),
-                HeaderField(name="existing1", format=ScalarType.INT32, byte=1),
-                HeaderField(name="existing2", format=ScalarType.INT16, byte=10),
-            ],  # expected_fields
-            "new fields added without conflicts"
-        ),
-        (
-            [
-                HeaderField(name="field1", format=ScalarType.INT32, byte=1),
-                HeaderField(name="field2", format=ScalarType.INT16, byte=10),
-            ],  # existing_fields
-            [
-                HeaderField(name="field1", format=ScalarType.FLOAT32, byte=100),
-                HeaderField(name="new_field", format=ScalarType.INT16, byte=200),
-            ],  # new_fields
-            [
-                HeaderField(name="field1", format=ScalarType.FLOAT32, byte=100),
-                HeaderField(name="new_field", format=ScalarType.INT16, byte=200),
-                HeaderField(name="field2", format=ScalarType.INT16, byte=10),
-            ],  # expected_fields
-            "field replacement and addition"
-        ),
-    ]
-
-
-
-    @pytest.mark.parametrize(
-        "existing_fields,new_fields,expected_fields,description",
-        MERGE_TEST_CASES
-    )
-    def test_merge_scenarios(
-        self,
-        segy_spec: SegySpec,
-        existing_fields: list[HeaderField],
-        new_fields: list[HeaderField],
-        expected_fields: list[HeaderField],
-        description: str,
-    ) -> None:
-        """Test merge scenarios with various field configurations."""
-        result = segy_spec._merge_headers_by_name(existing_fields, new_fields)
+    # Combined test data for various field operations
+    FIELD_OPERATION_TEST_CASES = [
+        # (operation_type, test_data, expected_result, should_raise, expected_error, description)
         
-        # Use helper function to compare all field properties
-        assert_fields_match(result, expected_fields, description)
-
-
-class TestValidateNonOverlappingHeaders:
-    """Tests for the _validate_non_overlapping_headers method."""
-
-    # Test data for validation scenarios
-    VALIDATION_TEST_CASES = [
-        # (fields, should_raise, expected_error)
-        ([], False, None),
-        ([HeaderField(name="field1", format=ScalarType.INT32, byte=1)], False, None),
-        (
-            [
-                HeaderField(name="field1", format=ScalarType.INT32, byte=1),  # bytes 1-4
-                HeaderField(name="field2", format=ScalarType.INT16, byte=10),  # bytes 10-11
-                HeaderField(name="field3", format=ScalarType.UINT8, byte=20),  # byte 20
-            ],
-            False,
-            None,
-        ),
-        (
-            [
-                HeaderField(name="field1", format=ScalarType.INT32, byte=1),  # bytes 1-4 (stops at 5)
-                HeaderField(name="field2", format=ScalarType.INT16, byte=5),  # bytes 5-6 (starts at 5)
-            ],
-            False,
-            None,
-        ),
-        (
-            [
-                HeaderField(name="field1", format=ScalarType.INT32, byte=1),
-                HeaderField(name="field2", format=ScalarType.INT16, byte=10),
-                HeaderField(name="field1", format=ScalarType.UINT8, byte=20),  # Duplicate name
-            ],
-            True,
-            "Duplicate header field names detected",
-        ),
-        (
-            [
-                HeaderField(name="field1", format=ScalarType.INT32, byte=1),  # bytes 1-4
-                HeaderField(name="field2", format=ScalarType.INT32, byte=3),  # bytes 3-6 (overlaps)
-            ],
-            True,
-            "Header fields overlap",
-        ),
+        # Merge tests
+        ("merge", ([], [HeaderField(name="field1", format=ScalarType.INT32, byte=1)]), 
+         [HeaderField(name="field1", format=ScalarType.INT32, byte=1)], False, None, "merge with empty existing fields"),
+        
+        ("merge", ([HeaderField(name="existing1", format=ScalarType.INT32, byte=10)], []), 
+         [HeaderField(name="existing1", format=ScalarType.INT32, byte=10)], False, None, "merge with empty new fields"),
+        
+        ("merge", (
+            [HeaderField(name="existing1", format=ScalarType.INT32, byte=1)],
+            [HeaderField(name="existing1", format=ScalarType.FLOAT32, byte=100)]
+         ), [HeaderField(name="existing1", format=ScalarType.FLOAT32, byte=100)], False, None, "merge with field replacement"),
+        
+        # Validation tests
+        ("validate", [], None, False, None, "validate empty list"),
+        ("validate", [HeaderField(name="field1", format=ScalarType.INT32, byte=1)], None, False, None, "validate single field"),
+        ("validate", [
+            HeaderField(name="field1", format=ScalarType.INT32, byte=1),
+            HeaderField(name="field2", format=ScalarType.INT16, byte=10),
+         ], None, False, None, "validate non-overlapping fields"),
+        ("validate", [
+            HeaderField(name="field1", format=ScalarType.INT32, byte=1),
+            HeaderField(name="field1", format=ScalarType.UINT8, byte=20),  # Duplicate name
+         ], None, True, "Duplicate header field names detected", "validate duplicate names"),
+        ("validate", [
+            HeaderField(name="field1", format=ScalarType.INT32, byte=1),  # bytes 1-4
+            HeaderField(name="field2", format=ScalarType.INT32, byte=3),  # bytes 3-6 (overlaps)
+         ], None, True, "Header fields overlap", "validate overlapping fields"),
+        
+        # Overlap tests
+        ("overlap", ((1, 5), (10, 15)), False, False, None, "non-overlapping ranges"),
+        ("overlap", ((1, 5), (5, 10)), False, False, None, "adjacent ranges"),
+        ("overlap", ((1, 10), (5, 15)), True, False, None, "overlapping ranges"),
+        ("overlap", ((5, 10), (5, 10)), True, False, None, "identical ranges"),
     ]
 
     @pytest.mark.parametrize(
-        "fields,should_raise,expected_error",
-        VALIDATION_TEST_CASES
+        "operation_type,test_data,expected_result,should_raise,expected_error,description",
+        FIELD_OPERATION_TEST_CASES
     )
-    def test_validation_scenarios(
+    def test_field_operations(
         self,
         segy_spec: SegySpec,
-        fields: list[HeaderField],
+        operation_type: str,
+        test_data: tuple | list,
+        expected_result: list[HeaderField] | bool | None,
         should_raise: bool,
         expected_error: str | None,
-    ) -> None:
-        """Test validation scenarios with various field configurations."""
-        if should_raise:
-            with pytest.raises(ValueError, match=expected_error):
-                segy_spec._validate_non_overlapping_headers(fields)
-        else:
-            # Should not raise any exception
-            segy_spec._validate_non_overlapping_headers(fields)
-
-
-class TestMergeHeadersByByteOffset:
-    """Tests for the _merge_headers_by_byte_offset method.
-    
-    This method is called AFTER _merge_headers_by_name and removes existing fields
-    that overlap with the newly added fields. It simulates the real usage where
-    existing_fields contains the merged state and new_fields are the original input.
-    """
-
-    # Test data for realistic byte offset merge scenarios
-    BYTE_OFFSET_TEST_CASES = [
-        # (merged_fields_after_name_merge, original_new_fields, expected_result_fields, description)
-        (
-            [
-                # State after name merge: new field + non-conflicting existing fields
-                HeaderField(name="new_field", format=ScalarType.UINT32, byte=1),  # bytes 1-4
-                HeaderField(name="existing1", format=ScalarType.INT16, byte=10),  # bytes 10-11
-                HeaderField(name="existing2", format=ScalarType.INT32, byte=12),  # bytes 12-15
-            ],  # merged_fields_after_name_merge
-            [
-                HeaderField(name="new_field", format=ScalarType.UINT32, byte=1),  # bytes 1-4
-            ],  # original_new_fields
-            [
-                HeaderField(name="new_field", format=ScalarType.UINT32, byte=1),
-                HeaderField(name="existing1", format=ScalarType.INT16, byte=10),
-                HeaderField(name="existing2", format=ScalarType.INT32, byte=12),
-            ],  # expected_result_fields
-            "no overlaps after name merge"
-        ),
-        (
-            [
-                # State after name merge: new field overlaps with next existing field
-                HeaderField(name="new_field", format=ScalarType.UINT32, byte=1),  # bytes 1-4
-                HeaderField(name="existing1", format=ScalarType.INT16, byte=3),  # bytes 3-4 (overlaps!)
-                HeaderField(name="existing2", format=ScalarType.INT32, byte=10),  # bytes 10-13
-            ],  # merged_fields_after_name_merge
-            [
-                HeaderField(name="new_field", format=ScalarType.UINT32, byte=1),
-            ],  # original_new_fields
-            [
-                HeaderField(name="new_field", format=ScalarType.UINT32, byte=1),
-                HeaderField(name="existing2", format=ScalarType.INT32, byte=10),
-            ],  # expected_result_fields (existing1 removed due to overlap)
-            "new field overlaps with existing field"
-        ),
-        (
-            [
-                # State after name merge: multiple overlaps
-                HeaderField(name="new_field1", format=ScalarType.UINT32, byte=1),  # bytes 1-4
-                HeaderField(name="existing1", format=ScalarType.INT16, byte=3),  # bytes 3-4 (overlaps with new_field1)
-                HeaderField(name="new_field2", format=ScalarType.INT32, byte=5),  # bytes 5-8
-                HeaderField(name="existing2", format=ScalarType.INT16, byte=7),  # bytes 7-8 (overlaps with new_field2)
-                HeaderField(name="existing3", format=ScalarType.INT32, byte=20),  # bytes 20-23 (no overlap)
-            ],  # merged_fields_after_name_merge
-            [
-                HeaderField(name="new_field1", format=ScalarType.UINT32, byte=1),
-                HeaderField(name="new_field2", format=ScalarType.INT32, byte=5),
-            ],  # original_new_fields
-            [
-                HeaderField(name="new_field1", format=ScalarType.UINT32, byte=1),
-                HeaderField(name="new_field2", format=ScalarType.INT32, byte=5),
-                HeaderField(name="existing3", format=ScalarType.INT32, byte=20),
-            ],  # expected_result_fields (existing1 and existing2 removed)
-            "multiple new fields with overlaps"
-        ),
-        (
-            [
-                HeaderField(name="existing1", format=ScalarType.INT32, byte=1),
-                HeaderField(name="existing2", format=ScalarType.INT16, byte=10),
-            ],  # merged_fields_after_name_merge
-            [],  # original_new_fields (empty)
-            [
-                HeaderField(name="existing1", format=ScalarType.INT32, byte=1),
-                HeaderField(name="existing2", format=ScalarType.INT16, byte=10),
-            ],  # expected_result_fields (no changes)
-            "no new fields"
-        ),
-    ]
-
-
-
-    @pytest.mark.parametrize(
-        "merged_fields_after_name_merge,original_new_fields,expected_result_fields,description",
-        BYTE_OFFSET_TEST_CASES
-    )
-    def test_merge_by_byte_offset_scenarios(
-        self,
-        segy_spec: SegySpec,
-        merged_fields_after_name_merge: list[HeaderField],
-        original_new_fields: list[HeaderField],
-        expected_result_fields: list[HeaderField],
         description: str,
     ) -> None:
-        """Test merge by byte offset scenarios that reflect real usage patterns."""
-        result = segy_spec._merge_headers_by_byte_offset(
-            merged_fields_after_name_merge.copy(), original_new_fields
-        )
+        """Test various header field operations with unified logic."""
+        if operation_type == "merge":
+            existing_fields, new_fields = test_data
+            if should_raise:
+                with pytest.raises(ValueError, match=expected_error):
+                    segy_spec._merge_headers_by_name(existing_fields, new_fields)
+            else:
+                result = segy_spec._merge_headers_by_name(existing_fields, new_fields)
+                assert_fields_match(result, expected_result, description)
         
-        # Use helper function to compare all field properties
-        assert_fields_match(result, expected_result_fields, description)
+        elif operation_type == "validate":
+            fields = test_data
+            if should_raise:
+                with pytest.raises(ValueError, match=expected_error):
+                    segy_spec._validate_non_overlapping_headers(fields)
+            else:
+                # Should not raise any exception
+                segy_spec._validate_non_overlapping_headers(fields)
+
+        elif operation_type == "overlap":
+            range1, range2 = test_data
+            result = segy_spec._overlap(range1, range2)
+            assert result == expected_result, f"Failed for {description}: {range1} vs {range2}"
+            # Test commutative property
+            assert segy_spec._overlap(range2, range1) == expected_result, f"Failed for {description}: {range2} vs {range1}"
+
 
 
 class TestCustomizeMethodEnhanced:
@@ -384,8 +168,8 @@ class TestCustomizeMethodEnhanced:
         (
             "binary",
             [
-                HeaderField(name="custom_field1", format=ScalarType.UINT32, byte=17),
-                HeaderField(name="custom_field2", format=ScalarType.INT16, byte=300),
+            HeaderField(name="custom_field1", format=ScalarType.UINT32, byte=17),
+            HeaderField(name="custom_field2", format=ScalarType.INT16, byte=300),
             ],
             False,
             None,
@@ -394,8 +178,8 @@ class TestCustomizeMethodEnhanced:
         (
             "trace",
             [
-                HeaderField(name="custom_trace1", format=ScalarType.FLOAT32, byte=100),
-                HeaderField(name="custom_trace2", format=ScalarType.INT32, byte=200),
+            HeaderField(name="custom_trace1", format=ScalarType.FLOAT32, byte=100),
+            HeaderField(name="custom_trace2", format=ScalarType.INT32, byte=200),
             ],
             False,
             None,
@@ -404,7 +188,7 @@ class TestCustomizeMethodEnhanced:
         (
             "binary",
             [
-                HeaderField(name="duplicate", format=ScalarType.UINT32, byte=17),
+            HeaderField(name="duplicate", format=ScalarType.UINT32, byte=17),
                 HeaderField(name="duplicate", format=ScalarType.INT16, byte=300),  # Duplicate name
             ],
             True,
@@ -414,7 +198,7 @@ class TestCustomizeMethodEnhanced:
         (
             "trace",
             [
-                HeaderField(name="duplicate", format=ScalarType.FLOAT32, byte=100),
+            HeaderField(name="duplicate", format=ScalarType.FLOAT32, byte=100),
                 HeaderField(name="duplicate", format=ScalarType.INT32, byte=200),  # Duplicate name
             ],
             True,
@@ -424,7 +208,7 @@ class TestCustomizeMethodEnhanced:
         (
             "binary",
             [
-                HeaderField(name="field1", format=ScalarType.INT32, byte=17),  # bytes 17-20
+            HeaderField(name="field1", format=ScalarType.INT32, byte=17),  # bytes 17-20
                 HeaderField(name="field2", format=ScalarType.INT32, byte=19),  # bytes 19-22 (overlaps)
             ],
             True,
