@@ -273,103 +273,119 @@ class TestValidateNonOverlappingHeaders:
 
 
 class TestMergeHeadersByByteOffset:
-    """Tests for the _merge_headers_by_byte_offset method."""
+    """Tests for the _merge_headers_by_byte_offset method.
+    
+    This method is called AFTER _merge_headers_by_name and removes existing fields
+    that overlap with the newly added fields. It simulates the real usage where
+    existing_fields contains the merged state and new_fields are the original input.
+    """
 
-    def test_merge_by_offset_no_overlaps(self, segy_spec: SegySpec) -> None:
-        """Test merging when there are no overlaps."""
-        existing_fields = [
-            HeaderField(name="existing1", format=ScalarType.INT32, byte=1),  # bytes 1-4
-            HeaderField(
-                name="existing2", format=ScalarType.INT16, byte=10
-            ),  # bytes 10-11
-        ]
-        new_fields = [
-            HeaderField(name="new1", format=ScalarType.UINT8, byte=20),  # byte 20
-        ]
+    # Test data for realistic byte offset merge scenarios
+    BYTE_OFFSET_TEST_CASES = [
+        # (merged_fields_after_name_merge, original_new_fields, expected_result_fields, description)
+        (
+            [
+                # State after name merge: new field + non-conflicting existing fields
+                HeaderField(name="new_field", format=ScalarType.UINT32, byte=1),  # bytes 1-4
+                HeaderField(name="existing1", format=ScalarType.INT16, byte=10),  # bytes 10-11
+                HeaderField(name="existing2", format=ScalarType.INT32, byte=12),  # bytes 12-15
+            ],  # merged_fields_after_name_merge
+            [
+                HeaderField(name="new_field", format=ScalarType.UINT32, byte=1),  # bytes 1-4
+            ],  # original_new_fields
+            [
+                HeaderField(name="new_field", format=ScalarType.UINT32, byte=1),
+                HeaderField(name="existing1", format=ScalarType.INT16, byte=10),
+                HeaderField(name="existing2", format=ScalarType.INT32, byte=12),
+            ],  # expected_result_fields
+            "no overlaps after name merge"
+        ),
+        (
+            [
+                # State after name merge: new field overlaps with next existing field
+                HeaderField(name="new_field", format=ScalarType.UINT32, byte=1),  # bytes 1-4
+                HeaderField(name="existing1", format=ScalarType.INT16, byte=3),  # bytes 3-4 (overlaps!)
+                HeaderField(name="existing2", format=ScalarType.INT32, byte=10),  # bytes 10-13
+            ],  # merged_fields_after_name_merge
+            [
+                HeaderField(name="new_field", format=ScalarType.UINT32, byte=1),
+            ],  # original_new_fields
+            [
+                HeaderField(name="new_field", format=ScalarType.UINT32, byte=1),
+                HeaderField(name="existing2", format=ScalarType.INT32, byte=10),
+            ],  # expected_result_fields (existing1 removed due to overlap)
+            "new field overlaps with existing field"
+        ),
+        (
+            [
+                # State after name merge: multiple overlaps
+                HeaderField(name="new_field1", format=ScalarType.UINT32, byte=1),  # bytes 1-4
+                HeaderField(name="existing1", format=ScalarType.INT16, byte=3),  # bytes 3-4 (overlaps with new_field1)
+                HeaderField(name="new_field2", format=ScalarType.INT32, byte=5),  # bytes 5-8
+                HeaderField(name="existing2", format=ScalarType.INT16, byte=7),  # bytes 7-8 (overlaps with new_field2)
+                HeaderField(name="existing3", format=ScalarType.INT32, byte=20),  # bytes 20-23 (no overlap)
+            ],  # merged_fields_after_name_merge
+            [
+                HeaderField(name="new_field1", format=ScalarType.UINT32, byte=1),
+                HeaderField(name="new_field2", format=ScalarType.INT32, byte=5),
+            ],  # original_new_fields
+            [
+                HeaderField(name="new_field1", format=ScalarType.UINT32, byte=1),
+                HeaderField(name="new_field2", format=ScalarType.INT32, byte=5),
+                HeaderField(name="existing3", format=ScalarType.INT32, byte=20),
+            ],  # expected_result_fields (existing1 and existing2 removed)
+            "multiple new fields with overlaps"
+        ),
+        (
+            [
+                HeaderField(name="existing1", format=ScalarType.INT32, byte=1),
+                HeaderField(name="existing2", format=ScalarType.INT16, byte=10),
+            ],  # merged_fields_after_name_merge
+            [],  # original_new_fields (empty)
+            [
+                HeaderField(name="existing1", format=ScalarType.INT32, byte=1),
+                HeaderField(name="existing2", format=ScalarType.INT16, byte=10),
+            ],  # expected_result_fields (no changes)
+            "no new fields"
+        ),
+    ]
 
-        result = segy_spec._merge_headers_by_byte_offset(existing_fields, new_fields)
-
-        # No overlaps, so all existing fields should remain
-        assert len(result) == 2  # noqa: PLR2004
-        existing_names = {field.name for field in result}
-        assert "existing1" in existing_names
-        assert "existing2" in existing_names
-
-    def test_merge_by_offset_with_overlaps(self, segy_spec: SegySpec) -> None:
-        """Test merging when new fields overlap with existing fields."""
-        existing_fields = [
-            HeaderField(name="existing1", format=ScalarType.INT32, byte=1),  # bytes 1-4
-            HeaderField(
-                name="existing2", format=ScalarType.INT32, byte=10
-            ),  # bytes 10-13
-            HeaderField(
-                name="existing3", format=ScalarType.INT16, byte=20
-            ),  # bytes 20-21
-        ]
-        new_fields = [
-            HeaderField(
-                name="new1", format=ScalarType.UINT32, byte=2
-            ),  # bytes 2-5 (overlaps with existing1)
-        ]
-
-        # After _merge_headers_by_name, existing1 should be replaced/removed due to overlap
-        # This test assumes the method works as intended to remove overlapping existing fields
-        result = segy_spec._merge_headers_by_byte_offset(
-            existing_fields.copy(), new_fields
+    def _assert_fields_match(self, actual_fields: list[HeaderField], expected_fields: list[HeaderField], description: str) -> None:
+        """Helper method to compare actual and expected HeaderField lists."""
+        assert len(actual_fields) == len(expected_fields), (
+            f"Failed for {description}: expected {len(expected_fields)} fields, got {len(actual_fields)}"
         )
+        
+        for i, (actual, expected) in enumerate(zip(actual_fields, expected_fields)):
+            assert actual.name == expected.name, (
+                f"Failed for {description}: field {i} name mismatch - expected '{expected.name}', got '{actual.name}'"
+            )
+            assert actual.format == expected.format, (
+                f"Failed for {description}: field {i} format mismatch - expected {expected.format}, got {actual.format}"
+            )
+            assert actual.byte == expected.byte, (
+                f"Failed for {description}: field {i} byte mismatch - expected {expected.byte}, got {actual.byte}"
+            )
 
-        # The exact behavior depends on the implementation, but existing1 should be affected
-        # since new1 overlaps with it
-        remaining_names = {field.name for field in result}
-
-        # existing2 and existing3 should remain as they don't overlap with new1
-        assert "existing2" in remaining_names
-        assert "existing3" in remaining_names
-
-    def test_merge_by_offset_empty_lists(self, segy_spec: SegySpec) -> None:
-        """Test merging with empty lists."""
-        # Empty existing fields
+    @pytest.mark.parametrize(
+        "merged_fields_after_name_merge,original_new_fields,expected_result_fields,description",
+        BYTE_OFFSET_TEST_CASES
+    )
+    def test_merge_by_byte_offset_scenarios(
+        self,
+        segy_spec: SegySpec,
+        merged_fields_after_name_merge: list[HeaderField],
+        original_new_fields: list[HeaderField],
+        expected_result_fields: list[HeaderField],
+        description: str,
+    ) -> None:
+        """Test merge by byte offset scenarios that reflect real usage patterns."""
         result = segy_spec._merge_headers_by_byte_offset(
-            [], [HeaderField(name="new1", format=ScalarType.INT32, byte=1)]
+            merged_fields_after_name_merge.copy(), original_new_fields
         )
-        assert len(result) == 0  # No existing fields to remove
-
-        # Empty new fields
-        existing_fields = [
-            HeaderField(name="existing1", format=ScalarType.INT32, byte=1)
-        ]
-        result = segy_spec._merge_headers_by_byte_offset(existing_fields, [])
-        assert len(result) == 1  # noqa: PLR2004
-        assert result[0].name == "existing1"
-
-    def test_merge_by_offset_multiple_overlaps(self, segy_spec: SegySpec) -> None:
-        """Test merging with multiple overlapping scenarios."""
-        existing_fields = [
-            HeaderField(name="existing1", format=ScalarType.INT32, byte=1),  # bytes 1-4
-            HeaderField(name="existing2", format=ScalarType.INT32, byte=5),  # bytes 5-8
-            HeaderField(
-                name="existing3", format=ScalarType.INT32, byte=15
-            ),  # bytes 15-18
-        ]
-        new_fields = [
-            HeaderField(
-                name="new1", format=ScalarType.UINT32, byte=3
-            ),  # bytes 3-6 (overlaps existing1 & existing2)
-            HeaderField(
-                name="new2", format=ScalarType.UINT16, byte=20
-            ),  # bytes 20-21 (no overlap)
-        ]
-
-        result = segy_spec._merge_headers_by_byte_offset(
-            existing_fields.copy(), new_fields
-        )
-
-        # existing3 should remain as it doesn't overlap
-        remaining_names = {field.name for field in result}
-        assert "existing3" in remaining_names
-
-        # The exact count depends on implementation, but should be less than original
-        assert len(result) <= len(existing_fields)
+        
+        # Use helper method to compare all field properties
+        self._assert_fields_match(result, expected_result_fields, description)
 
 
 class TestCustomizeMethodEnhanced:
