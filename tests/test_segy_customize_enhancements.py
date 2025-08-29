@@ -110,102 +110,102 @@ class TestOverlapMethod:
 class TestMergeHeadersByName:
     """Tests for the _merge_headers_by_name method."""
 
-    def test_merge_empty_existing_fields(self, segy_spec: SegySpec) -> None:
-        """Test merging when existing fields list is empty."""
-        new_fields = [
-            HeaderField(name="field1", format=ScalarType.INT32, byte=1),
-            HeaderField(name="field2", format=ScalarType.INT16, byte=10),
-        ]
+    # Test data for merge scenarios - covering the core logic without redundancy
+    MERGE_TEST_CASES = [
+        # (existing_fields, new_fields, expected_fields, description)
+        (
+            [],  # existing_fields
+            [
+                HeaderField(name="field1", format=ScalarType.INT32, byte=1),
+                HeaderField(name="field2", format=ScalarType.INT16, byte=10),
+            ],  # new_fields
+            [
+                HeaderField(name="field1", format=ScalarType.INT32, byte=1),
+                HeaderField(name="field2", format=ScalarType.INT16, byte=10),
+            ],  # expected_fields
+            "empty existing fields"
+        ),
+        (
+            [
+                HeaderField(name="existing1", format=ScalarType.INT32, byte=10),
+                HeaderField(name="existing2", format=ScalarType.INT16, byte=1),
+            ],  # existing_fields
+            [],  # new_fields
+            [
+                HeaderField(name="existing1", format=ScalarType.INT32, byte=10),
+                HeaderField(name="existing2", format=ScalarType.INT16, byte=1),
+            ],  # expected_fields
+            "empty new fields"
+        ),
+        (
+            [
+                HeaderField(name="existing1", format=ScalarType.INT32, byte=1),
+                HeaderField(name="existing2", format=ScalarType.INT16, byte=10),
+            ],  # existing_fields
+            [
+                HeaderField(name="new1", format=ScalarType.UINT32, byte=20),
+                HeaderField(name="new2", format=ScalarType.FLOAT32, byte=30),
+            ],  # new_fields
+            [
+                HeaderField(name="new1", format=ScalarType.UINT32, byte=20),
+                HeaderField(name="new2", format=ScalarType.FLOAT32, byte=30),
+                HeaderField(name="existing1", format=ScalarType.INT32, byte=1),
+                HeaderField(name="existing2", format=ScalarType.INT16, byte=10),
+            ],  # expected_fields
+            "new fields added without conflicts"
+        ),
+        (
+            [
+                HeaderField(name="field1", format=ScalarType.INT32, byte=1),
+                HeaderField(name="field2", format=ScalarType.INT16, byte=10),
+            ],  # existing_fields
+            [
+                HeaderField(name="field1", format=ScalarType.FLOAT32, byte=100),
+                HeaderField(name="new_field", format=ScalarType.INT16, byte=200),
+            ],  # new_fields
+            [
+                HeaderField(name="field1", format=ScalarType.FLOAT32, byte=100),
+                HeaderField(name="new_field", format=ScalarType.INT16, byte=200),
+                HeaderField(name="field2", format=ScalarType.INT16, byte=10),
+            ],  # expected_fields
+            "field replacement and addition"
+        ),
+    ]
 
-        result = segy_spec._merge_headers_by_name([], new_fields)
+    def _assert_fields_match(self, actual_fields: list[HeaderField], expected_fields: list[HeaderField], description: str) -> None:
+        """Helper method to compare actual and expected HeaderField lists."""
+        assert len(actual_fields) == len(expected_fields), (
+            f"Failed for {description}: expected {len(expected_fields)} fields, got {len(actual_fields)}"
+        )
+        
+        for i, (actual, expected) in enumerate(zip(actual_fields, expected_fields)):
+            assert actual.name == expected.name, (
+                f"Failed for {description}: field {i} name mismatch - expected '{expected.name}', got '{actual.name}'"
+            )
+            assert actual.format == expected.format, (
+                f"Failed for {description}: field {i} format mismatch - expected {expected.format}, got {actual.format}"
+            )
+            assert actual.byte == expected.byte, (
+                f"Failed for {description}: field {i} byte mismatch - expected {expected.byte}, got {actual.byte}"
+            )
 
-        assert len(result) == 2  # noqa: PLR2004
-        assert result[0].name == "field1"
-        assert result[1].name == "field2"
-
-    def test_merge_empty_new_fields(self, segy_spec: SegySpec) -> None:
-        """Test merging when new fields list is empty."""
-        existing_fields = [
-            HeaderField(name="existing1", format=ScalarType.INT32, byte=10),
-            HeaderField(name="existing2", format=ScalarType.INT16, byte=1),
-        ]
-
-        result = segy_spec._merge_headers_by_name(existing_fields, [])
-
-        assert len(result) == 2  # noqa: PLR2004
-        assert result[0].name == "existing1"
-        assert result[1].name == "existing2"
-
-    def test_merge_no_name_conflicts(self, segy_spec: SegySpec) -> None:
-        """Test merging when there are no name conflicts."""
-        existing_fields = [
-            HeaderField(name="existing1", format=ScalarType.INT32, byte=1),
-            HeaderField(name="existing2", format=ScalarType.INT16, byte=10),
-        ]
-        new_fields = [
-            HeaderField(name="new1", format=ScalarType.UINT32, byte=20),
-            HeaderField(name="new2", format=ScalarType.FLOAT32, byte=30),
-        ]
-
+    @pytest.mark.parametrize(
+        "existing_fields,new_fields,expected_fields,description",
+        MERGE_TEST_CASES
+    )
+    def test_merge_scenarios(
+        self,
+        segy_spec: SegySpec,
+        existing_fields: list[HeaderField],
+        new_fields: list[HeaderField],
+        expected_fields: list[HeaderField],
+        description: str,
+    ) -> None:
+        """Test merge scenarios with various field configurations."""
         result = segy_spec._merge_headers_by_name(existing_fields, new_fields)
-
-        assert len(result) == 4  # noqa: PLR2004
-        # New fields come first
-        assert result[0].name == "new1"
-        assert result[1].name == "new2"
-        # Existing fields that don't conflict come after
-        assert result[2].name == "existing1"
-        assert result[3].name == "existing2"
-
-    def test_merge_with_name_conflicts(self, segy_spec: SegySpec) -> None:
-        """Test merging when there are name conflicts (new fields should replace existing)."""
-        existing_fields = [
-            HeaderField(name="field1", format=ScalarType.INT32, byte=1),
-            HeaderField(name="field2", format=ScalarType.INT16, byte=10),
-            HeaderField(name="field3", format=ScalarType.UINT32, byte=20),
-        ]
-        new_fields = [
-            HeaderField(
-                name="field1", format=ScalarType.FLOAT32, byte=100
-            ),  # Replaces existing field1
-            HeaderField(
-                name="new_field", format=ScalarType.INT16, byte=200
-            ),  # New field
-        ]
-
-        result = segy_spec._merge_headers_by_name(existing_fields, new_fields)
-
-        # 2 new fields + 2 non-conflicting existing fields
-        assert len(result) == 4  # noqa: PLR2004
-
-        # New fields come first
-        assert result[0].name == "field1"
-        assert result[0].format == ScalarType.FLOAT32
-        assert result[0].byte == 100  # noqa: PLR2004
-        assert result[1].name == "new_field"
-
-        # Non-conflicting existing fields
-        assert result[2].name == "field2"
-        assert result[3].name == "field3"
-
-    def test_merge_all_fields_replaced(self, segy_spec: SegySpec) -> None:
-        """Test merging when all existing fields are replaced by new fields."""
-        existing_fields = [
-            HeaderField(name="field1", format=ScalarType.INT32, byte=1),
-            HeaderField(name="field2", format=ScalarType.INT16, byte=10),
-        ]
-        new_fields = [
-            HeaderField(name="field1", format=ScalarType.FLOAT32, byte=100),
-            HeaderField(name="field2", format=ScalarType.FLOAT64, byte=200),
-        ]
-
-        result = segy_spec._merge_headers_by_name(existing_fields, new_fields)
-
-        assert len(result) == 2  # noqa: PLR2004
-        assert result[0].name == "field1"
-        assert result[0].format == ScalarType.FLOAT32
-        assert result[1].name == "field2"
-        assert result[1].format == ScalarType.FLOAT64
+        
+        # Use helper method to compare all field properties
+        self._assert_fields_match(result, expected_fields, description)
 
 
 class TestValidateNonOverlappingHeaders:
