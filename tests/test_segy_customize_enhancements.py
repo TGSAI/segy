@@ -11,21 +11,31 @@ from segy.standards import SegyStandard
 from segy.standards import get_segy_standard
 
 
-def assert_fields_match(actual_fields: list[HeaderField], expected_fields: list[HeaderField], description: str) -> None:
+def assert_fields_match(
+    actual_fields: list[HeaderField],
+    expected_fields: list[HeaderField],
+    description: str,
+) -> None:
     """Helper function to compare actual and expected HeaderField lists."""
     assert len(actual_fields) == len(expected_fields), (
-        f"Failed for {description}: expected {len(expected_fields)} fields, got {len(actual_fields)}"
+        f"Failed for {description}: "
+        f"expected {len(expected_fields)} fields, got {len(actual_fields)}"
     )
-    
-    for i, (actual, expected) in enumerate(zip(actual_fields, expected_fields)):
+
+    for i, (actual, expected) in enumerate(
+        zip(actual_fields, expected_fields, strict=False)
+    ):
         assert actual.name == expected.name, (
-            f"Failed for {description}: field {i} name mismatch - expected '{expected.name}', got '{actual.name}'"
+            f"Failed for {description}: field {i} name mismatch - "
+            f"expected '{expected.name}', got '{actual.name}'"
         )
         assert actual.format == expected.format, (
-            f"Failed for {description}: field {i} format mismatch - expected {expected.format}, got {actual.format}"
+            f"Failed for {description}: field {i} format mismatch - "
+            f"expected {expected.format}, got {actual.format}"
         )
         assert actual.byte == expected.byte, (
-            f"Failed for {description}: field {i} byte mismatch - expected {expected.byte}, got {actual.byte}"
+            f"Failed for {description}: field {i} byte mismatch - "
+            f"expected {expected.byte}, got {actual.byte}"
         )
 
 
@@ -40,7 +50,7 @@ class TestHeaderFieldRange:
     """Tests for the new range property on HeaderField."""
 
     @pytest.mark.parametrize(
-        "field_name,format_type,byte_pos,expected_size",
+        ("field_name", "format_type", "byte_pos", "expected_size"),
         [
             # Basic test case
             ("test_field", ScalarType.INT32, 10, 4),
@@ -60,11 +70,11 @@ class TestHeaderFieldRange:
         ],
     )
     def test_range_property(
-        self, 
-        field_name: str, 
-        format_type: ScalarType, 
-        byte_pos: int, 
-        expected_size: int
+        self,
+        field_name: str,
+        format_type: ScalarType,
+        byte_pos: int,
+        expected_size: int,
     ) -> None:
         """Test range property with different field configurations."""
         field = HeaderField(name=field_name, format=format_type, byte=byte_pos)
@@ -81,35 +91,83 @@ class TestHeaderFieldOperations:
     # Combined test data for various field operations
     FIELD_OPERATION_TEST_CASES = [
         # (operation_type, test_data, expected_result, should_raise, expected_error, description)
-        
         # Merge tests
-        ("merge", ([], [HeaderField(name="field1", format=ScalarType.INT32, byte=1)]), 
-         [HeaderField(name="field1", format=ScalarType.INT32, byte=1)], False, None, "merge with empty existing fields"),
-        
-        ("merge", ([HeaderField(name="existing1", format=ScalarType.INT32, byte=10)], []), 
-         [HeaderField(name="existing1", format=ScalarType.INT32, byte=10)], False, None, "merge with empty new fields"),
-        
-        ("merge", (
-            [HeaderField(name="existing1", format=ScalarType.INT32, byte=1)],
-            [HeaderField(name="existing1", format=ScalarType.FLOAT32, byte=100)]
-         ), [HeaderField(name="existing1", format=ScalarType.FLOAT32, byte=100)], False, None, "merge with field replacement"),
-        
+        (
+            "merge",
+            ([], [HeaderField(name="field1", format=ScalarType.INT32, byte=1)]),
+            [HeaderField(name="field1", format=ScalarType.INT32, byte=1)],
+            False,
+            None,
+            "merge with empty existing fields",
+        ),
+        (
+            "merge",
+            ([HeaderField(name="existing1", format=ScalarType.INT32, byte=10)], []),
+            [HeaderField(name="existing1", format=ScalarType.INT32, byte=10)],
+            False,
+            None,
+            "merge with empty new fields",
+        ),
+        (
+            "merge",
+            (
+                [HeaderField(name="existing1", format=ScalarType.INT32, byte=1)],
+                [HeaderField(name="existing1", format=ScalarType.FLOAT32, byte=100)],
+            ),
+            [HeaderField(name="existing1", format=ScalarType.FLOAT32, byte=100)],
+            False,
+            None,
+            "merge with field replacement",
+        ),
         # Validation tests
         ("validate", [], None, False, None, "validate empty list"),
-        ("validate", [HeaderField(name="field1", format=ScalarType.INT32, byte=1)], None, False, None, "validate single field"),
-        ("validate", [
-            HeaderField(name="field1", format=ScalarType.INT32, byte=1),
-            HeaderField(name="field2", format=ScalarType.INT16, byte=10),
-         ], None, False, None, "validate non-overlapping fields"),
-        ("validate", [
-            HeaderField(name="field1", format=ScalarType.INT32, byte=1),
-            HeaderField(name="field1", format=ScalarType.UINT8, byte=20),  # Duplicate name
-         ], None, True, "Duplicate header field names detected", "validate duplicate names"),
-        ("validate", [
-            HeaderField(name="field1", format=ScalarType.INT32, byte=1),  # bytes 1-4
-            HeaderField(name="field2", format=ScalarType.INT32, byte=3),  # bytes 3-6 (overlaps)
-         ], None, True, "Header fields overlap", "validate overlapping fields"),
-        
+        (
+            "validate",
+            [HeaderField(name="field1", format=ScalarType.INT32, byte=1)],
+            None,
+            False,
+            None,
+            "validate single field",
+        ),
+        (
+            "validate",
+            [
+                HeaderField(name="field1", format=ScalarType.INT32, byte=1),
+                HeaderField(name="field2", format=ScalarType.INT16, byte=10),
+            ],
+            None,
+            False,
+            None,
+            "validate non-overlapping fields",
+        ),
+        (
+            "validate",
+            [
+                HeaderField(name="field1", format=ScalarType.INT32, byte=1),
+                HeaderField(
+                    name="field1", format=ScalarType.UINT8, byte=20
+                ),  # Duplicate name
+            ],
+            None,
+            True,
+            "Duplicate header field names detected",
+            "validate duplicate names",
+        ),
+        (
+            "validate",
+            [
+                HeaderField(
+                    name="field1", format=ScalarType.INT32, byte=1
+                ),  # bytes 1-4
+                HeaderField(
+                    name="field2", format=ScalarType.INT32, byte=3
+                ),  # bytes 3-6 (overlaps)
+            ],
+            None,
+            True,
+            "Header fields overlap",
+            "validate overlapping fields",
+        ),
         # Overlap tests
         ("overlap", ((1, 5), (10, 15)), False, False, None, "non-overlapping ranges"),
         ("overlap", ((1, 5), (5, 10)), False, False, None, "adjacent ranges"),
@@ -117,21 +175,18 @@ class TestHeaderFieldOperations:
         ("overlap", ((5, 10), (5, 10)), True, False, None, "identical ranges"),
     ]
 
-    @pytest.mark.parametrize(
-        "operation_type,test_data,expected_result,should_raise,expected_error,description",
-        FIELD_OPERATION_TEST_CASES
-    )
-    def test_field_operations(
-        self,
-        segy_spec: SegySpec,
-        operation_type: str,
-        test_data: tuple | list,
-        expected_result: list[HeaderField] | bool | None,
-        should_raise: bool,
-        expected_error: str | None,
-        description: str,
-    ) -> None:
+    @pytest.mark.parametrize("test_case", FIELD_OPERATION_TEST_CASES)
+    def test_field_operations(self, segy_spec: SegySpec, test_case: tuple) -> None:
         """Test various header field operations with unified logic."""
+        (
+            operation_type,
+            test_data,
+            expected_result,
+            should_raise,
+            expected_error,
+            description,
+        ) = test_case
+
         if operation_type == "merge":
             existing_fields, new_fields = test_data
             if should_raise:
@@ -140,7 +195,7 @@ class TestHeaderFieldOperations:
             else:
                 result = segy_spec._merge_headers_by_name(existing_fields, new_fields)
                 assert_fields_match(result, expected_result, description)
-        
+
         elif operation_type == "validate":
             fields = test_data
             if should_raise:
@@ -153,10 +208,13 @@ class TestHeaderFieldOperations:
         elif operation_type == "overlap":
             range1, range2 = test_data
             result = segy_spec._overlap(range1, range2)
-            assert result == expected_result, f"Failed for {description}: {range1} vs {range2}"
+            assert result == expected_result, (
+                f"Failed for {description}: {range1} vs {range2}"
+            )
             # Test commutative property
-            assert segy_spec._overlap(range2, range1) == expected_result, f"Failed for {description}: {range2} vs {range1}"
-
+            assert segy_spec._overlap(range2, range1) == expected_result, (
+                f"Failed for {description}: {range2} vs {range1}"
+            )
 
 
 class TestCustomizeMethodEnhanced:
@@ -168,79 +226,84 @@ class TestCustomizeMethodEnhanced:
         (
             "binary",
             [
-            HeaderField(name="custom_field1", format=ScalarType.UINT32, byte=17),
-            HeaderField(name="custom_field2", format=ScalarType.INT16, byte=300),
+                HeaderField(name="custom_field1", format=ScalarType.UINT32, byte=17),
+                HeaderField(name="custom_field2", format=ScalarType.INT16, byte=300),
             ],
             False,
             None,
-            "valid binary header fields"
+            "valid binary header fields",
         ),
         (
             "trace",
             [
-            HeaderField(name="custom_trace1", format=ScalarType.FLOAT32, byte=100),
-            HeaderField(name="custom_trace2", format=ScalarType.INT32, byte=200),
+                HeaderField(name="custom_trace1", format=ScalarType.FLOAT32, byte=100),
+                HeaderField(name="custom_trace2", format=ScalarType.INT32, byte=200),
             ],
             False,
             None,
-            "valid trace header fields"
+            "valid trace header fields",
         ),
         (
             "binary",
             [
-            HeaderField(name="duplicate", format=ScalarType.UINT32, byte=17),
-                HeaderField(name="duplicate", format=ScalarType.INT16, byte=300),  # Duplicate name
+                HeaderField(name="duplicate", format=ScalarType.UINT32, byte=17),
+                HeaderField(
+                    name="duplicate", format=ScalarType.INT16, byte=300
+                ),  # Duplicate name
             ],
             True,
             "Duplicate header field names detected",
-            "binary headers with duplicate names"
+            "binary headers with duplicate names",
         ),
         (
             "trace",
             [
-            HeaderField(name="duplicate", format=ScalarType.FLOAT32, byte=100),
-                HeaderField(name="duplicate", format=ScalarType.INT32, byte=200),  # Duplicate name
+                HeaderField(name="duplicate", format=ScalarType.FLOAT32, byte=100),
+                HeaderField(
+                    name="duplicate", format=ScalarType.INT32, byte=200
+                ),  # Duplicate name
             ],
             True,
             "Duplicate header field names detected",
-            "trace headers with duplicate names"
+            "trace headers with duplicate names",
         ),
         (
             "binary",
             [
-            HeaderField(name="field1", format=ScalarType.INT32, byte=17),  # bytes 17-20
-                HeaderField(name="field2", format=ScalarType.INT32, byte=19),  # bytes 19-22 (overlaps)
+                HeaderField(
+                    name="field1", format=ScalarType.INT32, byte=17
+                ),  # bytes 17-20
+                HeaderField(
+                    name="field2", format=ScalarType.INT32, byte=19
+                ),  # bytes 19-22 (overlaps)
             ],
             True,
             "Header fields overlap",
-            "binary headers with overlapping fields"
+            "binary headers with overlapping fields",
         ),
         (
             "trace",
             [
-                HeaderField(name="field1", format=ScalarType.FLOAT32, byte=100),  # bytes 100-103
-                HeaderField(name="field2", format=ScalarType.INT16, byte=102),  # bytes 102-103 (overlaps)
+                HeaderField(
+                    name="field1", format=ScalarType.FLOAT32, byte=100
+                ),  # bytes 100-103
+                HeaderField(
+                    name="field2", format=ScalarType.INT16, byte=102
+                ),  # bytes 102-103 (overlaps)
             ],
             True,
             "Header fields overlap",
-            "trace headers with overlapping fields"
+            "trace headers with overlapping fields",
         ),
     ]
 
-    @pytest.mark.parametrize(
-        "header_type,custom_fields,should_raise,expected_error,description",
-        CUSTOMIZE_TEST_CASES
-    )
-    def test_customize_scenarios(
-        self,
-        segy_spec: SegySpec,
-        header_type: str,
-        custom_fields: list[HeaderField],
-        should_raise: bool,
-        expected_error: str | None,
-        description: str,
-    ) -> None:
+    @pytest.mark.parametrize("test_case", CUSTOMIZE_TEST_CASES)
+    def test_customize_scenarios(self, segy_spec: SegySpec, test_case: tuple) -> None:
         """Test customize method scenarios for both binary and trace headers."""
+        header_type, custom_fields, should_raise, expected_error, description = (
+            test_case
+        )
+
         # Prepare the kwargs based on header type
         kwargs = {}
         if header_type == "binary":
@@ -256,7 +319,7 @@ class TestCustomizeMethodEnhanced:
             custom_spec = segy_spec.customize(**kwargs)
 
             assert custom_spec.segy_standard is None
-            
+
             # Check that custom fields are present
             if header_type == "binary":
                 assert len(custom_spec.binary_header.fields) >= len(custom_fields)
@@ -264,9 +327,11 @@ class TestCustomizeMethodEnhanced:
             elif header_type == "trace":
                 assert len(custom_spec.trace.header.fields) >= len(custom_fields)
                 field_names = {field.name for field in custom_spec.trace.header.fields}
-            
+
             for field in custom_fields:
-                assert field.name in field_names, f"Custom field '{field.name}' not found in {header_type} header"
+                assert field.name in field_names, (
+                    f"Custom field '{field.name}' not found in {header_type} header"
+                )
 
     def test_customize_replaces_existing_fields_by_name(
         self, segy_spec: SegySpec
