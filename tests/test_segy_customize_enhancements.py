@@ -68,52 +68,43 @@ class TestHeaderFieldRange:
 class TestOverlapMethod:
     """Tests for the _overlap method in SegySpec."""
 
-    def test_overlap_no_overlap_separated(self, segy_spec: SegySpec) -> None:
-        """Test that separated ranges don't overlap."""
-        range1 = (1, 5)  # [1, 5)
-        range2 = (10, 15)  # [10, 15)
+    # Test data for overlap scenarios
+    OVERLAP_TEST_CASES = [
+        # (range1, range2, expected_overlap, description)
+        ((1, 5), (10, 15), False, "separated ranges"),
+        ((1, 5), (5, 10), False, "adjacent ranges"),
+        ((1, 10), (5, 15), True, "partial overlap"),
+        ((1, 10), (3, 8), True, "complete overlap"),
+        ((5, 10), (5, 10), True, "identical ranges"),
+        ((1, 6), (5, 10), True, "single byte overlap"),
+        ((0, 4), (2, 6), True, "middle overlap"),
+        ((10, 20), (15, 25), True, "end overlap"),
+        ((5, 15), (0, 10), True, "start overlap"),
+        ((100, 200), (150, 250), True, "large number overlap"),
+        ((5, 6), (6, 7), False, "single byte adjacent"),
+        # Edge cases
+        ((5, 5), (5, 5), False, "zero width ranges"),
+    ]
 
-        assert not segy_spec._overlap(range1, range2)
-        assert not segy_spec._overlap(range2, range1)
-
-    def test_overlap_no_overlap_adjacent(self, segy_spec: SegySpec) -> None:
-        """Test that adjacent ranges don't overlap."""
-        range1 = (1, 5)  # [1, 5)
-        range2 = (5, 10)  # [5, 10) - starts where range1 ends
-
-        assert not segy_spec._overlap(range1, range2)
-        assert not segy_spec._overlap(range2, range1)
-
-    def test_overlap_partial_overlap(self, segy_spec: SegySpec) -> None:
-        """Test that partially overlapping ranges are detected."""
-        range1 = (1, 10)  # [1, 10)
-        range2 = (5, 15)  # [5, 15) - overlaps from 5-10
-
-        assert segy_spec._overlap(range1, range2)
-        assert segy_spec._overlap(range2, range1)
-
-    def test_overlap_complete_overlap(self, segy_spec: SegySpec) -> None:
-        """Test that completely overlapping ranges are detected."""
-        range1 = (1, 10)  # [1, 10)
-        range2 = (3, 8)  # [3, 8) - completely contained in range1
-
-        assert segy_spec._overlap(range1, range2)
-        assert segy_spec._overlap(range2, range1)
-
-    def test_overlap_identical_ranges(self, segy_spec: SegySpec) -> None:
-        """Test that identical ranges overlap."""
-        range1 = (5, 10)  # [5, 10)
-        range2 = (5, 10)  # [5, 10) - identical
-
-        assert segy_spec._overlap(range1, range2)
-
-    def test_overlap_single_byte_overlap(self, segy_spec: SegySpec) -> None:
-        """Test single byte overlap detection."""
-        range1 = (1, 6)  # [1, 6)
-        range2 = (5, 10)  # [5, 10) - overlaps at byte 5
-
-        assert segy_spec._overlap(range1, range2)
-        assert segy_spec._overlap(range2, range1)
+    @pytest.mark.parametrize(
+        "range1,range2,expected_overlap,description", OVERLAP_TEST_CASES
+    )
+    def test_overlap_scenarios(
+        self,
+        segy_spec: SegySpec,
+        range1: tuple[int, int],
+        range2: tuple[int, int],
+        expected_overlap: bool,
+        description: str,
+    ) -> None:
+        """Test overlap detection for various range scenarios."""
+        # Test both directions (range1 vs range2 and range2 vs range1)
+        assert segy_spec._overlap(range1, range2) == expected_overlap, (
+            f"Failed for {description}: {range1} vs {range2}"
+        )
+        assert segy_spec._overlap(range2, range1) == expected_overlap, (
+            f"Failed for {description}: {range2} vs {range1}"
+        )
 
 
 class TestMergeHeadersByName:
