@@ -36,7 +36,6 @@ if TYPE_CHECKING:
     from segy.indexing import AbstractIndexer
     from segy.schema import SegySpec
 
-
 logger = logging.getLogger(__name__)
 
 
