@@ -11,6 +11,24 @@ from segy.standards import SegyStandard
 from segy.standards import get_segy_standard
 
 
+def assert_fields_match(actual_fields: list[HeaderField], expected_fields: list[HeaderField], description: str) -> None:
+    """Helper function to compare actual and expected HeaderField lists."""
+    assert len(actual_fields) == len(expected_fields), (
+        f"Failed for {description}: expected {len(expected_fields)} fields, got {len(actual_fields)}"
+    )
+    
+    for i, (actual, expected) in enumerate(zip(actual_fields, expected_fields)):
+        assert actual.name == expected.name, (
+            f"Failed for {description}: field {i} name mismatch - expected '{expected.name}', got '{actual.name}'"
+        )
+        assert actual.format == expected.format, (
+            f"Failed for {description}: field {i} format mismatch - expected {expected.format}, got {actual.format}"
+        )
+        assert actual.byte == expected.byte, (
+            f"Failed for {description}: field {i} byte mismatch - expected {expected.byte}, got {actual.byte}"
+        )
+
+
 @pytest.fixture(params=[SegyStandard.REV0, SegyStandard.REV1])
 def segy_spec(request: pytest.FixtureRequest) -> SegySpec:
     """Fixture for creating known SegySpec instances for testing."""
@@ -53,16 +71,15 @@ class TestHeaderFieldRange:
         assert stop == 100 + expected_size  # noqa: PLR2004
         assert name == "field"
 
-    def test_range_property_different_byte_positions(self) -> None:
+    @pytest.mark.parametrize("byte_pos", [1, 50, 100, 200, 400])
+    def test_range_property_different_byte_positions(self, byte_pos: int) -> None:
         """Test range property with different starting byte positions."""
-        test_cases = [1, 50, 100, 200, 400]
-        for byte_pos in test_cases:
-            field = HeaderField(name="test", format=ScalarType.INT16, byte=byte_pos)
-            start, stop, name = field.range
+        field = HeaderField(name="test", format=ScalarType.INT16, byte=byte_pos)
+        start, stop, name = field.range
 
-            assert start == byte_pos  # noqa: PLR2004
-            assert stop == byte_pos + 2  # noqa: PLR2004
-            assert name == "test"
+        assert start == byte_pos  # noqa: PLR2004
+        assert stop == byte_pos + 2  # noqa: PLR2004
+        assert name == "test"
 
 
 class TestOverlapMethod:
@@ -172,22 +189,7 @@ class TestMergeHeadersByName:
         ),
     ]
 
-    def _assert_fields_match(self, actual_fields: list[HeaderField], expected_fields: list[HeaderField], description: str) -> None:
-        """Helper method to compare actual and expected HeaderField lists."""
-        assert len(actual_fields) == len(expected_fields), (
-            f"Failed for {description}: expected {len(expected_fields)} fields, got {len(actual_fields)}"
-        )
-        
-        for i, (actual, expected) in enumerate(zip(actual_fields, expected_fields)):
-            assert actual.name == expected.name, (
-                f"Failed for {description}: field {i} name mismatch - expected '{expected.name}', got '{actual.name}'"
-            )
-            assert actual.format == expected.format, (
-                f"Failed for {description}: field {i} format mismatch - expected {expected.format}, got {actual.format}"
-            )
-            assert actual.byte == expected.byte, (
-                f"Failed for {description}: field {i} byte mismatch - expected {expected.byte}, got {actual.byte}"
-            )
+
 
     @pytest.mark.parametrize(
         "existing_fields,new_fields,expected_fields,description",
@@ -204,8 +206,8 @@ class TestMergeHeadersByName:
         """Test merge scenarios with various field configurations."""
         result = segy_spec._merge_headers_by_name(existing_fields, new_fields)
         
-        # Use helper method to compare all field properties
-        self._assert_fields_match(result, expected_fields, description)
+        # Use helper function to compare all field properties
+        assert_fields_match(result, expected_fields, description)
 
 
 class TestValidateNonOverlappingHeaders:
@@ -350,22 +352,7 @@ class TestMergeHeadersByByteOffset:
         ),
     ]
 
-    def _assert_fields_match(self, actual_fields: list[HeaderField], expected_fields: list[HeaderField], description: str) -> None:
-        """Helper method to compare actual and expected HeaderField lists."""
-        assert len(actual_fields) == len(expected_fields), (
-            f"Failed for {description}: expected {len(expected_fields)} fields, got {len(actual_fields)}"
-        )
-        
-        for i, (actual, expected) in enumerate(zip(actual_fields, expected_fields)):
-            assert actual.name == expected.name, (
-                f"Failed for {description}: field {i} name mismatch - expected '{expected.name}', got '{actual.name}'"
-            )
-            assert actual.format == expected.format, (
-                f"Failed for {description}: field {i} format mismatch - expected {expected.format}, got {actual.format}"
-            )
-            assert actual.byte == expected.byte, (
-                f"Failed for {description}: field {i} byte mismatch - expected {expected.byte}, got {actual.byte}"
-            )
+
 
     @pytest.mark.parametrize(
         "merged_fields_after_name_merge,original_new_fields,expected_result_fields,description",
@@ -384,106 +371,118 @@ class TestMergeHeadersByByteOffset:
             merged_fields_after_name_merge.copy(), original_new_fields
         )
         
-        # Use helper method to compare all field properties
-        self._assert_fields_match(result, expected_result_fields, description)
+        # Use helper function to compare all field properties
+        assert_fields_match(result, expected_result_fields, description)
 
 
 class TestCustomizeMethodEnhanced:
     """Tests for the enhanced customize method with validation and merging."""
 
-    def test_customize_with_valid_binary_headers(self, segy_spec: SegySpec) -> None:
-        """Test customize method with valid binary header fields."""
-        custom_fields = [
-            HeaderField(name="custom_field1", format=ScalarType.UINT32, byte=17),
-            HeaderField(name="custom_field2", format=ScalarType.INT16, byte=300),
-        ]
+    # Test data for customize method scenarios
+    CUSTOMIZE_TEST_CASES = [
+        # (header_type, custom_fields, should_raise, expected_error, description)
+        (
+            "binary",
+            [
+                HeaderField(name="custom_field1", format=ScalarType.UINT32, byte=17),
+                HeaderField(name="custom_field2", format=ScalarType.INT16, byte=300),
+            ],
+            False,
+            None,
+            "valid binary header fields"
+        ),
+        (
+            "trace",
+            [
+                HeaderField(name="custom_trace1", format=ScalarType.FLOAT32, byte=100),
+                HeaderField(name="custom_trace2", format=ScalarType.INT32, byte=200),
+            ],
+            False,
+            None,
+            "valid trace header fields"
+        ),
+        (
+            "binary",
+            [
+                HeaderField(name="duplicate", format=ScalarType.UINT32, byte=17),
+                HeaderField(name="duplicate", format=ScalarType.INT16, byte=300),  # Duplicate name
+            ],
+            True,
+            "Duplicate header field names detected",
+            "binary headers with duplicate names"
+        ),
+        (
+            "trace",
+            [
+                HeaderField(name="duplicate", format=ScalarType.FLOAT32, byte=100),
+                HeaderField(name="duplicate", format=ScalarType.INT32, byte=200),  # Duplicate name
+            ],
+            True,
+            "Duplicate header field names detected",
+            "trace headers with duplicate names"
+        ),
+        (
+            "binary",
+            [
+                HeaderField(name="field1", format=ScalarType.INT32, byte=17),  # bytes 17-20
+                HeaderField(name="field2", format=ScalarType.INT32, byte=19),  # bytes 19-22 (overlaps)
+            ],
+            True,
+            "Header fields overlap",
+            "binary headers with overlapping fields"
+        ),
+        (
+            "trace",
+            [
+                HeaderField(name="field1", format=ScalarType.FLOAT32, byte=100),  # bytes 100-103
+                HeaderField(name="field2", format=ScalarType.INT16, byte=102),  # bytes 102-103 (overlaps)
+            ],
+            True,
+            "Header fields overlap",
+            "trace headers with overlapping fields"
+        ),
+    ]
 
-        # Should not raise any exception
-        custom_spec = segy_spec.customize(binary_header_fields=custom_fields)
-
-        assert custom_spec.segy_standard is None
-        assert len(custom_spec.binary_header.fields) >= len(custom_fields)
-
-        # Check that our custom fields are present
-        field_names = {field.name for field in custom_spec.binary_header.fields}
-        assert "custom_field1" in field_names
-        assert "custom_field2" in field_names
-
-    def test_customize_with_valid_trace_headers(self, segy_spec: SegySpec) -> None:
-        """Test customize method with valid trace header fields."""
-        custom_fields = [
-            HeaderField(name="custom_trace1", format=ScalarType.FLOAT32, byte=100),
-            HeaderField(name="custom_trace2", format=ScalarType.INT32, byte=200),
-        ]
-
-        # Should not raise any exception
-        custom_spec = segy_spec.customize(trace_header_fields=custom_fields)
-
-        assert custom_spec.segy_standard is None
-        assert len(custom_spec.trace.header.fields) >= len(custom_fields)
-
-        # Check that our custom fields are present
-        field_names = {field.name for field in custom_spec.trace.header.fields}
-        assert "custom_trace1" in field_names
-        assert "custom_trace2" in field_names
-
-    def test_customize_binary_headers_with_duplicate_names_raises_error(
-        self, segy_spec: SegySpec
+    @pytest.mark.parametrize(
+        "header_type,custom_fields,should_raise,expected_error,description",
+        CUSTOMIZE_TEST_CASES
+    )
+    def test_customize_scenarios(
+        self,
+        segy_spec: SegySpec,
+        header_type: str,
+        custom_fields: list[HeaderField],
+        should_raise: bool,
+        expected_error: str | None,
+        description: str,
     ) -> None:
-        """Test customize method with duplicate binary header field names."""
-        invalid_fields = [
-            HeaderField(name="duplicate", format=ScalarType.UINT32, byte=17),
-            HeaderField(
-                name="duplicate", format=ScalarType.INT16, byte=300
-            ),  # Duplicate name
-        ]
+        """Test customize method scenarios for both binary and trace headers."""
+        # Prepare the kwargs based on header type
+        kwargs = {}
+        if header_type == "binary":
+            kwargs["binary_header_fields"] = custom_fields
+        elif header_type == "trace":
+            kwargs["trace_header_fields"] = custom_fields
 
-        with pytest.raises(ValueError, match="Duplicate header field names detected"):
-            segy_spec.customize(binary_header_fields=invalid_fields)
+        if should_raise:
+            with pytest.raises(ValueError, match=expected_error):
+                segy_spec.customize(**kwargs)
+        else:
+            # Should not raise any exception
+            custom_spec = segy_spec.customize(**kwargs)
 
-    def test_customize_trace_headers_with_duplicate_names_raises_error(
-        self, segy_spec: SegySpec
-    ) -> None:
-        """Test customize method with duplicate trace header field names."""
-        invalid_fields = [
-            HeaderField(name="duplicate", format=ScalarType.FLOAT32, byte=100),
-            HeaderField(
-                name="duplicate", format=ScalarType.INT32, byte=200
-            ),  # Duplicate name
-        ]
-
-        with pytest.raises(ValueError, match="Duplicate header field names detected"):
-            segy_spec.customize(trace_header_fields=invalid_fields)
-
-    def test_customize_binary_headers_with_overlapping_fields_raises_error(
-        self, segy_spec: SegySpec
-    ) -> None:
-        """Test customize method with overlapping binary header fields."""
-        invalid_fields = [
-            HeaderField(name="field1", format=ScalarType.INT32, byte=17),  # bytes 17-20
-            HeaderField(
-                name="field2", format=ScalarType.INT32, byte=19
-            ),  # bytes 19-22 (overlaps)
-        ]
-
-        with pytest.raises(ValueError, match="Header fields overlap"):
-            segy_spec.customize(binary_header_fields=invalid_fields)
-
-    def test_customize_trace_headers_with_overlapping_fields_raises_error(
-        self, segy_spec: SegySpec
-    ) -> None:
-        """Test customize method with overlapping trace header fields."""
-        invalid_fields = [
-            HeaderField(
-                name="field1", format=ScalarType.FLOAT32, byte=100
-            ),  # bytes 100-103
-            HeaderField(
-                name="field2", format=ScalarType.INT16, byte=102
-            ),  # bytes 102-103 (overlaps)
-        ]
-
-        with pytest.raises(ValueError, match="Header fields overlap"):
-            segy_spec.customize(trace_header_fields=invalid_fields)
+            assert custom_spec.segy_standard is None
+            
+            # Check that custom fields are present
+            if header_type == "binary":
+                assert len(custom_spec.binary_header.fields) >= len(custom_fields)
+                field_names = {field.name for field in custom_spec.binary_header.fields}
+            elif header_type == "trace":
+                assert len(custom_spec.trace.header.fields) >= len(custom_fields)
+                field_names = {field.name for field in custom_spec.trace.header.fields}
+            
+            for field in custom_fields:
+                assert field.name in field_names, f"Custom field '{field.name}' not found in {header_type} header"
 
     def test_customize_replaces_existing_fields_by_name(
         self, segy_spec: SegySpec
