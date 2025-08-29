@@ -211,90 +211,65 @@ class TestMergeHeadersByName:
 class TestValidateNonOverlappingHeaders:
     """Tests for the _validate_non_overlapping_headers method."""
 
-    def test_validate_empty_list(self, segy_spec: SegySpec) -> None:
-        """Test validation with empty list should pass."""
-        # Should not raise any exception
-        segy_spec._validate_non_overlapping_headers([])
+    # Test data for validation scenarios
+    VALIDATION_TEST_CASES = [
+        # (fields, should_raise, expected_error)
+        ([], False, None),
+        ([HeaderField(name="field1", format=ScalarType.INT32, byte=1)], False, None),
+        (
+            [
+                HeaderField(name="field1", format=ScalarType.INT32, byte=1),  # bytes 1-4
+                HeaderField(name="field2", format=ScalarType.INT16, byte=10),  # bytes 10-11
+                HeaderField(name="field3", format=ScalarType.UINT8, byte=20),  # byte 20
+            ],
+            False,
+            None,
+        ),
+        (
+            [
+                HeaderField(name="field1", format=ScalarType.INT32, byte=1),  # bytes 1-4 (stops at 5)
+                HeaderField(name="field2", format=ScalarType.INT16, byte=5),  # bytes 5-6 (starts at 5)
+            ],
+            False,
+            None,
+        ),
+        (
+            [
+                HeaderField(name="field1", format=ScalarType.INT32, byte=1),
+                HeaderField(name="field2", format=ScalarType.INT16, byte=10),
+                HeaderField(name="field1", format=ScalarType.UINT8, byte=20),  # Duplicate name
+            ],
+            True,
+            "Duplicate header field names detected",
+        ),
+        (
+            [
+                HeaderField(name="field1", format=ScalarType.INT32, byte=1),  # bytes 1-4
+                HeaderField(name="field2", format=ScalarType.INT32, byte=3),  # bytes 3-6 (overlaps)
+            ],
+            True,
+            "Header fields overlap",
+        ),
+    ]
 
-    def test_validate_single_field(self, segy_spec: SegySpec) -> None:
-        """Test validation with single field should pass."""
-        fields = [HeaderField(name="field1", format=ScalarType.INT32, byte=1)]
-
-        # Should not raise any exception
-        segy_spec._validate_non_overlapping_headers(fields)
-
-    def test_validate_non_overlapping_fields(self, segy_spec: SegySpec) -> None:
-        """Test validation with non-overlapping fields should pass."""
-        fields = [
-            HeaderField(name="field1", format=ScalarType.INT32, byte=1),  # bytes 1-4
-            HeaderField(name="field2", format=ScalarType.INT16, byte=10),  # bytes 10-11
-            HeaderField(name="field3", format=ScalarType.UINT8, byte=20),  # byte 20
-        ]
-
-        # Should not raise any exception
-        segy_spec._validate_non_overlapping_headers(fields)
-
-    def test_validate_adjacent_fields(self, segy_spec: SegySpec) -> None:
-        """Test validation with adjacent (but not overlapping) fields should pass."""
-        fields = [
-            HeaderField(
-                name="field1", format=ScalarType.INT32, byte=1
-            ),  # bytes 1-4 (stops at 5)
-            HeaderField(
-                name="field2", format=ScalarType.INT16, byte=5
-            ),  # bytes 5-6 (starts at 5)
-        ]
-
-        # Should not raise any exception
-        segy_spec._validate_non_overlapping_headers(fields)
-
-    def test_validate_duplicate_names_raises_error(self, segy_spec: SegySpec) -> None:
-        """Test validation with duplicate field names should raise ValueError."""
-        fields = [
-            HeaderField(name="field1", format=ScalarType.INT32, byte=1),
-            HeaderField(name="field2", format=ScalarType.INT16, byte=10),
-            HeaderField(
-                name="field1", format=ScalarType.UINT8, byte=20
-            ),  # Duplicate name
-        ]
-
-        with pytest.raises(ValueError, match="Duplicate header field names detected"):
-            segy_spec._validate_non_overlapping_headers(fields)
-
-    def test_validate_overlapping_fields_raises_error(
-        self, segy_spec: SegySpec
+    @pytest.mark.parametrize(
+        "fields,should_raise,expected_error",
+        VALIDATION_TEST_CASES
+    )
+    def test_validation_scenarios(
+        self,
+        segy_spec: SegySpec,
+        fields: list[HeaderField],
+        should_raise: bool,
+        expected_error: str | None,
     ) -> None:
-        """Test validation with overlapping fields should raise ValueError."""
-        fields = [
-            HeaderField(name="field1", format=ScalarType.INT32, byte=1),  # bytes 1-4
-            HeaderField(
-                name="field2", format=ScalarType.INT32, byte=3
-            ),  # bytes 3-6 (overlaps)
-        ]
-
-        with pytest.raises(ValueError, match="Header fields overlap"):
+        """Test validation scenarios with various field configurations."""
+        if should_raise:
+            with pytest.raises(ValueError, match=expected_error):
+                segy_spec._validate_non_overlapping_headers(fields)
+        else:
+            # Should not raise any exception
             segy_spec._validate_non_overlapping_headers(fields)
-
-    def test_validate_multiple_overlaps_raises_error(self, segy_spec: SegySpec) -> None:
-        """Test validation with multiple overlapping fields should raise ValueError."""
-        fields = [
-            HeaderField(name="field1", format=ScalarType.INT32, byte=1),  # bytes 1-4
-            HeaderField(
-                name="field2", format=ScalarType.INT32, byte=3
-            ),  # bytes 3-6 (overlaps with field1)
-            HeaderField(
-                name="field3", format=ScalarType.INT16, byte=5
-            ),  # bytes 5-6 (overlaps with field2)
-        ]
-
-        with pytest.raises(ValueError, match="Header fields overlap"):
-            segy_spec._validate_non_overlapping_headers(fields)
-
-    def test_validate_none_input_does_not_raise(self, segy_spec: SegySpec) -> None:
-        """Test that None input is handled gracefully."""
-        # This should test the case where binary_header_fields or trace_header_fields is None
-        # The customize method should handle None before calling validation
-        segy_spec._validate_non_overlapping_headers([])
 
 
 class TestMergeHeadersByByteOffset:
