@@ -267,7 +267,7 @@ class TestValidateNonOverlappingHeaders:
             ),  # Duplicate name
         ]
 
-        with pytest.raises(ValueError, match="Duplicate header field names detected!"):
+        with pytest.raises(ValueError, match="Duplicate header field names detected"):
             segy_spec._validate_non_overlapping_headers(fields)
 
     def test_validate_overlapping_fields_raises_error(
@@ -281,7 +281,7 @@ class TestValidateNonOverlappingHeaders:
             ),  # bytes 3-6 (overlaps)
         ]
 
-        with pytest.raises(ValueError, match="Header fields overlap!"):
+        with pytest.raises(ValueError, match="Header fields overlap"):
             segy_spec._validate_non_overlapping_headers(fields)
 
     def test_validate_multiple_overlaps_raises_error(self, segy_spec: SegySpec) -> None:
@@ -296,7 +296,7 @@ class TestValidateNonOverlappingHeaders:
             ),  # bytes 5-6 (overlaps with field2)
         ]
 
-        with pytest.raises(ValueError, match="Header fields overlap!"):
+        with pytest.raises(ValueError, match="Header fields overlap"):
             segy_spec._validate_non_overlapping_headers(fields)
 
     def test_validate_none_input_does_not_raise(self, segy_spec: SegySpec) -> None:
@@ -456,7 +456,7 @@ class TestCustomizeMethodEnhanced:
             ),  # Duplicate name
         ]
 
-        with pytest.raises(ValueError, match="Duplicate header field names detected!"):
+        with pytest.raises(ValueError, match="Duplicate header field names detected"):
             segy_spec.customize(binary_header_fields=invalid_fields)
 
     def test_customize_trace_headers_with_duplicate_names_raises_error(
@@ -470,7 +470,7 @@ class TestCustomizeMethodEnhanced:
             ),  # Duplicate name
         ]
 
-        with pytest.raises(ValueError, match="Duplicate header field names detected!"):
+        with pytest.raises(ValueError, match="Duplicate header field names detected"):
             segy_spec.customize(trace_header_fields=invalid_fields)
 
     def test_customize_binary_headers_with_overlapping_fields_raises_error(
@@ -484,7 +484,7 @@ class TestCustomizeMethodEnhanced:
             ),  # bytes 19-22 (overlaps)
         ]
 
-        with pytest.raises(ValueError, match="Header fields overlap!"):
+        with pytest.raises(ValueError, match="Header fields overlap"):
             segy_spec.customize(binary_header_fields=invalid_fields)
 
     def test_customize_trace_headers_with_overlapping_fields_raises_error(
@@ -500,7 +500,7 @@ class TestCustomizeMethodEnhanced:
             ),  # bytes 102-103 (overlaps)
         ]
 
-        with pytest.raises(ValueError, match="Header fields overlap!"):
+        with pytest.raises(ValueError, match="Header fields overlap"):
             segy_spec.customize(trace_header_fields=invalid_fields)
 
     def test_customize_replaces_existing_fields_by_name(

@@ -100,7 +100,7 @@ class SegySpec(CamelCaseModel):
 
         for field in existing_fields:
             if field.name not in new_names:
-                filtered_fields.extend(field)
+                filtered_fields.append(field)  # noqa: PERF401  Don't use extend here.
         return filtered_fields
 
     def _merge_headers_by_byte_offset(
@@ -170,8 +170,6 @@ class SegySpec(CamelCaseModel):
             if self._overlap(ranges[i], ranges[i + 1]):
                 msg = f"Header fields overlap: {ranges[i]} and {ranges[i + 1]}!"
                 raise ValueError(msg)
-
-        return
 
     def customize(  # noqa: PLR0913
         self: SegySpec,
