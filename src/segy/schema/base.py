@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from enum import StrEnum
 from typing import TYPE_CHECKING
 from typing import Literal
 from typing import cast
@@ -10,8 +11,6 @@ from typing import cast
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic.alias_generators import to_camel
-
-from segy.compat import StrEnum
 
 if TYPE_CHECKING:
     from typing import Any
@@ -64,6 +63,10 @@ class BaseDataType(CamelCaseModel):
 class Endianness(StrEnum):
     """Enumeration class with three possible endianness values.
 
+    Attributes:
+        BIG: Big endian.
+        LITTLE: Little endian.
+
     Examples:
         >>> endian = Endianness.BIG
         >>> print(endian.symbol)
@@ -82,4 +85,4 @@ class Endianness(StrEnum):
     @property
     def symbol(self) -> Literal["<", ">", "="]:
         """Get the numpy symbol for the endianness from mapping."""
-        return cast(Literal["<", ">", "="], self._symbol_map[self.value])
+        return cast("Literal['<', '>', '=']", self._symbol_map[self.value])

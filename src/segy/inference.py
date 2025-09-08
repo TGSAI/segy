@@ -64,7 +64,8 @@ def infer_endianness(
         A boolean indicating if the endianness need to be reversed.
 
     Raises:
-        EndiannessInferenceError: When inference fails.
+        EndiannessInferenceError: When all methods fail.
+        NotImplementedError: When a pairwise swapped endianness is detected.
     """
     logger.debug("Starting endianness inference.")
 

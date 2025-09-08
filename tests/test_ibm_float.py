@@ -15,7 +15,7 @@ from segy.ibm import ieee2ibm_single
 
 
 @pytest.mark.parametrize(
-    "ieee,ibm",
+    ("ieee", "ibm"),
     [
         (0.0, 0x00000000),
         (-0.0, 0x00000000),
@@ -51,7 +51,7 @@ class TestIbmIeee:
 
 
 @pytest.mark.parametrize(
-    "ieee,ibm",
+    ("ieee", "ibm"),
     [
         (0.0, 0x00000000),
         (-0.0, 0x00000000),

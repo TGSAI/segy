@@ -1,6 +1,6 @@
 [![PyPI](https://img.shields.io/pypi/v/segy.svg)][install_pip]
 [![Conda](https://img.shields.io/conda/vn/conda-forge/segy)][install_conda]
-[![Python Version](https://img.shields.io/pypi/pyversions/multidimio)][python version]
+[![Python Version](https://img.shields.io/pypi/pyversions/segy)][python version]
 [![Status](https://img.shields.io/pypi/status/segy.svg)][status]
 [![License](https://img.shields.io/pypi/l/segy)][apache 2.0 license]
 
