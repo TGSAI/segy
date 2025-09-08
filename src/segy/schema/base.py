@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from enum import StrEnum
 from typing import TYPE_CHECKING
 from typing import Literal
 from typing import cast
@@ -10,8 +11,6 @@ from typing import cast
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic.alias_generators import to_camel
-
-from segy.compat import StrEnum
 
 if TYPE_CHECKING:
     from typing import Any
