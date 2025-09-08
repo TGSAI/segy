@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_header_little() -> NDArray[Any]:
     """Generate a mock structured array to test transforms with little endian."""
     names = ["field1", "field2", "field3"]
@@ -34,7 +34,7 @@ def mock_header_little() -> NDArray[Any]:
     return arr
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_header_big(mock_header_little: NDArray[Any]) -> NDArray[Any]:
     """Generate a mock structured array to test transforms with big endian."""
     data = mock_header_little.byteswap()
@@ -42,7 +42,7 @@ def mock_header_big(mock_header_little: NDArray[Any]) -> NDArray[Any]:
     return data.view(swapped_dtype)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_header_ibm() -> NDArray[Any]:
     """Generate a mock structured array to test IBM float field transform."""
     names = ["u4_field", "ibm_field", "u2_field", "ibm_field2"]
@@ -55,13 +55,13 @@ def mock_header_ibm() -> NDArray[Any]:
     return arr
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_data_little() -> NDArray[Any]:
     """Generate a mock little endian structured array to test transforms."""
     return np.asarray([[3.14, 42, 0], [-2, 3, -4]]).astype(np.float32)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_data_big(mock_data_little: NDArray[Any]) -> NDArray[Any]:
     """Generate a mock big endian structured array to test transforms."""
     data = mock_data_little.byteswap()
@@ -164,7 +164,7 @@ class TestRevisionTransform:
         transform = TransformFactory.create("segy_revision")
         transformed_bin_header = transform.apply(bin_header)
 
-        header_fields = cast(tuple[str], transformed_bin_header.dtype.names)
+        header_fields = cast("tuple[str]", transformed_bin_header.dtype.names)
 
         assert transformed_bin_header["segy_revision_major"].squeeze() == major
         assert transformed_bin_header["segy_revision_minor"].squeeze() == minor

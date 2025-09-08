@@ -33,7 +33,9 @@ def compare_transform_sequence(
     """Helper function for equality comparison of two sequences of transforms."""
     if len(transform_a) != len(transform_b):
         return False
-    return all(compare_transform(a, b) for a, b in zip(transform_a, transform_b))
+    return all(
+        compare_transform(a, b) for a, b in zip(transform_a, transform_b, strict=True)
+    )
 
 
 @pytest.fixture(

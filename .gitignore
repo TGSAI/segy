@@ -76,9 +76,6 @@ docs/jupyter_execute/
 .pybuilder/
 target/
 
-# Poetry
-.poetry/
-
 # Jupyter Notebook
 .ipynb_checkpoints
 
