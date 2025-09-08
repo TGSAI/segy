@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Annotated
-from typing import Optional
 
 import typer
 
@@ -18,13 +17,9 @@ ListOfFieldNamesOption = Annotated[
     list[str], typer.Option(default_factory=list, help="List of field names.")
 ]
 
-JsonFileOutOption = Annotated[
-    Optional[Path], typer.Option(help="Path for JSON output.")
-]
+JsonFileOutOption = Annotated[Path | None, typer.Option(help="Path for JSON output.")]
 
-TextFileOutOption = Annotated[
-    Optional[Path], typer.Option(help="Path for text output.")
-]
+TextFileOutOption = Annotated[Path | None, typer.Option(help="Path for text output.")]
 
 
 def modify_path(

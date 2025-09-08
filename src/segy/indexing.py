@@ -106,6 +106,9 @@ class AbstractIndexer(ABC):
         spec: An instance of BaseDataType.
         max_value: An integer representing the maximum value of the index.
         transform_pipeline: The transforms pipeline to apply for decoding.
+
+    Attributes:
+        kind: A string representing the kind of data being indexed.
     """
 
     kind: str = "Abstract"
@@ -156,7 +159,7 @@ class AbstractIndexer(ABC):
             indices = np.arange(*item.indices(self.max_value))
 
         else:  # int, list, or ndarray case
-            indices = np.atleast_1d(item)
+            indices = np.atleast_1d(item)  # type: ignore
             bounds_check(indices, self.max_value, self.kind)
 
         if len(indices) == 0:
@@ -199,7 +202,7 @@ class AbstractIndexer(ABC):
             duplicate_mask = counts > 1
             values = unique_indices[duplicate_mask]
             counts = counts[duplicate_mask]
-            duplicates = {int(v): int(c) for v, c in zip(values, counts)}
+            duplicates = {int(v): int(c) for v, c in zip(values, counts, strict=True)}
             logger.warning("Duplicate indices requested with counts %s:", duplicates)
 
         starts, ends = self.indices_to_byte_ranges(indices)

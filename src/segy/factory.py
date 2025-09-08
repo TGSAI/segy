@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC
 from datetime import datetime
-from datetime import timezone
 from typing import TYPE_CHECKING
 from typing import cast
 
@@ -56,7 +56,7 @@ def get_default_text(spec: SegySpec) -> str:
     text_lines = DEFAULT_TEXT_HEADER_LINES.copy()
 
     # Populate write time
-    now = datetime.now(tz=timezone.utc).isoformat(timespec="seconds")
+    now = datetime.now(tz=UTC).isoformat(timespec="seconds")
     text_lines[5] = text_lines[5].format(timestamp=now)
 
     # Populate revision
@@ -101,13 +101,13 @@ class SegyFactory:
     def sample_interval(self) -> int:
         """Return sample interval from spec."""
         # We know its populated at this point and its int (not None)
-        return cast(int, self.spec.trace.data.interval)
+        return cast("int", self.spec.trace.data.interval)
 
     @property
     def samples_per_trace(self) -> int:
         """Return number of samples from spec."""
         # We know its populated at this point and its int (not None)
-        return cast(int, self.spec.trace.data.samples)
+        return cast("int", self.spec.trace.data.samples)
 
     @property
     def segy_revision(self) -> SegyStandard:
@@ -248,8 +248,7 @@ class SegyFactory:
 
         Raises:
             AttributeError: if data dimensions are wrong (not 2D trace,samples).
-            ValueError: if there is a shape mismatch between headers.
-            ValueError: if there is a shape mismatch number of samples.
+            ValueError: if there is a shape mismatch between headers or num samples.
         """
         trace_spec = self.spec.trace
         trace_spec.data.samples = self.samples_per_trace
