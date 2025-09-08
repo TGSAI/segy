@@ -101,7 +101,7 @@ class HeaderArray(SegyArray):
 
     def to_dataframe(self) -> DataFrame:
         """Convert structured data to pandas DataFrame."""
-        from pandas import DataFrame
+        from pandas import DataFrame  # noqa: PLC0415 - Lazy import for fast module init
 
         return DataFrame.from_records(self)
 
@@ -136,7 +136,7 @@ class HeaderArray(SegyArray):
     def __setitem__(self, key: Any, value: Any) -> None:  # noqa: ANN401
         """Special getitem where we normalize header keys. Pass along to numpy."""
         if isinstance(key, str) and key in self.dtype.names:
-            super().__setitem__(key, value)  # type: ignore[no-untyped-call]
+            super().__setitem__(key, value)
             return
 
         if isinstance(key, str):
@@ -144,12 +144,12 @@ class HeaderArray(SegyArray):
 
         elif isinstance(key, list) and all(isinstance(i, str) for i in key):
             if all(k in self.dtype.names for k in key):
-                super().__setitem__(key, value)  # type: ignore[no-untyped-call]
+                super().__setitem__(key, value)
                 return
 
             key = self._normalize_and_validate_keys(key)
 
-        super().__setitem__(key, value)  # type: ignore[no-untyped-call]
+        super().__setitem__(key, value)
 
 
 class TraceArray(SegyArray):

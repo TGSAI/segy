@@ -205,7 +205,7 @@ class IbmFloatTransform(Transform):
 
     def transform(self, data: NDArray[Any]) -> NDArray[Any]:
         """Convert floats between IEEE and IBM."""
-        from segy import ibm
+        from segy import ibm  # noqa: PLC0415 - Lazy import for fast module init
 
         func_name, cast_dtype = self.ibm_func_map[self.direction]
         func = getattr(ibm, func_name)

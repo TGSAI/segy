@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import numpy as np
-
-from segy.compat import StrEnum
 
 if TYPE_CHECKING:
     from typing import Any

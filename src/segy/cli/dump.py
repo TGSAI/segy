@@ -35,8 +35,8 @@ app = typer.Typer(
 @app.command(rich_help_panel="General Commands")
 def info(uri: UriArgument, output: JsonFileOutOption = None) -> None:
     """Get basic information about a SEG-Y file."""
-    from segy import SegyFile
-    from segy.schema.segy import SegyInfo
+    from segy import SegyFile  # noqa: PLC0415 - Lazy import for fast init
+    from segy.schema.segy import SegyInfo  # noqa: PLC0415 - Lazy import for fast init
 
     segy = SegyFile(uri)
     spec = segy.spec
@@ -65,7 +65,7 @@ def info(uri: UriArgument, output: JsonFileOutOption = None) -> None:
 @app.command(rich_help_panel="Header Commands")
 def text_header(uri: UriArgument, output: TextFileOutOption = None) -> None:
     """Print or save the text header of a SEG-Y file."""
-    from segy import SegyFile
+    from segy import SegyFile  # noqa: PLC0415 - Lazy import for fast init
 
     segy = SegyFile(uri)
     text = segy.text_header
@@ -83,7 +83,7 @@ def text_header(uri: UriArgument, output: TextFileOutOption = None) -> None:
 @app.command(rich_help_panel="Header Commands")
 def binary_header(uri: UriArgument, output: JsonFileOutOption = None) -> None:
     """Print or save the binary header of a SEG-Y file."""
-    from segy import SegyFile
+    from segy import SegyFile  # noqa: PLC0415 - Lazy import for fast init
 
     segy = SegyFile(uri)
     bin_header = segy.binary_header
@@ -104,7 +104,7 @@ def trace(
     uri: UriArgument, index: ListOfIntegersOption, output: JsonFileOutOption = None
 ) -> None:
     """Get one or more traces with headers."""
-    from segy import SegyFile
+    from segy import SegyFile  # noqa: PLC0415 - Lazy import for fast init
 
     segy = SegyFile(uri)
 
@@ -123,9 +123,9 @@ def trace_header(
     output: JsonFileOutOption = None,
 ) -> None:
     """Get one or more trace's headers (without samples)."""
-    from pandas import Index
+    from pandas import Index  # noqa: PLC0415 - Lazy import for fast init
 
-    from segy import SegyFile
+    from segy import SegyFile  # noqa: PLC0415 - Lazy import for fast init
 
     segy = SegyFile(uri)
     headers = segy.header[index]
@@ -154,7 +154,7 @@ def trace_data(
     uri: UriArgument, index: ListOfIntegersOption, output: JsonFileOutOption = None
 ) -> None:
     """Get one or more trace's samples (without headers)."""
-    from segy import SegyFile
+    from segy import SegyFile  # noqa: PLC0415 - Lazy import for fast init
 
     segy = SegyFile(uri)
 
