@@ -8,6 +8,8 @@ from segy.schema import HeaderField
 from segy.schema import ScalarType
 from segy.schema import SegySpec
 from segy.schema.header import overlap
+from segy.schema.segy import _merge_headers_by_name
+from segy.schema.segy import _validate_non_overlapping_headers
 from segy.standards import SegyStandard
 from segy.standards import get_segy_standard
 
@@ -177,7 +179,7 @@ class TestHeaderFieldOperations:
     ]
 
     @pytest.mark.parametrize("test_case", FIELD_OPERATION_TEST_CASES)
-    def test_field_operations(self, segy_spec: SegySpec, test_case: tuple) -> None:
+    def test_field_operations(self, test_case: tuple) -> None:
         """Test various header field operations with unified logic."""
         (
             operation_type,
@@ -192,19 +194,19 @@ class TestHeaderFieldOperations:
             existing_fields, new_fields = test_data
             if should_raise:
                 with pytest.raises(ValueError, match=expected_error):
-                    segy_spec._merge_headers_by_name(existing_fields, new_fields)
+                    _merge_headers_by_name(existing_fields, new_fields)
             else:
-                result = segy_spec._merge_headers_by_name(existing_fields, new_fields)
+                result = _merge_headers_by_name(existing_fields, new_fields)
                 assert_fields_match(result, expected_result, description)
 
         elif operation_type == "validate":
             fields = test_data
             if should_raise:
                 with pytest.raises(ValueError, match=expected_error):
-                    segy_spec._validate_non_overlapping_headers(fields)
+                    _validate_non_overlapping_headers(fields)
             else:
                 # Should not raise any exception
-                segy_spec._validate_non_overlapping_headers(fields)
+                _validate_non_overlapping_headers(fields)
 
         elif operation_type == "overlap":
             range1, range2 = test_data
