@@ -9,6 +9,7 @@ from pydantic import Field
 from pydantic import model_validator
 
 from segy.schema.base import CamelCaseModel
+from segy.schema.header import overlap
 
 if TYPE_CHECKING:
     from segy.schema.base import Endianness
@@ -73,10 +74,6 @@ class SegySpec(CamelCaseModel):
         if self.trace.offset is None:
             self.trace.offset = cursor
 
-    def _overlap(self, range1: tuple[int, int], range2: tuple[int, int]) -> bool:
-        """Checks if two right half-open ranges overlap."""
-        return range1[0] < range2[1] and range1[1] > range2[0]
-
     def _merge_headers_by_name(
         self, existing_fields: list[HeaderField], new_fields: list[HeaderField]
     ) -> list[HeaderField]:
@@ -126,7 +123,7 @@ class SegySpec(CamelCaseModel):
         for i in range(len(ranges) - 1):
             current_key, current_range = ranges[i]
             next_key, next_range = ranges[i + 1]
-            if self._overlap(current_range, next_range):
+            if overlap(current_range, next_range):
                 for field in new_fields:
                     if field.name == current_key:
                         indices_to_remove.append(
@@ -167,7 +164,7 @@ class SegySpec(CamelCaseModel):
         ranges.sort(key=lambda range_tuple: range_tuple[0])
 
         for i in range(len(ranges) - 1):
-            if self._overlap(ranges[i], ranges[i + 1]):
+            if overlap(ranges[i], ranges[i + 1]):
                 msg = f"Header fields overlap: {ranges[i]} and {ranges[i + 1]}!"
                 raise ValueError(msg)
 
