@@ -31,7 +31,7 @@ class SegyStandard(float, Enum):
 
 
 def _merge_headers_by_name(
-    existing_fields: list[HeaderField], new_fields: list[HeaderField]
+    existing_fields: HeaderSpec, new_fields: list[HeaderField]
 ) -> list[HeaderField]:
     """Replaces existing headers with new headers that have the same name.
 
@@ -42,20 +42,15 @@ def _merge_headers_by_name(
     Returns:
         List of header fields with duplicates removed.
     """
-    if not existing_fields:
+    if not existing_fields.fields:
         return new_fields
     if not new_fields:
-        return existing_fields
+        return existing_fields.fields
 
-    new_names = {field.name for field in new_fields}
+    for field in new_fields:
+        existing_fields.add_field(field, overwrite=True)
 
-    filtered_fields = list(new_fields)
-
-    for field in existing_fields:
-        if field.name not in new_names:
-            filtered_fields.append(field)  # noqa: PERF401  Don't use extend here.
-    return filtered_fields
-
+    return existing_fields.fields
 
 def _merge_headers_by_byte_offset(
     existing_fields: list[HeaderField], new_fields: list[HeaderField]
@@ -77,18 +72,29 @@ def _merge_headers_by_byte_offset(
     ranges = [(field.name, field.range) for field in existing_fields]
     ranges.sort(key=lambda range_tuple: range_tuple[1][0])
     indices_to_remove = []
+    processed_new_fields = set()  # Track which new fields have already caused a removal
+
     for i in range(len(ranges) - 1):
         current_key, current_range = ranges[i]
         next_key, next_range = ranges[i + 1]
         if overlap(current_range, next_range):
-            for field in new_fields:
-                if field.name == current_key:
-                    indices_to_remove.append(i + 1)  # Remove next header, not current
-                    break
+            # Only remove existing fields that overlap with new fields
+            # Each new field should cause at most one removal
+            current_is_new = any(field.name == current_key for field in new_fields)
+            next_is_new = any(field.name == next_key for field in new_fields)
+
+            if current_is_new and not next_is_new and current_key not in processed_new_fields:
+                # Current is new, next is existing - remove next (existing)
+                indices_to_remove.append(i + 1)
+                processed_new_fields.add(current_key)
+            elif not current_is_new and next_is_new and next_key not in processed_new_fields:
+                # Current is existing, next is new - remove current (existing)
+                indices_to_remove.append(i)
+                processed_new_fields.add(next_key)
     # Sort indices in reverse order to avoid index shifting when removing elements
     indices_to_remove.sort(reverse=True)
     for idx in indices_to_remove:
-        if 0 <= idx < len(existing_fields):
+        if 0 <= idx < len(ranges):
             header_name, header_range = ranges[idx]
             # Find and remove the header by name
             for i, elem in enumerate(existing_fields):
@@ -198,7 +204,7 @@ class SegySpec(CamelCaseModel):
         # Update binary header fields if specified; else will revert to default.
         _validate_non_overlapping_headers(binary_header_fields)
         new_spec.binary_header.fields = _merge_headers_by_name(
-            new_spec.binary_header.fields, binary_header_fields
+            new_spec.binary_header, binary_header_fields
         )
         new_spec.binary_header.fields = _merge_headers_by_byte_offset(
             new_spec.binary_header.fields, binary_header_fields
@@ -211,7 +217,7 @@ class SegySpec(CamelCaseModel):
         # Update trace header spec if its specified; else will revert to default.
         _validate_non_overlapping_headers(trace_header_fields)
         new_spec.trace.header.fields = _merge_headers_by_name(
-            new_spec.trace.header.fields, trace_header_fields
+            new_spec.trace.header, trace_header_fields
         )
         new_spec.trace.header.fields = _merge_headers_by_byte_offset(
             new_spec.trace.header.fields, trace_header_fields
