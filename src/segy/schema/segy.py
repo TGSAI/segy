@@ -54,25 +54,26 @@ def _merge_headers_by_name(
 
 
 def _merge_headers_by_byte_offset(
-    existing_fields: list[HeaderField], new_fields: list[HeaderField]
+    existing_spec: HeaderSpec, new_fields: list[HeaderField]
 ) -> list[HeaderField]:
     """Removes existing headers that have bytes that would have been overlapped by new headers.
 
     Intended to be run AFTER _merge_headers_by_name.
     This algorithm will ensure all neighboring headers are not overlapped.
 
-    An overlap is defined as a
+    An overlap is anywhere that an `existing_spec` header byte width would have ANY intersection
+    with a `new_field` byte width.
 
     Args:
-        existing_fields: List of existing header fields. State AFTER _merge_headers_by_name.
+        existing_spec: HeaderSpec containing existing header fields.
         new_fields: List of new header fields.
 
     Returns:
         List of header fields with duplicates removed.
     """
-    ranges = [(field.name, field.range) for field in existing_fields]
+    ranges = [(field.name, field.range) for field in existing_spec.fields]
     ranges.sort(key=lambda range_tuple: range_tuple[1][0])
-    indices_to_remove = []
+    fields_to_remove = []
     processed_new_fields = set()  # Track which new fields have already caused a removal
 
     for i in range(len(ranges) - 1):
@@ -90,7 +91,7 @@ def _merge_headers_by_byte_offset(
                 and current_key not in processed_new_fields
             ):
                 # Current is new, next is existing - remove next (existing)
-                indices_to_remove.append(i + 1)
+                fields_to_remove.append(next_key)
                 processed_new_fields.add(current_key)
             elif (
                 not current_is_new
@@ -98,19 +99,14 @@ def _merge_headers_by_byte_offset(
                 and next_key not in processed_new_fields
             ):
                 # Current is existing, next is new - remove current (existing)
-                indices_to_remove.append(i)
+                fields_to_remove.append(current_key)
                 processed_new_fields.add(next_key)
-    # Sort indices in reverse order to avoid index shifting when removing elements
-    indices_to_remove.sort(reverse=True)
-    for idx in indices_to_remove:
-        if 0 <= idx < len(ranges):
-            header_name, header_range = ranges[idx]
-            # Find and remove the header by name
-            for i, elem in enumerate(existing_fields):
-                if elem.name == header_name:
-                    existing_fields.pop(i)
-                    break
-    return existing_fields
+
+    # Remove fields using the HeaderSpec's remove_field method
+    for field_name in fields_to_remove:
+        existing_spec.remove_field(field_name)
+
+    return existing_spec.fields
 
 
 def _validate_non_overlapping_headers(new_fields: list[HeaderField]) -> None:
@@ -216,7 +212,7 @@ class SegySpec(CamelCaseModel):
             new_spec.binary_header, binary_header_fields
         )
         new_spec.binary_header.fields = _merge_headers_by_byte_offset(
-            new_spec.binary_header.fields, binary_header_fields
+            new_spec.binary_header, binary_header_fields
         )
 
         # Update extended text spec if its specified; else will revert to default.
@@ -229,7 +225,7 @@ class SegySpec(CamelCaseModel):
             new_spec.trace.header, trace_header_fields
         )
         new_spec.trace.header.fields = _merge_headers_by_byte_offset(
-            new_spec.trace.header.fields, trace_header_fields
+            new_spec.trace.header, trace_header_fields
         )
 
         # Update trace data spec if its specified; else will revert to default.
