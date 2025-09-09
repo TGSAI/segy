@@ -52,6 +52,7 @@ def _merge_headers_by_name(
 
     return existing_fields.fields
 
+
 def _merge_headers_by_byte_offset(
     existing_fields: list[HeaderField], new_fields: list[HeaderField]
 ) -> list[HeaderField]:
@@ -83,11 +84,19 @@ def _merge_headers_by_byte_offset(
             current_is_new = any(field.name == current_key for field in new_fields)
             next_is_new = any(field.name == next_key for field in new_fields)
 
-            if current_is_new and not next_is_new and current_key not in processed_new_fields:
+            if (
+                current_is_new
+                and not next_is_new
+                and current_key not in processed_new_fields
+            ):
                 # Current is new, next is existing - remove next (existing)
                 indices_to_remove.append(i + 1)
                 processed_new_fields.add(current_key)
-            elif not current_is_new and next_is_new and next_key not in processed_new_fields:
+            elif (
+                not current_is_new
+                and next_is_new
+                and next_key not in processed_new_fields
+            ):
                 # Current is existing, next is new - remove current (existing)
                 indices_to_remove.append(i)
                 processed_new_fields.add(next_key)

@@ -7,12 +7,12 @@ import pytest
 from segy.schema import HeaderField
 from segy.schema import ScalarType
 from segy.schema import SegySpec
+from segy.schema.header import HeaderSpec
 from segy.schema.header import overlap
 from segy.schema.segy import _merge_headers_by_name
 from segy.schema.segy import _validate_non_overlapping_headers
 from segy.standards import SegyStandard
 from segy.standards import get_segy_standard
-from segy.schema.header import HeaderSpec
 
 
 def assert_fields_match(
@@ -98,7 +98,10 @@ class TestHeaderFieldOperations:
         # Merge tests
         (
             "merge",
-            (HeaderSpec(fields=[]), [HeaderField(name="field1", format=ScalarType.INT32, byte=1)]),
+            (
+                HeaderSpec(fields=[]),
+                [HeaderField(name="field1", format=ScalarType.INT32, byte=1)],
+            ),
             [HeaderField(name="field1", format=ScalarType.INT32, byte=1)],
             False,
             None,
@@ -106,7 +109,14 @@ class TestHeaderFieldOperations:
         ),
         (
             "merge",
-            (HeaderSpec(fields=[HeaderField(name="existing1", format=ScalarType.INT32, byte=10)]), []),
+            (
+                HeaderSpec(
+                    fields=[
+                        HeaderField(name="existing1", format=ScalarType.INT32, byte=10)
+                    ]
+                ),
+                [],
+            ),
             [HeaderField(name="existing1", format=ScalarType.INT32, byte=10)],
             False,
             None,
@@ -115,7 +125,11 @@ class TestHeaderFieldOperations:
         (
             "merge",
             (
-                HeaderSpec(fields=[HeaderField(name="existing1", format=ScalarType.INT32, byte=1)]),
+                HeaderSpec(
+                    fields=[
+                        HeaderField(name="existing1", format=ScalarType.INT32, byte=1)
+                    ]
+                ),
                 [HeaderField(name="existing1", format=ScalarType.FLOAT32, byte=100)],
             ),
             [HeaderField(name="existing1", format=ScalarType.FLOAT32, byte=100)],
