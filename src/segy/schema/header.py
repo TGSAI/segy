@@ -233,10 +233,8 @@ class HeaderSpec(BaseDataType):
         # Trigger validation
         self.fields = self.fields
 
-    def remove_field(self, name: str | HeaderField) -> None:
+    def remove_field(self, name: str) -> None:
         """Remove a field from the structured data type by name."""
-        if isinstance(name, HeaderField):
-            name = name.name
         try:
             field_idx = self.names.index(name)
         except ValueError as err:
