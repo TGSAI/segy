@@ -1,0 +1,39 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/python:3.13-trixie",
+  // Configure tool-specific properties.
+  "features": {
+    "ghcr.io/va-h/devcontainers-features/uv:1": { "version": "0.8.15" }
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
+        "python.testing.pytestArgs": ["tests"],
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestEnabled": true
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-keymap",
+        "ms-toolsai.jupyter-renderers",
+        "vscode-icons-team.vscode-icons",
+        "wayou.vscode-todo-highlight",
+        "streetsidesoftware.code-spell-checker",
+        "eamodio.gitlens",
+        "visualstudioexptteam.vscodeintellicode",
+        "richie5um2.vscode-sort-json"
+      ]
+    },
+    "jetbrains": {
+      "plugins": ["com.koxudaxi.pydantic", "com.koxudaxi.ruff"]
+    }
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/segy,type=bind",
+  "workspaceFolder": "/workspaces/segy",
+  // This installs the segy dev environment in the container. Put any customizations there.
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
+  // Add any mounts you want to use here.
+  //"mounts": [ "source=${localWorkspaceFolder}/../DATA/,target=/DATA/,type=bind,consistency=cached" ]
+}

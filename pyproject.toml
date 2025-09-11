@@ -28,11 +28,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cloud = [
-    "s3fs (>=2024.10.0)",
-    "gcsfs (>=2024.10.0)",
-    "adlfs (>=2024.7.0)"
-]
+cloud = ["s3fs (>=2024.10.0)", "gcsfs (>=2024.10.0)", "adlfs (>=2024.7.0)"]
 
 [project.urls]
 repository = "https://github.com/TGSAI/segy"
@@ -74,39 +70,39 @@ target-version = "py311"
 src = ["src"]
 
 [tool.uv]
-required-version = ">=0.6.11"
+required-version = ">=0.8.15"
 
 [tool.ruff.lint]
 select = [
-    "E",   # pycodestyle
-    "F",   # pyflakes
-    "B",   # bugbear
-    "I",   # isort
-    "UP",  # pyupgrade
-    "N",   # pep8-naming
-    "D",   # pydocstyle
-    "ANN", # annotations
-    "S",   # bandit
-    "A",   # builtins
-    "C4",  # comprehensions
-    "DTZ", # datetimez
-    "EM",  # errmsg
-    "ICN", # import-conventions
-    "PIE", # pie
-    "PT",  # pytest-style
-    "RSE", # raise
-    "RET", # return
-    "SIM", # simplify
-    "TID", # tidy-imports
-    "TCH", # type-checking
-    "ARG", # unused-arguments
-    "PTH", # use-pathlib
-    "TD",  # todos
-    "PL",  # pylint
-    "FLY", # flynt
-    "NPY201", # numpy
-    "LOG", # logging
-    "G", # logging-format
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "B",    # bugbear
+    "I",    # isort
+    "UP",   # pyupgrade
+    "N",    # pep8-naming
+    "D",    # pydocstyle
+    "ANN",  # annotations
+    "S",    # bandit
+    "A",    # builtins
+    "C4",   # comprehensions
+    "DTZ",  # datetimez
+    "EM",   # errmsg
+    "ICN",  # import-conventions
+    "PIE",  # pie
+    "PT",   # pytest-style
+    "RSE",  # raise
+    "RET",  # return
+    "SIM",  # simplify
+    "TID",  # tidy-imports
+    "TCH",  # type-checking
+    "ARG",  # unused-arguments
+    "PTH",  # use-pathlib
+    "TD",   # todos
+    "PL",   # pylint
+    "FLY",  # flynt
+    "NPY",  # numpy
+    "LOG",  # logging
+    "G",    # logging-format
     "PERF", # perflint
 ]
 
@@ -136,10 +132,7 @@ style = "google"
 arg-type-hints-in-docstring = false
 check-return-types = false
 check-yield-types = false
-exclude = [
-    "src/schema/header.py",
-    "src/segy/ibm.py",
-]
+exclude = ["src/schema/header.py", "src/segy/ibm.py"]
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
@@ -190,10 +183,10 @@ commit = false
 tag = false
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)(\\.dev(?P<dev>\\d+))?"
 serialize = [
-    "{major}.{minor}.{patch}.dev{dev}",  # For dev releases
-    "{major}.{minor}.{patch}"            # For stable releases
+    "{major}.{minor}.{patch}.dev{dev}", # For dev releases
+    "{major}.{minor}.{patch}",          # For stable releases
 ]
 
 [build-system]
-requires = ["setuptools", "wheel", "fastentrypoints"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.8.15,<0.9.0"]
+build-backend = "uv_build"
