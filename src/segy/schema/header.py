@@ -64,12 +64,12 @@ class HeaderField(BaseDataType):
         return self.format.dtype
 
     @property
-    def range(self) -> tuple[int, int, str]:
+    def range(self) -> tuple[int, int]:
         """Return the start and stop byte location of the field.
 
         Note: This return is Fortran-style and right half-open. [start, stop)
         """
-        return (self.byte, self.byte + self.dtype.itemsize, self.name)
+        return self.byte, self.byte + self.dtype.itemsize
 
 
 class HeaderSpec(BaseDataType):

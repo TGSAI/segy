@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from segy.schema import HeaderField
@@ -82,11 +84,10 @@ class TestHeaderFieldRange:
     ) -> None:
         """Test range property with different field configurations."""
         field = HeaderField(name=field_name, format=format_type, byte=byte_pos)
-        start, stop, name = field.range
+        start, stop = field.range
 
         assert start == byte_pos
         assert stop == byte_pos + expected_size
-        assert name == field_name
 
 
 class TestHeaderFieldOperations:
@@ -194,7 +195,7 @@ class TestHeaderFieldOperations:
     ]
 
     @pytest.mark.parametrize("test_case", FIELD_OPERATION_TEST_CASES)
-    def test_field_operations(self, test_case: tuple) -> None:
+    def test_field_operations(self, test_case: tuple[Any, ...]) -> None:
         """Test various header field operations with unified logic."""
         (
             operation_type,
@@ -225,8 +226,8 @@ class TestHeaderFieldOperations:
 
         elif operation_type == "overlap":
             range1, range2 = test_data
-            result = overlap(range1, range2)
-            assert result == expected_result, (
+            overlap_result = overlap(range1, range2)
+            assert overlap_result == expected_result, (
                 f"Failed for {description}: {range1} vs {range2}"
             )
             # Test commutative property
@@ -316,7 +317,9 @@ class TestCustomizeMethodEnhanced:
     ]
 
     @pytest.mark.parametrize("test_case", CUSTOMIZE_TEST_CASES)
-    def test_customize_scenarios(self, segy_spec: SegySpec, test_case: tuple) -> None:
+    def test_customize_scenarios(
+        self, segy_spec: SegySpec, test_case: tuple[Any, ...]
+    ) -> None:
         """Test customize method scenarios for both binary and trace headers."""
         header_type, custom_fields, should_raise, expected_error, description = (
             test_case
