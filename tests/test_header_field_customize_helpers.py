@@ -10,7 +10,7 @@ from segy.schema import HeaderField
 from segy.schema import ScalarType
 from segy.schema import SegySpec
 from segy.schema.header import HeaderSpec
-from segy.schema.header import overlap
+from segy.schema.header import ranges_overlap
 from segy.schema.segy import _merge_headers_by_name
 from segy.schema.segy import _validate_non_overlapping_headers
 from segy.standards import SegyStandard
@@ -226,12 +226,12 @@ class TestHeaderFieldOperations:
 
         elif operation_type == "overlap":
             range1, range2 = test_data
-            overlap_result = overlap(range1, range2)
+            overlap_result = ranges_overlap(range1, range2)
             assert overlap_result == expected_result, (
                 f"Failed for {description}: {range1} vs {range2}"
             )
             # Test commutative property
-            assert overlap(range2, range1) == expected_result, (
+            assert ranges_overlap(range2, range1) == expected_result, (
                 f"Failed for {description}: {range2} vs {range1}"
             )
 

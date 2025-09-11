@@ -9,7 +9,7 @@ from pydantic import Field
 from pydantic import model_validator
 
 from segy.schema.base import CamelCaseModel
-from segy.schema.header import overlap
+from segy.schema.header import ranges_overlap
 
 if TYPE_CHECKING:
     from segy.schema.base import Endianness
@@ -79,7 +79,7 @@ def _merge_headers_by_byte_offset(
     for i in range(len(ranges) - 1):
         current_key, current_range = ranges[i]
         next_key, next_range = ranges[i + 1]
-        if overlap(current_range, next_range):
+        if ranges_overlap(current_range, next_range):
             # Only remove existing fields that overlap with new fields
             # Each new field should cause at most one removal
             current_is_new = any(field.name == current_key for field in new_fields)
@@ -131,7 +131,7 @@ def _validate_non_overlapping_headers(new_fields: list[HeaderField]) -> None:
     ranges.sort(key=lambda range_tuple: range_tuple[0])
 
     for i in range(len(ranges) - 1):
-        if overlap(ranges[i], ranges[i + 1]):
+        if ranges_overlap(ranges[i], ranges[i + 1]):
             msg = f"Header fields overlap: {ranges[i]} and {ranges[i + 1]}!"
             raise ValueError(msg)
 

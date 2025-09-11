@@ -15,7 +15,7 @@ from segy.schema.base import Endianness
 from segy.schema.format import ScalarType  # noqa: TCH001
 
 
-def overlap(range1: tuple[int, int], range2: tuple[int, int]) -> bool:
+def ranges_overlap(range1: tuple[int, int], range2: tuple[int, int]) -> bool:
     """Checks if two right half-open ranges overlap."""
     return range1[0] < range2[1] and range1[1] > range2[0]
 
