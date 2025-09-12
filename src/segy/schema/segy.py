@@ -30,6 +30,24 @@ class SegyStandard(float, Enum):
     REV21 = 2.1
 
 
+def _merge_headers(
+    existing_fields: HeaderSpec, new_fields: list[HeaderField]
+) -> list[HeaderField]:
+    """Merges existing headers with new headers.
+
+    Args:
+        existing_fields: List of existing header fields.
+        new_fields: List of new header fields.
+
+    Returns:
+        List of header fields with duplicates removed.
+    """
+    _validate_non_overlapping_headers(new_fields)
+    existing_fields.fields = _merge_headers_by_name(existing_fields, new_fields)
+    existing_fields.fields = _merge_headers_by_byte_offset(existing_fields, new_fields)
+    return existing_fields.fields
+
+
 def _merge_headers_by_name(
     existing_fields: HeaderSpec, new_fields: list[HeaderField]
 ) -> list[HeaderField]:
@@ -208,11 +226,7 @@ class SegySpec(CamelCaseModel):
 
         # Update binary header fields if specified; else will revert to default.
         if binary_header_fields is not None:
-            _validate_non_overlapping_headers(binary_header_fields)
-            new_spec.binary_header.fields = _merge_headers_by_name(
-                new_spec.binary_header, binary_header_fields
-            )
-            new_spec.binary_header.fields = _merge_headers_by_byte_offset(
+            new_spec.binary_header.fields = _merge_headers(
                 new_spec.binary_header, binary_header_fields
             )
 
@@ -222,11 +236,7 @@ class SegySpec(CamelCaseModel):
 
         # Update trace header spec if its specified; else will revert to default.
         if trace_header_fields is not None:
-            _validate_non_overlapping_headers(trace_header_fields)
-            new_spec.trace.header.fields = _merge_headers_by_name(
-                new_spec.trace.header, trace_header_fields
-            )
-            new_spec.trace.header.fields = _merge_headers_by_byte_offset(
+            new_spec.trace.header.fields = _merge_headers(
                 new_spec.trace.header, trace_header_fields
             )
 
