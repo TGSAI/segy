@@ -65,10 +65,11 @@ def generate_test_trace_data(
         header_arr[field.name] = random_field_data.astype(field.format)
 
     # Cast to float32 if IBM.
-    if data_spec.format == ScalarType.IBM32:
-        sample_dtype = np.dtype("float32")
-    else:
-        sample_dtype = np.dtype(data_spec.format)
+    sample_dtype = (
+        np.dtype("float32")
+        if data_spec.format == ScalarType.IBM32
+        else np.dtype(data_spec.format)
+    )
     sample_shape = (num_traces, SAMPLES_PER_TRACE)
     sample_arr = np.empty(shape=sample_shape, dtype=sample_dtype)
     random_sample_data = rng.normal(size=sample_shape)
