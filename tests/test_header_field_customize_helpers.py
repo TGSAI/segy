@@ -91,14 +91,12 @@ class TestHeaderFieldRange:
 
 
 class TestHeaderFieldOperations:
-    """Consolidated tests for header field operations (merge, validation, overlap)."""
+    """Tests for header field operations (merge, validation, overlap)."""
 
-    # Combined test data for various field operations
-    FIELD_OPERATION_TEST_CASES = [
-        # (operation_type, test_data, expected_result, should_raise, expected_error, description)
-        # Merge tests
+    # Test data for merge operations
+    MERGE_TEST_CASES = [
+        # (test_data, expected_result, should_raise, expected_error, description)
         (
-            "merge",
             (
                 HeaderSpec(fields=[]),
                 [HeaderField(name="field1", format=ScalarType.INT32, byte=1)],
@@ -109,7 +107,6 @@ class TestHeaderFieldOperations:
             "merge with empty existing fields",
         ),
         (
-            "merge",
             (
                 HeaderSpec(
                     fields=[
@@ -124,7 +121,6 @@ class TestHeaderFieldOperations:
             "merge with empty new fields",
         ),
         (
-            "merge",
             (
                 HeaderSpec(
                     fields=[
@@ -138,10 +134,13 @@ class TestHeaderFieldOperations:
             None,
             "merge with field replacement",
         ),
-        # Validation tests
-        ("validate", [], None, False, None, "validate empty list"),
+    ]
+
+    # Test data for validation operations
+    VALIDATE_TEST_CASES = [
+        # (test_data, expected_result, should_raise, expected_error, description)
+        ([], None, False, None, "validate empty list"),
         (
-            "validate",
             [HeaderField(name="field1", format=ScalarType.INT32, byte=1)],
             None,
             False,
@@ -149,7 +148,6 @@ class TestHeaderFieldOperations:
             "validate single field",
         ),
         (
-            "validate",
             [
                 HeaderField(name="field1", format=ScalarType.INT32, byte=1),
                 HeaderField(name="field2", format=ScalarType.INT16, byte=10),
@@ -160,7 +158,6 @@ class TestHeaderFieldOperations:
             "validate non-overlapping fields",
         ),
         (
-            "validate",
             [
                 HeaderField(name="field1", format=ScalarType.INT32, byte=1),
                 HeaderField(
@@ -173,7 +170,6 @@ class TestHeaderFieldOperations:
             "validate duplicate names",
         ),
         (
-            "validate",
             [
                 HeaderField(
                     name="field1", format=ScalarType.INT32, byte=1
@@ -187,18 +183,21 @@ class TestHeaderFieldOperations:
             "Header fields overlap",
             "validate overlapping fields",
         ),
-        # Overlap tests
-        ("overlap", ((1, 5), (10, 15)), False, False, None, "non-overlapping ranges"),
-        ("overlap", ((1, 5), (5, 10)), False, False, None, "adjacent ranges"),
-        ("overlap", ((1, 10), (5, 15)), True, False, None, "overlapping ranges"),
-        ("overlap", ((5, 10), (5, 10)), True, False, None, "identical ranges"),
     ]
 
-    @pytest.mark.parametrize("test_case", FIELD_OPERATION_TEST_CASES)
-    def test_field_operations(self, test_case: tuple[Any, ...]) -> None:
-        """Test various header field operations with unified logic."""
+    # Test data for overlap operations
+    OVERLAP_TEST_CASES = [
+        # (test_data, expected_result, should_raise, expected_error, description)
+        (((1, 5), (10, 15)), False, False, None, "non-overlapping ranges"),
+        (((1, 5), (5, 10)), False, False, None, "adjacent ranges"),
+        (((1, 10), (5, 15)), True, False, None, "overlapping ranges"),
+        (((5, 10), (5, 10)), True, False, None, "identical ranges"),
+    ]
+
+    @pytest.mark.parametrize("test_case", MERGE_TEST_CASES)
+    def test_merge(self, test_case: tuple[Any, ...]) -> None:
+        """Test header field merging operations."""
         (
-            operation_type,
             test_data,
             expected_result,
             should_raise,
@@ -206,44 +205,62 @@ class TestHeaderFieldOperations:
             description,
         ) = test_case
 
-        if operation_type == "merge":
-            existing_fields, new_fields = test_data
-            if should_raise:
-                with pytest.raises(ValueError, match=expected_error):
-                    _merge_headers_by_name(existing_fields, new_fields)
-            else:
-                result = _merge_headers_by_name(existing_fields, new_fields)
-                assert_fields_match(result, expected_result, description)
+        existing_fields, new_fields = test_data
+        if should_raise:
+            with pytest.raises(ValueError, match=expected_error):
+                _merge_headers_by_name(existing_fields, new_fields)
+        else:
+            result = _merge_headers_by_name(existing_fields, new_fields)
+            assert_fields_match(result, expected_result, description)
 
-        elif operation_type == "validate":
-            fields = test_data
-            if should_raise:
-                with pytest.raises(ValueError, match=expected_error):
-                    _validate_non_overlapping_headers(fields)
-            else:
-                # Should not raise any exception
+    @pytest.mark.parametrize("test_case", VALIDATE_TEST_CASES)
+    def test_validate(self, test_case: tuple[Any, ...]) -> None:
+        """Test header field validation operations."""
+        (
+            test_data,
+            _,  # expected_result (unused)
+            should_raise,
+            expected_error,
+            description,
+        ) = test_case
+
+        fields = test_data
+        if should_raise:
+            with pytest.raises(ValueError, match=expected_error):
                 _validate_non_overlapping_headers(fields)
+        else:
+            # Should not raise any exception
+            _validate_non_overlapping_headers(fields)
 
-        elif operation_type == "overlap":
-            range1, range2 = test_data
-            overlap_result = ranges_overlap(range1, range2)
-            assert overlap_result == expected_result, (
-                f"Failed for {description}: {range1} vs {range2}"
-            )
-            # Test commutative property
-            assert ranges_overlap(range2, range1) == expected_result, (
-                f"Failed for {description}: {range2} vs {range1}"
-            )
+    @pytest.mark.parametrize("test_case", OVERLAP_TEST_CASES)
+    def test_overlap(self, test_case: tuple[Any, ...]) -> None:
+        """Test range overlap detection."""
+        (
+            test_data,
+            expected_result,
+            _,  # should_raise (unused, always False)
+            _,  # expected_error (unused, always None)
+            description,
+        ) = test_case
+
+        range1, range2 = test_data
+        overlap_result = ranges_overlap(range1, range2)
+        assert overlap_result == expected_result, (
+            f"Failed for {description}: {range1} vs {range2}"
+        )
+        # Test commutative property
+        assert ranges_overlap(range2, range1) == expected_result, (
+            f"Failed for {description}: {range2} vs {range1}"
+        )
 
 
 class TestCustomizeMethodEnhanced:
     """Tests for the enhanced customize method with validation and merging."""
 
-    # Test data for customize method scenarios
-    CUSTOMIZE_TEST_CASES = [
-        # (header_type, custom_fields, should_raise, expected_error, description)
+    # Test data for binary header customization
+    BINARY_CUSTOMIZE_TEST_CASES = [
+        # (custom_fields, should_raise, expected_error, description)
         (
-            "binary",
             [
                 HeaderField(name="custom_field1", format=ScalarType.UINT32, byte=17),
                 HeaderField(name="custom_field2", format=ScalarType.INT16, byte=300),
@@ -253,17 +270,6 @@ class TestCustomizeMethodEnhanced:
             "valid binary header fields",
         ),
         (
-            "trace",
-            [
-                HeaderField(name="custom_trace1", format=ScalarType.FLOAT32, byte=100),
-                HeaderField(name="custom_trace2", format=ScalarType.INT32, byte=200),
-            ],
-            False,
-            None,
-            "valid trace header fields",
-        ),
-        (
-            "binary",
             [
                 HeaderField(name="duplicate", format=ScalarType.UINT32, byte=17),
                 HeaderField(
@@ -275,19 +281,6 @@ class TestCustomizeMethodEnhanced:
             "binary headers with duplicate names",
         ),
         (
-            "trace",
-            [
-                HeaderField(name="duplicate", format=ScalarType.FLOAT32, byte=100),
-                HeaderField(
-                    name="duplicate", format=ScalarType.INT32, byte=200
-                ),  # Duplicate name
-            ],
-            True,
-            "Duplicate header field names detected",
-            "trace headers with duplicate names",
-        ),
-        (
-            "binary",
             [
                 HeaderField(
                     name="field1", format=ScalarType.INT32, byte=17
@@ -300,8 +293,32 @@ class TestCustomizeMethodEnhanced:
             "Header fields overlap",
             "binary headers with overlapping fields",
         ),
+    ]
+
+    # Test data for trace header customization
+    TRACE_CUSTOMIZE_TEST_CASES = [
+        # (custom_fields, should_raise, expected_error, description)
         (
-            "trace",
+            [
+                HeaderField(name="custom_trace1", format=ScalarType.FLOAT32, byte=100),
+                HeaderField(name="custom_trace2", format=ScalarType.INT32, byte=200),
+            ],
+            False,
+            None,
+            "valid trace header fields",
+        ),
+        (
+            [
+                HeaderField(name="duplicate", format=ScalarType.FLOAT32, byte=100),
+                HeaderField(
+                    name="duplicate", format=ScalarType.INT32, byte=200
+                ),  # Duplicate name
+            ],
+            True,
+            "Duplicate header field names detected",
+            "trace headers with duplicate names",
+        ),
+        (
             [
                 HeaderField(
                     name="field1", format=ScalarType.FLOAT32, byte=100
@@ -316,21 +333,14 @@ class TestCustomizeMethodEnhanced:
         ),
     ]
 
-    @pytest.mark.parametrize("test_case", CUSTOMIZE_TEST_CASES)
-    def test_customize_scenarios(
+    @pytest.mark.parametrize("test_case", BINARY_CUSTOMIZE_TEST_CASES)
+    def test_customize_binary_header(
         self, segy_spec: SegySpec, test_case: tuple[Any, ...]
     ) -> None:
-        """Test customize method scenarios for both binary and trace headers."""
-        header_type, custom_fields, should_raise, expected_error, description = (
-            test_case
-        )
+        """Test customize method scenarios for binary headers."""
+        custom_fields, should_raise, expected_error, description = test_case
 
-        # Prepare the kwargs based on header type
-        kwargs = {}
-        if header_type == "binary":
-            kwargs["binary_header_fields"] = custom_fields
-        elif header_type == "trace":
-            kwargs["trace_header_fields"] = custom_fields
+        kwargs = {"binary_header_fields": custom_fields}
 
         if should_raise:
             with pytest.raises(ValueError, match=expected_error):
@@ -342,16 +352,39 @@ class TestCustomizeMethodEnhanced:
             assert custom_spec.segy_standard is None
 
             # Check that custom fields are present
-            if header_type == "binary":
-                assert len(custom_spec.binary_header.fields) >= len(custom_fields)
-                field_names = {field.name for field in custom_spec.binary_header.fields}
-            elif header_type == "trace":
-                assert len(custom_spec.trace.header.fields) >= len(custom_fields)
-                field_names = {field.name for field in custom_spec.trace.header.fields}
+            assert len(custom_spec.binary_header.fields) >= len(custom_fields)
+            field_names = {field.name for field in custom_spec.binary_header.fields}
 
             for field in custom_fields:
                 assert field.name in field_names, (
-                    f"Custom field '{field.name}' not found in {header_type} header"
+                    f"Custom field '{field.name}' not found in binary header"
+                )
+
+    @pytest.mark.parametrize("test_case", TRACE_CUSTOMIZE_TEST_CASES)
+    def test_customize_trace_header(
+        self, segy_spec: SegySpec, test_case: tuple[Any, ...]
+    ) -> None:
+        """Test customize method scenarios for trace headers."""
+        custom_fields, should_raise, expected_error, description = test_case
+
+        kwargs = {"trace_header_fields": custom_fields}
+
+        if should_raise:
+            with pytest.raises(ValueError, match=expected_error):
+                segy_spec.customize(**kwargs)
+        else:
+            # Should not raise any exception
+            custom_spec = segy_spec.customize(**kwargs)
+
+            assert custom_spec.segy_standard is None
+
+            # Check that custom fields are present
+            assert len(custom_spec.trace.header.fields) >= len(custom_fields)
+            field_names = {field.name for field in custom_spec.trace.header.fields}
+
+            for field in custom_fields:
+                assert field.name in field_names, (
+                    f"Custom field '{field.name}' not found in trace header"
                 )
 
     def test_customize_replaces_existing_fields_by_name(
