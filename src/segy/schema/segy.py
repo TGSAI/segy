@@ -9,7 +9,6 @@ from pydantic import Field
 from pydantic import model_validator
 
 from segy.schema.base import CamelCaseModel
-from segy.schema.header import ranges_overlap
 
 if TYPE_CHECKING:
     from segy.schema.base import Endianness
@@ -28,130 +27,6 @@ class SegyStandard(float, Enum):
     REV1 = 1.0
     REV2 = 2.0
     REV21 = 2.1
-
-
-def _merge_headers(
-    existing_fields: HeaderSpec, new_fields: list[HeaderField]
-) -> list[HeaderField]:
-    """Merges existing headers with new headers.
-
-    Args:
-        existing_fields: List of existing header fields.
-        new_fields: List of new header fields.
-
-    Returns:
-        List of header fields with duplicates removed.
-    """
-    _validate_non_overlapping_headers(new_fields)
-    existing_fields.fields = _merge_headers_by_name(existing_fields, new_fields)
-    existing_fields.fields = _merge_headers_by_byte_offset(existing_fields, new_fields)
-    return existing_fields.fields
-
-
-def _merge_headers_by_name(
-    existing_fields: HeaderSpec, new_fields: list[HeaderField]
-) -> list[HeaderField]:
-    """Replaces existing headers with new headers that have the same name.
-
-    Args:
-        existing_fields: List of existing header fields.
-        new_fields: List of new header fields.
-
-    Returns:
-        List of header fields with duplicates removed.
-    """
-    if not existing_fields.fields:
-        return new_fields
-    if not new_fields:
-        return existing_fields.fields
-
-    for field in new_fields:
-        existing_fields.add_field(field, overwrite=True)
-
-    return existing_fields.fields
-
-
-def _merge_headers_by_byte_offset(
-    existing_spec: HeaderSpec, new_fields: list[HeaderField]
-) -> list[HeaderField]:
-    """Removes existing headers that have bytes that would have been overlapped by new headers.
-
-    Intended to be run AFTER _merge_headers_by_name.
-    This algorithm will ensure all neighboring headers are not overlapped.
-
-    An overlap is anywhere that an `existing_spec` header byte width would have ANY intersection
-    with a `new_field` byte width.
-
-    Args:
-        existing_spec: HeaderSpec containing existing header fields.
-        new_fields: List of new header fields.
-
-    Returns:
-        List of header fields with duplicates removed.
-    """
-    ranges = [(field.name, field.range) for field in existing_spec.fields]
-    ranges.sort(key=lambda range_tuple: range_tuple[1][0])
-    fields_to_remove = []
-    processed_new_fields = set()  # Track which new fields have already caused a removal
-
-    for i in range(len(ranges) - 1):
-        current_key, current_range = ranges[i]
-        next_key, next_range = ranges[i + 1]
-        if ranges_overlap(current_range, next_range):
-            # Only remove existing fields that overlap with new fields
-            # Each new field should cause at most one removal
-            current_is_new = any(field.name == current_key for field in new_fields)
-            next_is_new = any(field.name == next_key for field in new_fields)
-
-            if (
-                current_is_new
-                and not next_is_new
-                and current_key not in processed_new_fields
-            ):
-                # Current is new, next is existing - remove next (existing)
-                fields_to_remove.append(next_key)
-                processed_new_fields.add(current_key)
-            elif (
-                not current_is_new
-                and next_is_new
-                and next_key not in processed_new_fields
-            ):
-                # Current is existing, next is new - remove current (existing)
-                fields_to_remove.append(current_key)
-                processed_new_fields.add(next_key)
-
-    # Remove fields using the HeaderSpec's remove_field method
-    for field_name in fields_to_remove:
-        existing_spec.remove_field(field_name)
-
-    return existing_spec.fields
-
-
-def _validate_non_overlapping_headers(new_fields: list[HeaderField]) -> None:
-    """Validates that a list of new headers have unique names and do not overlap one-another.
-
-    Args:
-        new_fields: List of new header fields.
-
-    Raises:
-        ValueError: If duplicate header field names are detected.
-        ValueError: If header fields overlap.
-    """
-    if not new_fields:
-        return
-
-    names = [field.name for field in new_fields]
-    if len(names) != len(set(names)):
-        msg = f"Duplicate header field names detected: {names}!"
-        raise ValueError(msg)
-
-    ranges = [field.range for field in new_fields]
-    ranges.sort(key=lambda range_tuple: range_tuple[0])
-
-    for i in range(len(ranges) - 1):
-        if ranges_overlap(ranges[i], ranges[i + 1]):
-            msg = f"Header fields overlap: {ranges[i]} and {ranges[i + 1]}!"
-            raise ValueError(msg)
 
 
 class SegySpec(CamelCaseModel):
@@ -226,9 +101,7 @@ class SegySpec(CamelCaseModel):
 
         # Update binary header fields if specified; else will revert to default.
         if binary_header_fields is not None:
-            new_spec.binary_header.fields = _merge_headers(
-                new_spec.binary_header, binary_header_fields
-            )
+            new_spec.binary_header.customize(binary_header_fields)
 
         # Update extended text spec if its specified; else will revert to default.
         if ext_text_spec:
@@ -236,9 +109,7 @@ class SegySpec(CamelCaseModel):
 
         # Update trace header spec if its specified; else will revert to default.
         if trace_header_fields is not None:
-            new_spec.trace.header.fields = _merge_headers(
-                new_spec.trace.header, trace_header_fields
-            )
+            new_spec.trace.header.customize(trace_header_fields)
 
         # Update trace data spec if its specified; else will revert to default.
         if trace_data_spec:
