@@ -39,7 +39,7 @@ class TestHeaderField:
         with pytest.raises(ValidationError, match=expected_regex):
             HeaderField(
                 name="test_field",
-                byte=invalid_byte,
+                byte=invalid_byte,  # type: ignore
                 format=ScalarType.INT32,
             )
 

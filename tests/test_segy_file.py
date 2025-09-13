@@ -76,8 +76,9 @@ def generate_test_trace_data(
 
     # Clip if the dtype has finite bounds (i.e., for numeric integer types).
     # Floats can handle the normal dist range we created above
+    # Type ignore because mypy can't statically narrow `sample_dtype` based on runtime
     if np.issubdtype(sample_dtype, np.integer):
-        info = np.iinfo(sample_dtype)
+        info = np.iinfo(sample_dtype)# type: ignore[type-var]
         min_val = info.min
         max_val = info.max
         random_sample_data = np.clip(random_sample_data, min_val, max_val)
