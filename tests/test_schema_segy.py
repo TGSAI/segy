@@ -106,6 +106,6 @@ class TestSegySpecCustomize:
 
         expected_subdtype = (np.dtype("uint16"), (3,))
         assert custom_spec.segy_standard is None
-        assert custom_spec.trace.dtype.itemsize == 246  # noqa: PLR2004
-        assert custom_spec.trace.data.dtype.itemsize == 6  # noqa: PLR2004
+        assert custom_spec.trace.dtype.itemsize == 246
+        assert custom_spec.trace.data.dtype.itemsize == 6
         assert custom_spec.trace.data.dtype.subdtype == expected_subdtype
