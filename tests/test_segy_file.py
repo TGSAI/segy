@@ -73,7 +73,16 @@ def generate_test_trace_data(
     sample_shape = (num_traces, SAMPLES_PER_TRACE)
     sample_arr = np.empty(shape=sample_shape, dtype=sample_dtype)
     random_sample_data = rng.normal(size=sample_shape)
-    sample_arr[:] = random_sample_data.astype("float32")
+
+    # Clip if the dtype has finite bounds (i.e., for numeric integer types).
+    # Floats can handle the normal dist range we created above
+    if np.issubdtype(sample_dtype, np.integer):
+        info = np.iinfo(sample_dtype)
+        min_val = info.min
+        max_val = info.max
+        random_sample_data = np.clip(random_sample_data, min_val, max_val)
+
+    sample_arr[:] = random_sample_data
 
     return header_arr, sample_arr
 
