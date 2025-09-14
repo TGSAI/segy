@@ -96,20 +96,20 @@ class SegySpec(CamelCaseModel):
         new_spec = self.model_copy(deep=True)
         new_spec.segy_standard = None
 
-        if text_header_spec:
+        if text_header_spec is not None:
             new_spec.text_header = text_header_spec
 
         # Update binary header fields if specified; else will revert to default.
-        if binary_header_fields:
-            new_spec.binary_header.fields = binary_header_fields
+        if binary_header_fields is not None:
+            new_spec.binary_header.customize(binary_header_fields)
 
         # Update extended text spec if its specified; else will revert to default.
         if ext_text_spec:
             new_spec.ext_text_header = ext_text_spec
 
         # Update trace header spec if its specified; else will revert to default.
-        if trace_header_fields:
-            new_spec.trace.header.fields = trace_header_fields
+        if trace_header_fields is not None:
+            new_spec.trace.header.customize(trace_header_fields)
 
         # Update trace data spec if its specified; else will revert to default.
         if trace_data_spec:
