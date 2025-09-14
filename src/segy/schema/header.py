@@ -15,99 +15,22 @@ from segy.schema.base import Endianness
 from segy.schema.format import ScalarType  # noqa: TCH001
 
 
-def _merge_headers(spec: HeaderSpec, new_fields: list[HeaderField]) -> None:
-    """Merges existing headers with new headers.
+def _validate_non_overlapping_fields(fields: list[HeaderField]) -> None:
+    """Validates that a list of HeaderField have unique names and do not overlap one-another.
 
     Args:
-        spec: HeaderSpec to modify.
-        new_fields: List of new header fields.
-    """
-    _validate_non_overlapping_headers(new_fields)
-    _merge_headers_by_name(spec, new_fields)
-    _merge_headers_by_byte_offset(spec, new_fields)
-
-
-def _merge_headers_by_name(spec: HeaderSpec, new_fields: list[HeaderField]) -> None:
-    """Replaces existing headers with new headers that have the same name.
-
-    Args:
-        spec: HeaderSpec to modify.
-        new_fields: List of new header fields.
-    """
-    for field in new_fields:
-        spec.add_field(field, overwrite=True)
-
-
-def _merge_headers_by_byte_offset(
-    spec: HeaderSpec, new_fields: list[HeaderField]
-) -> None:
-    """Removes existing headers that have bytes that would have been overlapped by new headers.
-
-    Intended to be run AFTER _merge_headers_by_name.
-    This algorithm will ensure all neighboring headers are not overlapped.
-
-    An overlap is anywhere that an `existing_spec` header byte width would have ANY intersection
-    with a `new_field` byte width.
-
-    Args:
-        spec: HeaderSpec to modify.
-        new_fields: List of new header fields.
-
-    Returns:
-        List of header fields with duplicates removed.
-    """
-    ranges = [(field.name, field.range) for field in spec.fields]
-    ranges.sort(key=lambda range_tuple: range_tuple[1][0])
-    fields_to_remove = []
-    processed_new_fields = set()  # Track which new fields have already caused a removal
-
-    for i in range(len(ranges) - 1):
-        current_key, current_range = ranges[i]
-        next_key, next_range = ranges[i + 1]
-        if ranges_overlap(current_range, next_range):
-            # Only remove existing fields that overlap with new fields
-            # Each new field should cause at most one removal
-            current_is_new = any(field.name == current_key for field in new_fields)
-            next_is_new = any(field.name == next_key for field in new_fields)
-
-            if (
-                current_is_new
-                and not next_is_new
-                and current_key not in processed_new_fields
-            ):
-                # Current is new, next is existing - remove next (existing)
-                fields_to_remove.append(next_key)
-                processed_new_fields.add(current_key)
-            elif (
-                not current_is_new
-                and next_is_new
-                and next_key not in processed_new_fields
-            ):
-                # Current is existing, next is new - remove current (existing)
-                fields_to_remove.append(current_key)
-                processed_new_fields.add(next_key)
-
-    # Remove fields using the HeaderSpec's remove_field method
-    for field_name in fields_to_remove:
-        spec.remove_field(field_name)
-
-
-def _validate_non_overlapping_headers(new_fields: list[HeaderField]) -> None:
-    """Validates that a list of new headers have unique names and do not overlap one-another.
-
-    Args:
-        new_fields: List of new header fields.
+        fields: List of new header fields.
 
     Raises:
         ValueError: If duplicate header field names are detected.
         ValueError: If header fields overlap.
     """
-    names = [field.name for field in new_fields]
+    names = [field.name for field in fields]
     if len(names) != len(set(names)):
         msg = f"Duplicate header field names detected: {names}!"
         raise ValueError(msg)
 
-    ranges = [field.range for field in new_fields]
+    ranges = [field.range for field in fields]
     ranges.sort(key=lambda range_tuple: range_tuple[0])
 
     for i in range(len(ranges) - 1):
@@ -345,5 +268,30 @@ class HeaderSpec(BaseDataType):
         del self.fields[field_idx]
 
     def customize(self, fields: list[HeaderField]) -> None:
-        """Customize a HeaderField with user defined fields."""
-        _merge_headers(self, fields)
+        """Customizes existing HeaderSpec fields with new headers handling overlaps.
+
+        It first handles name conflicts. Then it handles byte-range intersections.
+
+        This ensures no byte-range intersections between new and existing fields. Assumes
+        new fields do not overlap each other (validated first) and existing fields do not
+        overlap each other.
+
+        Args:
+            fields: List of new header fields.
+        """
+        _validate_non_overlapping_fields(fields)
+
+        # Handle name conflicts (overwrite old ones)
+        for field in fields:
+            self.add_field(field, overwrite=True)
+
+        # Handle byte-range conflicts (remove overlapping old fields)
+        fields_to_remove = set()
+        for new_field in fields:
+            for field in self.fields:
+                does_overlap = ranges_overlap(field.range, new_field.range)
+                if field.name != new_field.name and does_overlap:
+                    fields_to_remove.add(field.name)
+
+        for name in fields_to_remove:
+            self.remove_field(name)

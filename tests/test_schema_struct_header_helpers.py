@@ -8,9 +8,7 @@ import pytest
 
 from segy.schema import ScalarType
 from segy.schema.header import HeaderField
-from segy.schema.header import HeaderSpec
-from segy.schema.header import _merge_headers
-from segy.schema.header import _validate_non_overlapping_headers
+from segy.schema.header import _validate_non_overlapping_fields
 from segy.schema.header import ranges_overlap
 
 FieldRange: TypeAlias = tuple[int, int]
@@ -29,43 +27,21 @@ def test_ranges_overlap(range1: FieldRange, range2: FieldRange, expected: bool) 
     assert ranges_overlap(range1, range2) == expected
 
 
-def test_merge_headers(basic_fields: list[HeaderField]) -> None:
-    """Test merging of two HeaderSpecs."""
-    spec = HeaderSpec(fields=basic_fields[:1])  # Only 'foo'
-
-    # Merge one with overlap, and two "new" ones
-    field_overlaps_foo = HeaderField(name="overlap", byte=3, format=ScalarType.INT16)
-    new_fields = basic_fields[1:] + [field_overlaps_foo]
-    _merge_headers(spec, new_fields)
-    assert spec.names == ["bar", "fizz", "overlap"]  # foo removed due to overlap
-
-
-def test_merge_headers_consecutive(basic_fields: list[HeaderField]) -> None:
-    """Test merging of two HeaderSpecs where a new field cuts through two."""
-    spec = HeaderSpec(fields=basic_fields[:2])  # 'foo' and 'bar'
-
-    # Merge 'fizz' and 'overlap' field that invalidates 'foo' and 'bar'
-    field_overlaps_foo = HeaderField(name="overlap", byte=3, format=ScalarType.FLOAT32)
-    new_fields = basic_fields[2:] + [field_overlaps_foo]
-    _merge_headers(spec, new_fields)
-    assert spec.names == ["fizz", "overlap"]  # foo and bar removed due to overlap
-
-
 def test_validate_non_overlapping_headers() -> None:
     """Test validation of non-overlapping headers."""
     valid_fields = [
         HeaderField(name="a", byte=1, format=ScalarType.INT32),  # [1,5)
         HeaderField(name="b", byte=5, format=ScalarType.INT32),  # [5,9)
     ]
-    _validate_non_overlapping_headers(valid_fields)  # No error
+    _validate_non_overlapping_fields(valid_fields)  # No error
 
     duplicate_names = [HeaderField(name="a", byte=1, format=ScalarType.INT32)] * 2
     with pytest.raises(ValueError, match="Duplicate header field names detected"):
-        _validate_non_overlapping_headers(duplicate_names)
+        _validate_non_overlapping_fields(duplicate_names)
 
     overlapping = [
         HeaderField(name="a", byte=1, format=ScalarType.INT32),  # [1,5)
         HeaderField(name="b", byte=3, format=ScalarType.INT32),  # [3,7)
     ]
     with pytest.raises(ValueError, match="Header fields overlap"):
-        _validate_non_overlapping_headers(overlapping)
+        _validate_non_overlapping_fields(overlapping)
