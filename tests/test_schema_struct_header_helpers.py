@@ -39,6 +39,7 @@ def test_merge_headers(basic_fields: list[HeaderField]) -> None:
     _merge_headers(spec, new_fields)
     assert spec.names == ["bar", "fizz", "overlap"]  # foo removed due to overlap
 
+
 def test_merge_headers_consecutive(basic_fields: list[HeaderField]) -> None:
     """Test merging of two HeaderSpecs where a new field cuts through two."""
     spec = HeaderSpec(fields=basic_fields[:2])  # 'foo' and 'bar'
@@ -48,6 +49,7 @@ def test_merge_headers_consecutive(basic_fields: list[HeaderField]) -> None:
     new_fields = basic_fields[2:] + [field_overlaps_foo]
     _merge_headers(spec, new_fields)
     assert spec.names == ["fizz", "overlap"]  # foo and bar removed due to overlap
+
 
 def test_validate_non_overlapping_headers() -> None:
     """Test validation of non-overlapping headers."""
