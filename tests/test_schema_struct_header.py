@@ -152,13 +152,18 @@ class TestHeaderSpec:
 
     def test_customize(self, basic_header_spec: HeaderSpec) -> None:
         """Test HeaderSpec customization."""
+        # Test adding single field
+        new_field = HeaderField(name="buzz", format=ScalarType.INT32, byte=37)
+        basic_header_spec.customize(new_field)
+        assert basic_header_spec.names == ["foo", "bar", "fizz", "buzz"]
+
         new_fields = [
             HeaderField(name="new1", format=ScalarType.INT32, byte=6),  # Overlaps bar
             HeaderField(name="foo", format=ScalarType.FLOAT32, byte=1),  # Replaces foo
         ]
         basic_header_spec.customize(new_fields)
 
-        assert basic_header_spec.names == ["foo", "fizz", "new1"]  # no more bar
+        assert basic_header_spec.names == ["foo", "fizz", "buzz", "new1"]  # remove bar
         assert basic_header_spec.formats[0] == np.dtype("float32")  # foo overwritten
 
         # Test invalid customize (duplicates in new_fields)

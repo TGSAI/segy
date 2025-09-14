@@ -267,7 +267,7 @@ class HeaderSpec(BaseDataType):
 
         del self.fields[field_idx]
 
-    def customize(self, fields: list[HeaderField]) -> None:
+    def customize(self, fields: HeaderField | list[HeaderField]) -> None:
         """Customizes existing HeaderSpec fields with new headers handling overlaps.
 
         It first handles name conflicts. Then it handles byte-range intersections.
@@ -279,6 +279,9 @@ class HeaderSpec(BaseDataType):
         Args:
             fields: List of new header fields.
         """
+        if isinstance(fields, HeaderField):
+            fields = [fields]
+
         _validate_non_overlapping_fields(fields)
 
         # Handle name conflicts (overwrite old ones)
