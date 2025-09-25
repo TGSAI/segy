@@ -133,9 +133,9 @@ class TestHeaderSpec:
         }
         """
         actual_spec = HeaderSpec.model_validate_json(struct_json)
-        assert len(actual_spec.fields) == 2  # noqa: PLR2004
+        assert len(actual_spec.fields) == 2
         assert actual_spec.dtype.names == ("f1", "f2")
-        assert actual_spec.dtype.itemsize == 12  # noqa: PLR2004
+        assert actual_spec.dtype.itemsize == 12
         assert not actual_spec.dtype.isnative
 
 
