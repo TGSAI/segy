@@ -158,7 +158,7 @@ class AbstractIndexer(ABC):
         """Apply transforms to the data after decoding."""
         return self.transform_pipeline.apply(data)
 
-    def _normalize_and_validate_query(
+    def normalize_and_validate_query(
         self, item: int | list[int] | NDArray[IntDType] | slice
     ) -> NDArray[IntDType]:
         """Operator for integers, lists, and slices with bounds checking."""
@@ -186,7 +186,7 @@ class AbstractIndexer(ABC):
 
     def __getitem__(self, item: int | list[int] | NDArray[IntDType] | slice) -> Any:  # noqa: ANN401
         """Operator for integers, lists, and slices with bounds checking."""
-        indices = self._normalize_and_validate_query(item)
+        indices = self.normalize_and_validate_query(item)
         data = self.fetch(indices)
         return self.post_process(data)
 
