@@ -258,7 +258,7 @@ class TestSegyFile:
         trace_offset = segy_file.spec.trace.offset
         trace_buffer_size = segy_file.spec.trace.dtype.itemsize
         for trc_idx in range(segy_file.num_traces):
-            start = trace_offset + trc_idx * trace_buffer_size
+            start = trace_offset + trc_idx * trace_buffer_size  # type: ignore[operator]
             stop = start + header_buffer_size
             expected_bytes += segy_file.fs.read_bytes(segy_file.url, start, stop)
         assert actual_bytes == expected_bytes, "Raw bytes do not match expected."
@@ -296,7 +296,7 @@ class TestSegyFile:
         header_buffer_size = segy_file.spec.trace.header.dtype.itemsize
         trace_buffer_size = segy_file.spec.trace.dtype.itemsize
         for trc_idx in range(segy_file.num_traces):
-            start = trace_offset + trc_idx * trace_buffer_size + header_buffer_size
+            start = trace_offset + trc_idx * trace_buffer_size + header_buffer_size  # type: ignore[operator]
             stop = start + sample_buffer_size
             expected_bytes += segy_file.fs.read_bytes(segy_file.url, start, stop)
         assert actual_bytes == expected_bytes, "Raw bytes do not match expected."
@@ -354,8 +354,9 @@ class TestSegyFile:
         # Test raw access bytes
         actual_bytes = buffer.tobytes()
         expected_bytes = b""
+        trace_offset = segy_file.spec.trace.offset
         for trc_idx in index:
-            start = segy_file.spec.trace.offset + trc_idx * trace_buffer_size
+            start = trace_offset + trc_idx * trace_buffer_size  # type: ignore[operator]
             stop = start + trace_buffer_size
             expected_bytes += segy_file.fs.read_bytes(segy_file.url, start, stop)
         assert actual_bytes == expected_bytes, "Raw bytes do not match expected."
