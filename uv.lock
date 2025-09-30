@@ -2769,7 +2769,7 @@ wheels = [
 
 [[package]]
 name = "segy"
-version = "0.5.1"
+version = "0.5.1.post1"
 source = { editable = "." }
 dependencies = [
     { name = "fsspec" },
