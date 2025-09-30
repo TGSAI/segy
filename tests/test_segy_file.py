@@ -344,12 +344,12 @@ class TestSegyFile:
         assert_array_almost_equal(traces.sample, test_config.expected_samples[index])
 
         # Test raw access reusing the complex random access with duplicates
-        index = segy_file.trace.normalize_and_validate_query(index)
-        buffer = segy_file.trace.fetch(index, raw=True)
+        index_np = segy_file.trace.normalize_and_validate_query(index)
+        buffer = segy_file.trace.fetch(index_np, raw=True)
         trace_buffer_size = segy_file.spec.trace.dtype.itemsize
         assert buffer.nbytes == trace_buffer_size * len(index)
         assert buffer.dtype == np.dtype((np.void, trace_buffer_size))
-        assert buffer.shape == index.shape
+        assert buffer.shape == index_np.shape
 
         # Test raw access bytes
         actual_bytes = buffer.tobytes()
