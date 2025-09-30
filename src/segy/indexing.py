@@ -144,7 +144,9 @@ class AbstractIndexer(ABC):
         """Apply transforms to the data after decoding."""
         return self.transform_pipeline.apply(data)
 
-    def __getitem__(self, item: int | list[int] | NDArray[IntDType] | slice) -> Any:  # noqa: ANN401
+    def _normalize_and_validate_query(
+        self, item: int | list[int] | NDArray[IntDType] | slice
+    ) -> NDArray[IntDType]:
         """Operator for integers, lists, and slices with bounds checking."""
         if isinstance(item, slice):
             if item.step == 0:
@@ -166,6 +168,11 @@ class AbstractIndexer(ABC):
             msg = "Couldn't parse request. Please ensure it is a valid index."
             raise IndexError(msg)
 
+        return indices
+
+    def __getitem__(self, item: int | list[int] | NDArray[IntDType] | slice) -> Any:  # noqa: ANN401
+        """Operator for integers, lists, and slices with bounds checking."""
+        indices = self._normalize_and_validate_query(item)
         data = self.fetch(indices)
         return self.post_process(data)
 
