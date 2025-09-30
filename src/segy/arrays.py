@@ -104,10 +104,6 @@ class HeaderArray(SegyArray):
         return DataFrame.from_records(self)
 
     def _normalize_and_validate_keys(self, key: str | list[str]) -> str | list[str]:
-        if self.dtype.names is None:  # to keep mypy happy
-            msg = f"{self.__class__.__name__} can only work on structured arrays."
-            raise ValueError(msg)
-
         if isinstance(key, str):
             original_key = copy(key)
             key = normalize_key(key)
@@ -125,10 +121,6 @@ class HeaderArray(SegyArray):
         if self.dtype.kind == "V" and self.dtype.names is None:
             # edge case for raw arrays when its void and no fields
             return super().__getitem__(item)
-
-        if self.dtype.names is None:  # to keep mypy happy
-            msg = f"{self.__class__.__name__} can only work on structured arrays."
-            raise ValueError(msg)
 
         if isinstance(item, str) and item in self.dtype.names:
             return super().__getitem__(item)
@@ -148,10 +140,6 @@ class HeaderArray(SegyArray):
         if self.dtype.kind == "V" and self.dtype.names is None:
             # edge case for raw arrays when its void and no fields
             super().__setitem__(key, value)
-
-        if self.dtype.names is None:  # to keep mypy happy
-            msg = f"{self.__class__.__name__} can only work on structured arrays."
-            raise ValueError(msg)
 
         if isinstance(key, str) and key in self.dtype.names:
             super().__setitem__(key, value)

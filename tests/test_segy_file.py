@@ -252,6 +252,8 @@ class TestSegyFile:
         assert buffer.nbytes == header_buffer_size * segy_file.num_traces
         assert buffer.dtype == np.dtype((np.void, header_buffer_size))
 
+        segy_file.header[:2]["trace_weighting_factor"]
+
         # Test raw access bytes
         actual_bytes = buffer.tobytes()
         expected_bytes = b""
