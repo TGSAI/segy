@@ -122,7 +122,8 @@ class HeaderArray(SegyArray):
 
     def __getitem__(self, item: Any) -> Any:  # noqa: ANN401
         """Special getitem where we normalize header keys. Pass along to numpy."""
-        if self.dtype.kind == "V":
+        if self.dtype.kind == "V" and self.dtype.names is None:
+            # edge case for raw arrays when its void and no fields
             return super().__getitem__(item)
 
         if self.dtype.names is None:  # to keep mypy happy
@@ -144,7 +145,8 @@ class HeaderArray(SegyArray):
 
     def __setitem__(self, key: Any, value: Any) -> None:  # noqa: ANN401
         """Special getitem where we normalize header keys. Pass along to numpy."""
-        if self.dtype.kind == "V":
+        if self.dtype.kind == "V" and self.dtype.names is None:
+            # edge case for raw arrays when its void and no fields
             super().__setitem__(key, value)
 
         if self.dtype.names is None:  # to keep mypy happy
