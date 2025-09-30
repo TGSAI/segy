@@ -159,7 +159,7 @@ class AbstractIndexer(ABC):
             indices = np.arange(*item.indices(self.max_value))
 
         else:  # int, list, or ndarray case
-            indices = np.atleast_1d(item)  # type: ignore
+            indices = np.atleast_1d(item)
             bounds_check(indices, self.max_value, self.kind)
 
         if len(indices) == 0:
