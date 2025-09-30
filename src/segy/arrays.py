@@ -104,27 +104,23 @@ class HeaderArray(SegyArray):
         return DataFrame.from_records(self)
 
     def _normalize_and_validate_keys(self, key: str | list[str]) -> str | list[str]:
-        if self.dtype.names is None:  # to keep mypy happy
-            msg = f"{self.__class__.__name__} can only work on structured arrays."
-            raise ValueError(msg)
-
         if isinstance(key, str):
             original_key = copy(key)
             key = normalize_key(key)
-            validate_key(key, original_key, self.dtype.names)
+            validate_key(key, original_key, self.dtype.names)  # type: ignore[arg-type]
         elif isinstance(key, list):
             original_keys = copy(key)
             key = [normalize_key(k) for k in key]
             for k, orig_k in zip(key, original_keys, strict=True):
-                validate_key(k, orig_k, self.dtype.names)
+                validate_key(k, orig_k, self.dtype.names)  # type: ignore[arg-type]
 
         return key
 
     def __getitem__(self, item: Any) -> Any:  # noqa: ANN401
         """Special getitem where we normalize header keys. Pass along to numpy."""
-        if self.dtype.names is None:  # to keep mypy happy
-            msg = f"{self.__class__.__name__} can only work on structured arrays."
-            raise ValueError(msg)
+        if self.dtype.names is None:
+            # edge case for raw arrays when it has no fields
+            return super().__getitem__(item)
 
         if isinstance(item, str) and item in self.dtype.names:
             return super().__getitem__(item)
@@ -141,15 +137,16 @@ class HeaderArray(SegyArray):
 
     def __setitem__(self, key: Any, value: Any) -> None:  # noqa: ANN401
         """Special getitem where we normalize header keys. Pass along to numpy."""
-        if self.dtype.names is None:  # to keep mypy happy
-            msg = f"{self.__class__.__name__} can only work on structured arrays."
-            raise ValueError(msg)
-
-        if isinstance(key, str) and key in self.dtype.names:
+        if self.dtype.names is None:
+            # edge case for raw arrays when it has no fields
             super().__setitem__(key, value)
             return
 
         if isinstance(key, str):
+            if key in self.dtype.names:
+                super().__setitem__(key, value)
+                return
+
             key = self._normalize_and_validate_keys(key)
 
         elif isinstance(key, list) and all(isinstance(i, str) for i in key):
