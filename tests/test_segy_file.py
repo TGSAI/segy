@@ -256,7 +256,6 @@ class TestSegyFile:
         actual_bytes = buffer.tobytes()
         expected_bytes = b""
         trace_offset = segy_file.spec.trace.offset
-        header_buffer_size = segy_file.spec.trace.header.dtype.itemsize
         trace_buffer_size = segy_file.spec.trace.dtype.itemsize
         for trc_idx in range(segy_file.num_traces):
             start = trace_offset + trc_idx * trace_buffer_size
