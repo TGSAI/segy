@@ -107,12 +107,12 @@ class HeaderArray(SegyArray):
         if isinstance(key, str):
             original_key = copy(key)
             key = normalize_key(key)
-            validate_key(key, original_key, self.dtype.names)
+            validate_key(key, original_key, self.dtype.names)  # type: ignore[arg-type]
         elif isinstance(key, list):
             original_keys = copy(key)
             key = [normalize_key(k) for k in key]
             for k, orig_k in zip(key, original_keys, strict=True):
-                validate_key(k, orig_k, self.dtype.names)
+                validate_key(k, orig_k, self.dtype.names)  # type: ignore[arg-type]
 
         return key
 
