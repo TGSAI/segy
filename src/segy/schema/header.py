@@ -15,6 +15,35 @@ from segy.schema.base import Endianness
 from segy.schema.format import ScalarType  # noqa: TCH001
 
 
+def _validate_non_overlapping_fields(fields: list[HeaderField]) -> None:
+    """Validates that a list of HeaderField have unique names and do not overlap one-another.
+
+    Args:
+        fields: List of new header fields.
+
+    Raises:
+        ValueError: If duplicate header field names are detected.
+        ValueError: If header fields overlap.
+    """
+    names = [field.name for field in fields]
+    if len(names) != len(set(names)):
+        msg = f"Duplicate header field names detected: {names}!"
+        raise ValueError(msg)
+
+    ranges = [field.range for field in fields]
+    ranges.sort(key=lambda range_tuple: range_tuple[0])
+
+    for i in range(len(ranges) - 1):
+        if ranges_overlap(ranges[i], ranges[i + 1]):
+            msg = f"Header fields overlap: {ranges[i]} and {ranges[i + 1]}!"
+            raise ValueError(msg)
+
+
+def ranges_overlap(range1: tuple[int, int], range2: tuple[int, int]) -> bool:
+    """Checks if two right half-open ranges overlap."""
+    return range1[0] < range2[1] and range1[1] > range2[0]
+
+
 class HeaderField(BaseDataType):
     """A class representing header field spec.
 
@@ -57,6 +86,14 @@ class HeaderField(BaseDataType):
     def dtype(self) -> np.dtype[Any]:
         """Converts the data type of the object into a NumPy dtype."""
         return self.format.dtype
+
+    @property
+    def range(self) -> tuple[int, int]:
+        """Return the start and stop byte location of the field.
+
+        Note: This return is Fortran-style and right half-open. [start, stop)
+        """
+        return self.byte, self.byte + self.dtype.itemsize
 
 
 class HeaderSpec(BaseDataType):
@@ -229,3 +266,35 @@ class HeaderSpec(BaseDataType):
             raise KeyError(msg) from err
 
         del self.fields[field_idx]
+
+    def customize(self, fields: HeaderField | list[HeaderField]) -> None:
+        """Customizes existing HeaderSpec fields with new headers handling overlaps.
+
+        It first handles name conflicts. Then it handles byte-range intersections.
+
+        This ensures no byte-range intersections between new and existing fields. Assumes
+        new fields do not overlap each other (validated first) and existing fields do not
+        overlap each other.
+
+        Args:
+            fields: List of new header fields.
+        """
+        if isinstance(fields, HeaderField):
+            fields = [fields]
+
+        _validate_non_overlapping_fields(fields)
+
+        # Handle name conflicts (overwrite old ones)
+        for field in fields:
+            self.add_field(field, overwrite=True)
+
+        # Handle byte-range conflicts (remove overlapping old fields)
+        fields_to_remove = set()
+        for new_field in fields:
+            for field in self.fields:
+                does_overlap = ranges_overlap(field.range, new_field.range)
+                if field.name != new_field.name and does_overlap:
+                    fields_to_remove.add(field.name)
+
+        for name in fields_to_remove:
+            self.remove_field(name)

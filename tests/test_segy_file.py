@@ -65,14 +65,25 @@ def generate_test_trace_data(
         header_arr[field.name] = random_field_data.astype(field.format)
 
     # Cast to float32 if IBM.
-    if data_spec.format == ScalarType.IBM32:
-        sample_dtype = np.dtype("float32")
-    else:
-        sample_dtype = np.dtype(data_spec.format)
+    sample_dtype = (
+        np.dtype("float32")
+        if data_spec.format == ScalarType.IBM32
+        else np.dtype(data_spec.format)
+    )
     sample_shape = (num_traces, SAMPLES_PER_TRACE)
     sample_arr = np.empty(shape=sample_shape, dtype=sample_dtype)
     random_sample_data = rng.normal(size=sample_shape)
-    sample_arr[:] = random_sample_data.astype("float32")
+
+    # Clip if the dtype has finite bounds (i.e., for numeric integer types).
+    # Floats can handle the normal dist range we created above
+    # Type ignore because mypy can't statically narrow `sample_dtype` based on runtime
+    if np.issubdtype(sample_dtype, np.integer):
+        info = np.iinfo(sample_dtype)  # type: ignore[type-var]
+        min_val = info.min
+        max_val = info.max
+        random_sample_data = np.clip(random_sample_data, min_val, max_val)
+
+    sample_arr[:] = random_sample_data
 
     return header_arr, sample_arr
 
@@ -234,6 +245,26 @@ class TestSegyFile:
 
         assert_array_equal(segy_file.header[:], test_config.expected_headers)
 
+        # Test raw access
+        index = segy_file.header.normalize_and_validate_query(slice(None))
+        buffer = segy_file.header.fetch(index, raw=True)
+        header_buffer_size = segy_file.spec.trace.header.dtype.itemsize
+        assert buffer.nbytes == header_buffer_size * segy_file.num_traces
+        assert buffer.dtype == np.dtype((np.void, header_buffer_size))
+
+        segy_file.header[:2]["trace_weighting_factor"]
+
+        # Test raw access bytes
+        actual_bytes = buffer.tobytes()
+        expected_bytes = b""
+        trace_offset = segy_file.spec.trace.offset
+        trace_buffer_size = segy_file.spec.trace.dtype.itemsize
+        for trc_idx in range(segy_file.num_traces):
+            start = trace_offset + trc_idx * trace_buffer_size  # type: ignore[operator]
+            stop = start + header_buffer_size
+            expected_bytes += segy_file.fs.read_bytes(segy_file.url, start, stop)
+        assert actual_bytes == expected_bytes, "Raw bytes do not match expected."
+
     @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
     @pytest.mark.parametrize("sample_format", [ScalarType.IBM32, ScalarType.FLOAT32])
     def test_trace_sample_accessor(
@@ -252,6 +283,25 @@ class TestSegyFile:
         segy_file = SegyFile(test_config.uri)
 
         assert_array_almost_equal(segy_file.sample[:], test_config.expected_samples)
+
+        # Test raw access
+        index = segy_file.sample.normalize_and_validate_query(slice(None))
+        buffer = segy_file.sample.fetch(index, raw=True)
+        sample_buffer_size = segy_file.spec.trace.data.dtype.itemsize
+        assert buffer.nbytes == sample_buffer_size * segy_file.num_traces
+        assert buffer.dtype == np.dtype((np.void, sample_buffer_size))
+
+        # Test raw access bytes
+        actual_bytes = buffer.tobytes()
+        expected_bytes = b""
+        trace_offset = segy_file.spec.trace.offset
+        header_buffer_size = segy_file.spec.trace.header.dtype.itemsize
+        trace_buffer_size = segy_file.spec.trace.dtype.itemsize
+        for trc_idx in range(segy_file.num_traces):
+            start = trace_offset + trc_idx * trace_buffer_size + header_buffer_size  # type: ignore[operator]
+            stop = start + sample_buffer_size
+            expected_bytes += segy_file.fs.read_bytes(segy_file.url, start, stop)
+        assert actual_bytes == expected_bytes, "Raw bytes do not match expected."
 
     @pytest.mark.parametrize("standard", [SegyStandard.REV0, SegyStandard.REV1])
     @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
@@ -294,6 +344,24 @@ class TestSegyFile:
         traces = segy_file.trace[index]
         assert_array_equal(traces.header, test_config.expected_headers[index])
         assert_array_almost_equal(traces.sample, test_config.expected_samples[index])
+
+        # Test raw access reusing the complex random access with duplicates
+        index_np = segy_file.trace.normalize_and_validate_query(index)
+        buffer = segy_file.trace.fetch(index_np, raw=True)
+        trace_buffer_size = segy_file.spec.trace.dtype.itemsize
+        assert buffer.nbytes == trace_buffer_size * len(index)
+        assert buffer.dtype == np.dtype((np.void, trace_buffer_size))
+        assert buffer.shape == index_np.shape
+
+        # Test raw access bytes
+        actual_bytes = buffer.tobytes()
+        expected_bytes = b""
+        trace_offset = segy_file.spec.trace.offset
+        for trc_idx in index:
+            start = trace_offset + trc_idx * trace_buffer_size  # type: ignore[operator]
+            stop = start + trace_buffer_size
+            expected_bytes += segy_file.fs.read_bytes(segy_file.url, start, stop)
+        assert actual_bytes == expected_bytes, "Raw bytes do not match expected."
 
 
 class TestSegyFileExceptions:

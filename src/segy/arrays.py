@@ -24,15 +24,13 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from collections.abc import Iterable
     from collections.abc import Mapping
-    from typing import Literal
 
+    from numpy import _OrderKACF
     from numpy.typing import NDArray
     from pandas import DataFrame
 
-    OrderKACF = Literal[None, "K", "A", "C", "F"]
 
-
-class SegyArray(np.ndarray):  # type: ignore[type-arg]
+class SegyArray(np.ndarray):
     """Base class for array interface. Like ndarray but extensible."""
 
     def __new__(cls, input_array: NDArray[Any]) -> SegyArray:
@@ -65,7 +63,7 @@ class SegyArray(np.ndarray):  # type: ignore[type-arg]
 
         return result
 
-    def copy(self, order: OrderKACF = "K") -> SegyArray:
+    def copy(self, order: _OrderKACF = "K") -> SegyArray:
         """Copy structured array preserving the padded bytes as is.
 
         This method ensures that the copy includes raw binary data and any padding
@@ -75,7 +73,7 @@ class SegyArray(np.ndarray):  # type: ignore[type-arg]
         """
         void_view = self.view("V")
         void_copy = np.copy(void_view, order=order, subok=True)
-        return void_copy.view(self.dtype)  # type: ignore[no-any-return]
+        return void_copy.view(self.dtype, type=type(self)).view()
 
 
 class HeaderArray(SegyArray):
@@ -109,17 +107,21 @@ class HeaderArray(SegyArray):
         if isinstance(key, str):
             original_key = copy(key)
             key = normalize_key(key)
-            validate_key(key, original_key, self.dtype.names)
+            validate_key(key, original_key, self.dtype.names)  # type: ignore[arg-type]
         elif isinstance(key, list):
             original_keys = copy(key)
             key = [normalize_key(k) for k in key]
             for k, orig_k in zip(key, original_keys, strict=True):
-                validate_key(k, orig_k, self.dtype.names)
+                validate_key(k, orig_k, self.dtype.names)  # type: ignore[arg-type]
 
         return key
 
     def __getitem__(self, item: Any) -> Any:  # noqa: ANN401
         """Special getitem where we normalize header keys. Pass along to numpy."""
+        if self.dtype.names is None:
+            # edge case for raw arrays when it has no fields
+            return super().__getitem__(item)
+
         if isinstance(item, str) and item in self.dtype.names:
             return super().__getitem__(item)
 
@@ -135,11 +137,16 @@ class HeaderArray(SegyArray):
 
     def __setitem__(self, key: Any, value: Any) -> None:  # noqa: ANN401
         """Special getitem where we normalize header keys. Pass along to numpy."""
-        if isinstance(key, str) and key in self.dtype.names:
+        if self.dtype.names is None:
+            # edge case for raw arrays when it has no fields
             super().__setitem__(key, value)
             return
 
         if isinstance(key, str):
+            if key in self.dtype.names:
+                super().__setitem__(key, value)
+                return
+
             key = self._normalize_and_validate_keys(key)
 
         elif isinstance(key, list) and all(isinstance(i, str) for i in key):
