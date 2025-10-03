@@ -47,7 +47,7 @@ class SegyFile:
         url: Path to SEG-Y file on disk or remote store.
         spec: The schema / spec describing the SEG-Y file. This
             is optional and by default it will try to infer the
-            SEG-Y standard from the binary header.
+            SEG-Y standard from the binary header or header_overrides.
         settings: A settings instance to configure / override
             the SEG-Y parsing logic. Optional.
         header_overrides: A header overrides instance to
