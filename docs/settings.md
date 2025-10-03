@@ -39,18 +39,14 @@ You initialize an instance of [SegySettings] like any other Python object,
 optionally providing initial values for the settings. For example:
 
 ```python
-from segy.config import BinaryHeaderSettings
-from segy.config import SegySettings
+from segy.config import SegyHeaderOverrides
+from segy.config import SegyFileSettings
 from segy.schema import Endianness
 
 # Override extended text header count to zero
-bin_overrides = BinaryHeaderSettings(extended_text_header=0)
-
-settings = SegySettings(
-    binary=bin_overrides,
-    endian=Endianness.LITTLE,
-    revision=1,
-)
+binary_header_overrides = {"extended_text_header": 0, "segy_revision": 1}
+header_overrides = SegyHeaderOverrides(binary_header=binary_header_overrides)
+settings = SegyFileSettings(endianness=Endianness.LITTLE)
 ```
 
 Then this can be passed to [SegyFile] directly.
@@ -58,7 +54,7 @@ Then this can be passed to [SegyFile] directly.
 ```python
 from segy import SegyFile
 
-file = SegyFile(uri="...", settings=settings)
+file = SegyFile(uri="...", settings=settings, header_overrides=header_overrides)
 ```
 
 If no settings are provided to [SegyFile], it will take the default values.
@@ -69,13 +65,12 @@ If no settings are provided to [SegyFile], it will take the default values.
 
 ## Environment Variables
 
-Environment variables that follow the `SEGY__VARIABLE__SUBVARIABLE` format will be
-automatically included in your [SegySettings] instance:
+Environment variables that follow the `SEGY_` format will be
+automatically included in your [SegyFileSettings] instance:
 
 ```shell
-export SEGY__BINARY__SAMPLES_PER_TRACE=1001
-export SEGY__ENDIANNESS="big"
-export SEGY__REVISION=0
+export SEGY_OVERRIDE_BINARY_HEADER='{"samples_per_trace": 1001, "segy_revision": 1}'
+export SEGY_ENDIANNESS="big"
 ```
 
 The environment variables will override the defaults in the [SegySettings]

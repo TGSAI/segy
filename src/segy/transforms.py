@@ -246,6 +246,29 @@ class SegyRevisionTransform(Transform):
         )
 
 
+class ReplaceHeaderValueTransform(Transform):
+    """Transform to replace a specific array or key with a new value.
+
+    Args:
+        value: New value to replace the header field with.
+    """
+
+    def __init__(self, key: str, value: int | float):
+        super().__init__()
+
+        if self.keys is not None:
+            msg = f"{self.__class__.__name__} doesn't take `keys` argument."
+            raise TypeError(msg)
+
+        self.key = key
+        self.value = value
+
+    def transform(self, data: NDArray[Any]) -> NDArray[Any]:
+        """Replace header field value with new value."""
+        data[self.key] = self.value
+        return data
+
+
 class TraceTransform(Transform):
     """Composite transform to apply header and data pipeline to trace.
 
@@ -285,6 +308,7 @@ class TransformFactory:
         "byte_swap": ByteSwapTransform,
         "ibm_float": IbmFloatTransform,
         "segy_revision": SegyRevisionTransform,
+        "replace_header_value": ReplaceHeaderValueTransform,
         "trace": TraceTransform,
     }
 

@@ -15,7 +15,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from segy.config import SegySettings
+from segy.config import SegyFileSettings
+from segy.config import SegyHeaderOverrides
 from segy.exceptions import EndiannessInferenceError
 from segy.schema import Endianness
 from segy.schema import SegyStandard
@@ -52,7 +53,7 @@ class SegyInferResult:
 
 def infer_endianness(
     buffer: bytes,
-    settings: SegySettings,
+    settings: SegyFileSettings,
 ) -> EndiannessAction:
     """Infer if we need to reverse the endianness of the seismic data.
 
@@ -120,14 +121,14 @@ def infer_endianness(
 def interpret_revision(
     buffer: bytes,
     endianness_action: EndiannessAction | None = None,
-    settings: SegySettings | None = None,
+    overrides: SegyHeaderOverrides | None = None,
 ) -> int | float:
     """Infer the revision number from the binary header of a SEG-Y file.
 
     Args:
         buffer: The binary header buffer.
         endianness_action: The action to take for endianness.
-        settings: The SegySettings, which may override the revision.
+        overrides: The SegyHeaderOverrides, which may override the revision.
 
     Returns:
         The revision number as a float (e.g., 1.0, 1.2, 2.0).
@@ -135,16 +136,16 @@ def interpret_revision(
     if endianness_action is None:
         endianness_action = EndiannessAction.KEEP
 
-    if settings is None:
-        settings = SegySettings()
+    if overrides is None:
+        overrides = SegyHeaderOverrides()
 
     logger.debug("Starting revision inference.")
 
-    # Method 1: Use settings if available
-    if settings.binary.revision is not None:
-        settings_rev = settings.binary.revision
-        logger.info("Using provided revision from settings: %s", settings_rev)
-        return settings_rev
+    # Method 1: Use override if available
+    user_revision = overrides.binary_header.get("segy_revision", None)
+    if user_revision is not None:
+        logger.info("Using provided revision from override: %s", user_revision)
+        return user_revision
 
     # Method 2: Major/minor from single byte integers (SEG-Y Rev2+)
     logger.debug("Checking if file is SEG-Y Rev2+.")

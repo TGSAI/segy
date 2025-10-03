@@ -21,11 +21,11 @@
 ## Configuration
 
 ```{eval-rst}
-.. autopydantic_settings:: segy.config.SegySettings
+.. autopydantic_settings:: segy.config.SegyFileSettings
     :inherited-members: BaseModel
 ```
 
 ```{eval-rst}
-.. autopydantic_settings:: segy.config.BinaryHeaderSettings
+.. autopydantic_settings:: segy.config.SegyHeaderOverrides
     :inherited-members: BaseModel
 ```
