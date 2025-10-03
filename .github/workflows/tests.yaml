@@ -44,7 +44,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python }}
-          pyproject-file: ${{ github.workspace }}/pyproject.toml
+          version-file: ${{ github.workspace }}/pyproject.toml
 
       - name: Install Nox
         run: |
@@ -58,13 +58,15 @@ jobs:
         run: |
           import hashlib
           import sys
+          import os
 
           python = "py{}.{}".format(*sys.version_info[:2])
           payload = sys.version.encode() + sys.executable.encode()
           digest = hashlib.sha256(payload).hexdigest()
           result = "${{ runner.os }}-{}-{}-pre-commit".format(python, digest[:8])
 
-          print("::set-output name=result::{}".format(result))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"result={result}\n")
 
       - name: Restore pre-commit cache
         uses: actions/cache@v4
@@ -105,7 +107,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           python-version: 3.13
-          pyproject-file: "${{ github.workspace }}/pyproject.toml"
+          version-file: "${{ github.workspace }}/pyproject.toml"
 
       - name: Install Nox
         run: |
