@@ -24,7 +24,6 @@ from segy.standards import get_segy_standard
 from segy.standards.codes import DataSampleFormatCode
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
     from typing import Any
 
     from fsspec import AbstractFileSystem
@@ -39,7 +38,7 @@ EXPECTED_SAMPLE_LABELS = range(0, SAMPLES_PER_TRACE * SAMPLE_INTERVAL, SAMPLE_IN
 
 
 @pytest.fixture
-def set_settings_overrides_env_vars(monkeypatch: Generator[pytest.MonkeyPatch]) -> None:
+def set_settings_overrides_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
     """Set environment variables for the settings/override env var test."""
     monkeypatch.setenv("SEGY_STORAGE_OPTIONS", '{"anon": true}')
     monkeypatch.setenv("SEGY_OVERRIDE_BINARY_HEADER", '{"segy_revision": 1.0}')
