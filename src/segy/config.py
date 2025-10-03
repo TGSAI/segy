@@ -22,7 +22,9 @@ class SegyHeaderOverrides(SegyBaseSettings):
     """SEG-Y header parsing overrides.
 
     Any value that is set to an integer will override what is parsed from
-    the binary header in the actual file.
+    the binary header in the actual file. If you override with a float
+    please ensure that the field is defined as a float. If not, the float
+    will get down-cast to an integer.
     """
 
     binary_header: Mapping[str, int | float] = Field(
