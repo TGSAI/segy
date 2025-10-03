@@ -66,7 +66,7 @@ If no settings are provided to [SegyFile], it will take the default values.
 ## Environment Variables
 
 Environment variables that follow the `SEGY_` format will be
-automatically included in your [SegySettings] instance:
+automatically included in your [SegyFileSettings] instance:
 
 ```shell
 export SEGY_OVERRIDE_BINARY_HEADER='{"samples_per_trace": 1001, "segy_revision": 1}'
