@@ -1,6 +1,6 @@
 [project]
 name = "segy"
-version = "0.5.0.post1"  # Don't manually update; use bump-my-version
+version = "0.5.1.post1"  # Don't manually update; use bump-my-version
 description = "The Ultimate Python SEG-Y I/O with Cloud Support and Schemas"
 authors = [{ name = "Altay Sansal", email = "altay.sansal@tgs.com" }]
 license = "Apache-2.0"
@@ -54,16 +54,16 @@ dev = [
 ]
 
 docs = [
-    "sphinx>=8.1.3,<8.2.0",
+    "sphinx>=8.2.1,<9.0.0",
     "sphinx-design>=0.6.1",
     "sphinx-copybutton>=0.5.2",
-    "furo>=2024.8.6",
-    "myst-nb>=1.2.0",
+    "furo>=2025.9.25",
+    "myst-nb>=1.3.0",
     "linkify-it-py>=2.0.3",
     "autodoc-pydantic>=2.2.0",
     "sphinxcontrib-typer>=0.6.2",
     "matplotlib>=3.10.1",
-    "s3fs>=2025.3.2",
+    "s3fs>=2025.9.0",
 ]
 
 [tool.ruff]
@@ -178,7 +178,7 @@ init_typed = true
 warn_required_dynamic_aliases = true
 
 [tool.bumpversion]
-current_version = "0.5.0.post1"
+current_version = "0.5.1.post1"
 allow_dirty = true
 commit = false
 tag = false

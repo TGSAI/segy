@@ -13,7 +13,8 @@ from fsspec.core import url_to_fs
 
 from segy.accessors import TraceAccessor
 from segy.arrays import HeaderArray
-from segy.config import SegySettings
+from segy.config import SegyFileSettings
+from segy.config import SegyHeaderOverrides
 from segy.exceptions import SegyFileSpecMismatchError
 from segy.indexing import DataIndexer
 from segy.indexing import HeaderIndexer
@@ -46,9 +47,11 @@ class SegyFile:
         url: Path to SEG-Y file on disk or remote store.
         spec: The schema / spec describing the SEG-Y file. This
             is optional and by default it will try to infer the
-            SEG-Y standard from the binary header.
+            SEG-Y standard from the binary header or header_overrides.
         settings: A settings instance to configure / override
             the SEG-Y parsing logic. Optional.
+        header_overrides: A header overrides instance to
+            modify the SEG-Y header(s) on the fly. Optional.
 
     Attributes:
         fs: The filesystem instance used to access the file.
@@ -62,9 +65,11 @@ class SegyFile:
         self,
         url: str,
         spec: SegySpec | None = None,
-        settings: SegySettings | None = None,
+        settings: SegyFileSettings | None = None,
+        header_overrides: SegyHeaderOverrides | None = None,
     ):
-        self.settings = settings if settings is not None else SegySettings()
+        self.settings = settings or SegyFileSettings()
+        self.header_overrides = header_overrides or SegyHeaderOverrides()
 
         self.fs, self.url = url_to_fs(url, **self.settings.storage_options)
         self._info = self.fs.info(self.url)
@@ -72,7 +77,7 @@ class SegyFile:
         self.spec = self._initialize_spec(spec)
         self._update_spec()
 
-        self.accessors = TraceAccessor(self.spec.trace)
+        self.accessors = TraceAccessor(self.spec.trace, self.header_overrides)
 
     @property
     def file_size(self) -> int:
@@ -156,6 +161,19 @@ class SegyFile:
             little_endian = TransformFactory.create("byte_swap", Endianness.LITTLE)
             transforms.add_transform(little_endian)
 
+        bin_hdr_overrides = self.header_overrides.binary_header
+        if len(bin_hdr_overrides) > 0:
+            for key, value in bin_hdr_overrides.items():
+                # Special case for revision because user input is a float and we need to
+                # convert it back to base16 so that `interpret_revision` can interpret it.
+                if key == "segy_revision":
+                    minor, major = np.modf(value)
+                    minor = int(minor * 10)  # fraction to int
+                    value = (int(major) << 8) | minor  # noqa: PLW2901
+
+                replace = TransformFactory.create("replace_header_value", key, value)
+                transforms.add_transform(replace)
+
         interpret_revision = TransformFactory.create("segy_revision")
         transforms.add_transform(interpret_revision)
 
@@ -180,7 +198,7 @@ class SegyFile:
         bin_header_buffer = self.fs.read_block(fn=self.url, offset=3200, length=400)
         endianness_action = infer_endianness(bin_header_buffer, self.settings)
         revision = interpret_revision(
-            bin_header_buffer, endianness_action, self.settings
+            bin_header_buffer, endianness_action, self.header_overrides
         )
 
         if endianness_action == EndiannessAction.REVERSE:
@@ -198,19 +216,21 @@ class SegyFile:
     def _update_spec(self) -> None:
         """Parse the binary header and apply some rules."""
         ext_text_header_spec = self.spec.ext_text_header
+        bin_header_overrides = self.header_overrides.binary_header
 
         if ext_text_header_spec is not None:
             num_ext_text = self.binary_header["num_extended_text_headers"].item()
             logger.info("Ext text headers, count from binary header: %s.", num_ext_text)
             ext_text_header_spec.count = num_ext_text
 
-            settings_num_ext_text = self.settings.binary.ext_text_header
-            if settings_num_ext_text is not None:
+            num_ext_text = bin_header_overrides.get("num_extended_text_headers", None)
+
+            if num_ext_text is not None:
                 logger.info(
-                    "Using provided ext text header count from settings: %s",
-                    settings_num_ext_text,
+                    "Using provided ext text header count from overrides: %s",
+                    num_ext_text,
                 )
-                ext_text_header_spec.count = settings_num_ext_text
+                ext_text_header_spec.count = int(num_ext_text)
 
         sample_format_value = self.binary_header["data_sample_format"].item()
         data_sample_format_code = DataSampleFormatCode(sample_format_value)

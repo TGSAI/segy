@@ -13,8 +13,8 @@ from numpy.testing import assert_array_equal
 
 from segy import SegyFactory
 from segy import SegyFile
-from segy.config import BinaryHeaderSettings
-from segy.config import SegySettings
+from segy.config import SegyFileSettings
+from segy.config import SegyHeaderOverrides
 from segy.exceptions import EndiannessInferenceError
 from segy.exceptions import SegyFileSpecMismatchError
 from segy.schema import Endianness
@@ -35,6 +35,14 @@ SAMPLES_PER_TRACE = 21
 NUM_TRACES = 15
 
 EXPECTED_SAMPLE_LABELS = range(0, SAMPLES_PER_TRACE * SAMPLE_INTERVAL, SAMPLE_INTERVAL)
+
+
+@pytest.fixture
+def set_settings_overrides_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Set environment variables for the settings/override env var test."""
+    monkeypatch.setenv("SEGY_STORAGE_OPTIONS", '{"anon": true}')
+    monkeypatch.setenv("SEGY_OVERRIDE_BINARY_HEADER", '{"segy_revision": 1.0}')
+    monkeypatch.setenv("SEGY_OVERRIDE_TRACE_HEADER", '{"coordinate_scalar": 100}')
 
 
 @dataclass
@@ -245,6 +253,26 @@ class TestSegyFile:
 
         assert_array_equal(segy_file.header[:], test_config.expected_headers)
 
+        # Test raw access
+        index = segy_file.header.normalize_and_validate_query(slice(None))
+        buffer = segy_file.header.fetch(index, raw=True)
+        header_buffer_size = segy_file.spec.trace.header.dtype.itemsize
+        assert buffer.nbytes == header_buffer_size * segy_file.num_traces
+        assert buffer.dtype == np.dtype((np.void, header_buffer_size))
+
+        segy_file.header[:2]["trace_weighting_factor"]
+
+        # Test raw access bytes
+        actual_bytes = buffer.tobytes()
+        expected_bytes = b""
+        trace_offset = segy_file.spec.trace.offset
+        trace_buffer_size = segy_file.spec.trace.dtype.itemsize
+        for trc_idx in range(segy_file.num_traces):
+            start = trace_offset + trc_idx * trace_buffer_size  # type: ignore[operator]
+            stop = start + header_buffer_size
+            expected_bytes += segy_file.fs.read_bytes(segy_file.url, start, stop)
+        assert actual_bytes == expected_bytes, "Raw bytes do not match expected."
+
     @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
     @pytest.mark.parametrize("sample_format", [ScalarType.IBM32, ScalarType.FLOAT32])
     def test_trace_sample_accessor(
@@ -263,6 +291,25 @@ class TestSegyFile:
         segy_file = SegyFile(test_config.uri)
 
         assert_array_almost_equal(segy_file.sample[:], test_config.expected_samples)
+
+        # Test raw access
+        index = segy_file.sample.normalize_and_validate_query(slice(None))
+        buffer = segy_file.sample.fetch(index, raw=True)
+        sample_buffer_size = segy_file.spec.trace.data.dtype.itemsize
+        assert buffer.nbytes == sample_buffer_size * segy_file.num_traces
+        assert buffer.dtype == np.dtype((np.void, sample_buffer_size))
+
+        # Test raw access bytes
+        actual_bytes = buffer.tobytes()
+        expected_bytes = b""
+        trace_offset = segy_file.spec.trace.offset
+        header_buffer_size = segy_file.spec.trace.header.dtype.itemsize
+        trace_buffer_size = segy_file.spec.trace.dtype.itemsize
+        for trc_idx in range(segy_file.num_traces):
+            start = trace_offset + trc_idx * trace_buffer_size + header_buffer_size  # type: ignore[operator]
+            stop = start + sample_buffer_size
+            expected_bytes += segy_file.fs.read_bytes(segy_file.url, start, stop)
+        assert actual_bytes == expected_bytes, "Raw bytes do not match expected."
 
     @pytest.mark.parametrize("standard", [SegyStandard.REV0, SegyStandard.REV1])
     @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
@@ -306,6 +353,24 @@ class TestSegyFile:
         assert_array_equal(traces.header, test_config.expected_headers[index])
         assert_array_almost_equal(traces.sample, test_config.expected_samples[index])
 
+        # Test raw access reusing the complex random access with duplicates
+        index_np = segy_file.trace.normalize_and_validate_query(index)
+        buffer = segy_file.trace.fetch(index_np, raw=True)
+        trace_buffer_size = segy_file.spec.trace.dtype.itemsize
+        assert buffer.nbytes == trace_buffer_size * len(index)
+        assert buffer.dtype == np.dtype((np.void, trace_buffer_size))
+        assert buffer.shape == index_np.shape
+
+        # Test raw access bytes
+        actual_bytes = buffer.tobytes()
+        expected_bytes = b""
+        trace_offset = segy_file.spec.trace.offset
+        for trc_idx in index:
+            start = trace_offset + trc_idx * trace_buffer_size  # type: ignore[operator]
+            stop = start + trace_buffer_size
+            expected_bytes += segy_file.fs.read_bytes(segy_file.url, start, stop)
+        assert actual_bytes == expected_bytes, "Raw bytes do not match expected."
+
 
 class TestSegyFileExceptions:
     """Test exceptions for SegyFile."""
@@ -340,22 +405,45 @@ class TestSegyFileExceptions:
 
 
 class TestSegyFileSettingsOverride:
-    """Test if settings overrides work fine for SegyFile."""
+    """Test if settings and header overrides work fine for SegyFile."""
+
+    def test_measurement_unit_override(self, mock_filesystem: MemoryFileSystem) -> None:
+        """Make a rev0 file and open it as rev1 from settings/overrides."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem, segy_standard=SegyStandard.REV1
+        )
+
+        overrides = SegyHeaderOverrides(binary_header={"measurement_system_code": 2})
+        segy_file = SegyFile(test_config.uri, header_overrides=overrides)
+
+        assert segy_file.binary_header["measurement_system_code"] == 2
 
     def test_revision_override(self, mock_filesystem: MemoryFileSystem) -> None:
-        """Make rev0 file and open it as rev1 from settings override."""
+        """Make a rev0 file and open it as rev1 from a binary header override."""
         test_config = generate_test_segy(
             filesystem=mock_filesystem, segy_standard=SegyStandard.REV0
         )
 
-        settings = SegySettings.model_validate({"binary": {"revision": 1.0}})
-        segy_file = SegyFile(test_config.uri, settings=settings)
+        overrides = SegyHeaderOverrides(binary_header={"segy_revision": 1.0})
+        segy_file = SegyFile(test_config.uri, header_overrides=overrides)
 
         assert segy_file.spec.segy_standard == SegyStandard.REV1
-        assert segy_file.binary_header["segy_revision_major"] == 0
+        assert segy_file.binary_header["segy_revision_major"] == 1
+        assert segy_file.binary_header["segy_revision_minor"] == 0
+
+    def test_coord_scalar_override(self, mock_filesystem: MemoryFileSystem) -> None:
+        """Make a rev0 file and modify coord scalar using trace header override."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem, segy_standard=SegyStandard.REV0
+        )
+
+        overrides = SegyHeaderOverrides(trace_header={"coordinate_scalar": -100})
+        segy_file = SegyFile(test_config.uri, header_overrides=overrides)
+
+        assert segy_file.header[0]["coordinate_scalar"] == -100
 
     def test_revision_endian_override(self, mock_filesystem: MemoryFileSystem) -> None:
-        """Make big-rev0 file and open it as little-rev1 from settings override."""
+        """Make a big-rev0 file and open it as little-rev1 from settings/overrides."""
         test_config = generate_test_segy(
             filesystem=mock_filesystem,
             segy_standard=SegyStandard.REV0,
@@ -364,8 +452,7 @@ class TestSegyFileSettingsOverride:
         # Now ensure overriding endian works. This should raise an
         # error because with little endian the sample format will be
         # interpreted incorrectly from binary header.
-        settings_dict_both = {"endianness": "little"}
-        settings = SegySettings.model_validate(settings_dict_both)
+        settings = SegyFileSettings(endianness=Endianness.LITTLE)
 
         with pytest.raises(ValueError, match="is not a valid DataSampleFormatCode"):
             SegyFile(test_config.uri, settings=settings)
@@ -395,8 +482,26 @@ class TestSegyFileSettingsOverride:
             SegyFile(test_config.uri)
 
         # Make it work with override
-        bin_override = BinaryHeaderSettings(ext_text_header=num_extended_text_headers)
-        settings = SegySettings(binary=bin_override)
-        segy_file = SegyFile(test_config.uri, settings=settings)
+        bin_overrides = {"num_extended_text_headers": num_extended_text_headers}
+        header_overrides = SegyHeaderOverrides(binary_header=bin_overrides)
+        segy_file = SegyFile(test_config.uri, header_overrides=header_overrides)
 
         assert segy_file.num_ext_text == num_extended_text_headers
+
+    @pytest.mark.usefixtures("set_settings_overrides_env_vars")
+    def test_settings_and_override_env_vars(
+        self,
+        mock_filesystem: MemoryFileSystem,
+    ) -> None:
+        """Test if settings and header overrides work with env. vars."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem, segy_standard=SegyStandard.REV21
+        )
+
+        segy_file = SegyFile(test_config.uri)
+
+        assert segy_file.spec.segy_standard == SegyStandard.REV1
+        assert segy_file.settings.storage_options == {"anon": True}
+        assert segy_file.binary_header["segy_revision_major"] == 1
+        assert segy_file.binary_header["segy_revision_minor"] == 0
+        assert segy_file.header[0]["coordinate_scalar"] == 100

@@ -56,7 +56,7 @@ To run the below examples, set your S3 configuration. More details in
 {ref}`env-configuration-options`.
 
 ```shell
-export SEGY__STORAGE_OPTIONS='{"anon": true}'
+export SEGY_STORAGE_OPTIONS='{"anon": true}'
 ```
 
 ````
@@ -195,7 +195,7 @@ Environment variables can be configured in many ways, please refer to the option
 for your specific Operating System (OS).
 
 ```shell
-export SEGY__STORAGE_OPTIONS='{"anon": true}'
+export SEGY_STORAGE_OPTIONS='{"anon": true}'
 ```
 
 ```{seealso}

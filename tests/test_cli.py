@@ -24,7 +24,7 @@ class TestDump:
     @classmethod
     def setup_class(cls: type[TestDump]) -> None:
         """Set environment variable for anon access to S3."""
-        os.environ["SEGY__STORAGE_OPTIONS"] = '{"anon": true}'
+        os.environ["SEGY_STORAGE_OPTIONS"] = '{"anon": true}'
 
     def test_info_dump(self, s3_path: str) -> None:
         """Test generic info dump."""

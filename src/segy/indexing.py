@@ -94,6 +94,20 @@ def bounds_check(indices: NDArray[IntDType], max_: int, type_: str) -> None:
         raise IndexError(msg)
 
 
+def _handle_raw_dtype(dtype: np.dtype[Any], raw: bool) -> np.dtype[Any]:
+    """Handle casting a proper dtype to its void version if requested.
+
+    This is typically used in casting unbounded raw bytes to proper array boundaries
+    when using `np.frombuffer`. This way, we can look at raw bytes without
+    interpreting them as a structured array.
+
+    Args:
+        dtype: The interpreted dtype to cast.
+        raw: Flag to request a void version of the dtype with the correct length.
+    """
+    return np.dtype((np.void, dtype.itemsize)) if raw else dtype
+
+
 class AbstractIndexer(ABC):
     """Abstract class for indexing and fetching structured data from a remote file.
 
@@ -137,14 +151,16 @@ class AbstractIndexer(ABC):
         """Logic to calculate start/end bytes."""
 
     @abstractmethod
-    def decode(self, buffer: bytearray) -> NDArray[Any]:
+    def decode(self, buffer: bytearray, raw: bool) -> NDArray[Any]:
         """How to decode the bytes after reading."""
 
     def post_process(self, data: NDArray[Any]) -> NDArray[Any]:
         """Apply transforms to the data after decoding."""
         return self.transform_pipeline.apply(data)
 
-    def __getitem__(self, item: int | list[int] | NDArray[IntDType] | slice) -> Any:  # noqa: ANN401
+    def normalize_and_validate_query(
+        self, item: int | list[int] | NDArray[IntDType] | slice
+    ) -> NDArray[IntDType]:
         """Operator for integers, lists, and slices with bounds checking."""
         if isinstance(item, slice):
             if item.step == 0:
@@ -166,10 +182,15 @@ class AbstractIndexer(ABC):
             msg = "Couldn't parse request. Please ensure it is a valid index."
             raise IndexError(msg)
 
+        return indices
+
+    def __getitem__(self, item: int | list[int] | NDArray[IntDType] | slice) -> Any:  # noqa: ANN401
+        """Operator for integers, lists, and slices with bounds checking."""
+        indices = self.normalize_and_validate_query(item)
         data = self.fetch(indices)
         return self.post_process(data)
 
-    def fetch(self, indices: NDArray[IntDType]) -> NDArray[Any]:
+    def fetch(self, indices: NDArray[IntDType], raw: bool = False) -> NDArray[Any]:
         """Fetches and decodes binary data from the given indices.
 
         It supports duplicates in the indices, and it will also preserve
@@ -178,6 +199,8 @@ class AbstractIndexer(ABC):
 
         Args:
             indices: A list of integers representing the indices.
+            raw: Flag to request raw bytes converted to a numpy array at trace boundaries.
+                Mainly used for debugging or viewing raw binary data.
 
         Returns:
             An NDArray of any type representing the fetched data.
@@ -207,7 +230,7 @@ class AbstractIndexer(ABC):
 
         starts, ends = self.indices_to_byte_ranges(indices)
         buffer = merge_cat_file(self.fs, self.url, starts.tolist(), ends.tolist())
-        array = self.decode(buffer)
+        array = self.decode(buffer, raw)
         return array[index_order].squeeze()
 
 
@@ -237,9 +260,10 @@ class TraceIndexer(AbstractIndexer):
 
         return starts, ends
 
-    def decode(self, buffer: bytearray) -> TraceArray:
+    def decode(self, buffer: bytearray, raw: bool = False) -> TraceArray:
         """Decode whole traces (header + data)."""
-        data = np.frombuffer(buffer, dtype=self.spec.dtype)
+        dtype = _handle_raw_dtype(self.spec.dtype, raw)
+        data = np.frombuffer(buffer, dtype=dtype)
         return TraceArray(data)
 
 
@@ -271,9 +295,10 @@ class HeaderIndexer(AbstractIndexer):
 
         return starts, ends
 
-    def decode(self, buffer: bytearray) -> HeaderArray:
+    def decode(self, buffer: bytearray, raw: bool = False) -> HeaderArray:
         """Decode headers only."""
-        data = np.frombuffer(buffer, dtype=self.spec.dtype["header"])
+        dtype = _handle_raw_dtype(self.spec.dtype["header"], raw)
+        data = np.frombuffer(buffer, dtype=dtype)
         return HeaderArray(data)
 
 
@@ -305,6 +330,7 @@ class DataIndexer(AbstractIndexer):
 
         return starts, ends
 
-    def decode(self, buffer: bytearray) -> NDArray[Any]:
+    def decode(self, buffer: bytearray, raw: bool = False) -> NDArray[Any]:
         """Decode trace samples only."""
-        return np.frombuffer(buffer, dtype=self.spec.dtype["data"])
+        dtype = _handle_raw_dtype(self.spec.dtype["data"], raw)
+        return np.frombuffer(buffer, dtype=dtype)
