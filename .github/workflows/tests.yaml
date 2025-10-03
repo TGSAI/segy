@@ -38,7 +38,7 @@ jobs:
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install the pinned version of uv
         uses: astral-sh/setup-uv@v6
@@ -99,7 +99,7 @@ jobs:
     needs: tests
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install the pinned version of uv
         uses: astral-sh/setup-uv@v6
