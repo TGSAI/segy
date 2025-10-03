@@ -15,10 +15,7 @@ from segy.schema import Endianness  # noqa: TCH001
 class SegyBaseSettings(BaseSettings):
     """Base class for settings."""
 
-    model_config = SettingsConfigDict(
-        extra="ignore",
-        case_sensitive=False,
-    )
+    model_config = SettingsConfigDict(extra="ignore", case_sensitive=False)
 
 
 class SegyHeaderOverrides(SegyBaseSettings):
