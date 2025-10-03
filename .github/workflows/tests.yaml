@@ -44,7 +44,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python }}
-          pyproject-file: ${{ github.workspace }}/pyproject.toml
+          version-file: ${{ github.workspace }}/pyproject.toml
 
       - name: Install Nox
         run: |
@@ -105,7 +105,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           python-version: 3.13
-          pyproject-file: "${{ github.workspace }}/pyproject.toml"
+          version-file: "${{ github.workspace }}/pyproject.toml"
 
       - name: Install Nox
         run: |
