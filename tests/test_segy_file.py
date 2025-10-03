@@ -24,6 +24,7 @@ from segy.standards import get_segy_standard
 from segy.standards.codes import DataSampleFormatCode
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
     from typing import Any
 
     from fsspec import AbstractFileSystem
@@ -35,6 +36,14 @@ SAMPLES_PER_TRACE = 21
 NUM_TRACES = 15
 
 EXPECTED_SAMPLE_LABELS = range(0, SAMPLES_PER_TRACE * SAMPLE_INTERVAL, SAMPLE_INTERVAL)
+
+
+@pytest.fixture
+def set_settings_overrides_env_vars(monkeypatch: Generator[pytest.MonkeyPatch]) -> None:
+    """Set environment variables for the Teapot dome tests."""
+    monkeypatch.setenv("SEGY_STORAGE_OPTIONS", '{"anon": true}')
+    monkeypatch.setenv("SEGY_OVERRIDE_BINARY_HEADER", '{"segy_revision": 1.0}')
+    monkeypatch.setenv("SEGY_OVERRIDE_TRACE_HEADER", '{"coordinate_scalar": 100}')
 
 
 @dataclass
@@ -479,3 +488,21 @@ class TestSegyFileSettingsOverride:
         segy_file = SegyFile(test_config.uri, header_overrides=header_overrides)
 
         assert segy_file.num_ext_text == num_extended_text_headers
+
+    @pytest.mark.usefixtures("set_settings_overrides_env_vars")
+    def test_settings_and_override_env_vars(
+        self,
+        mock_filesystem: MemoryFileSystem,
+    ) -> None:
+        """Test if settings and header overrides work with env. vars."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem, segy_standard=SegyStandard.REV21
+        )
+
+        segy_file = SegyFile(test_config.uri)
+
+        assert segy_file.spec.segy_standard == SegyStandard.REV1
+        assert segy_file.settings.storage_options == {"anon": True}
+        assert segy_file.binary_header["segy_revision_major"] == 1
+        assert segy_file.binary_header["segy_revision_minor"] == 0
+        assert segy_file.header[0]["coordinate_scalar"] == 100
