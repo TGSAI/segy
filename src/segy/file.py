@@ -50,6 +50,8 @@ class SegyFile:
             SEG-Y standard from the binary header.
         settings: A settings instance to configure / override
             the SEG-Y parsing logic. Optional.
+        header_overrides: A header overrides instance to
+            modify the SEG-Y header(s) on the fly. Optional.
 
     Attributes:
         fs: The filesystem instance used to access the file.
