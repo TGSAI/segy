@@ -40,7 +40,7 @@ EXPECTED_SAMPLE_LABELS = range(0, SAMPLES_PER_TRACE * SAMPLE_INTERVAL, SAMPLE_IN
 
 @pytest.fixture
 def set_settings_overrides_env_vars(monkeypatch: Generator[pytest.MonkeyPatch]) -> None:
-    """Set environment variables for the Teapot dome tests."""
+    """Set environment variables for the settings/override env var test."""
     monkeypatch.setenv("SEGY_STORAGE_OPTIONS", '{"anon": true}')
     monkeypatch.setenv("SEGY_OVERRIDE_BINARY_HEADER", '{"segy_revision": 1.0}')
     monkeypatch.setenv("SEGY_OVERRIDE_TRACE_HEADER", '{"coordinate_scalar": 100}')
