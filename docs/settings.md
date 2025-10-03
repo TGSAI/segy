@@ -45,8 +45,8 @@ from segy.schema import Endianness
 
 # Override extended text header count to zero
 binary_header_overrides = {"extended_text_header": 0, "segy_revision": 1}
-header_overrides = SegyHeaderOverrides(binaryh_header=binary_header_overrides)
-settings = SegyFileSettings(endian=Endianness.LITTLE)
+header_overrides = SegyHeaderOverrides(binary_header=binary_header_overrides)
+settings = SegyFileSettings(endianness=Endianness.LITTLE)
 ```
 
 Then this can be passed to [SegyFile] directly.
