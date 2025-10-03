@@ -13,8 +13,8 @@ from numpy.testing import assert_array_equal
 
 from segy import SegyFactory
 from segy import SegyFile
-from segy.config import BinaryHeaderSettings
-from segy.config import SegySettings
+from segy.config import SegyFileSettings
+from segy.config import SegyHeaderOverrides
 from segy.exceptions import EndiannessInferenceError
 from segy.exceptions import SegyFileSpecMismatchError
 from segy.schema import Endianness
@@ -397,22 +397,45 @@ class TestSegyFileExceptions:
 
 
 class TestSegyFileSettingsOverride:
-    """Test if settings overrides work fine for SegyFile."""
+    """Test if settings and header overrides work fine for SegyFile."""
+
+    def test_measurement_unit_override(self, mock_filesystem: MemoryFileSystem) -> None:
+        """Make a rev0 file and open it as rev1 from settings/overrides."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem, segy_standard=SegyStandard.REV1
+        )
+
+        overrides = SegyHeaderOverrides(binary_header={"measurement_system_code": 2})
+        segy_file = SegyFile(test_config.uri, header_overrides=overrides)
+
+        assert segy_file.binary_header["measurement_system_code"] == 2
 
     def test_revision_override(self, mock_filesystem: MemoryFileSystem) -> None:
-        """Make rev0 file and open it as rev1 from settings override."""
+        """Make a rev0 file and open it as rev1 from a binary header override."""
         test_config = generate_test_segy(
             filesystem=mock_filesystem, segy_standard=SegyStandard.REV0
         )
 
-        settings = SegySettings.model_validate({"binary": {"revision": 1.0}})
-        segy_file = SegyFile(test_config.uri, settings=settings)
+        overrides = SegyHeaderOverrides(binary_header={"segy_revision": 1.0})
+        segy_file = SegyFile(test_config.uri, header_overrides=overrides)
 
         assert segy_file.spec.segy_standard == SegyStandard.REV1
-        assert segy_file.binary_header["segy_revision_major"] == 0
+        assert segy_file.binary_header["segy_revision_major"] == 1
+        assert segy_file.binary_header["segy_revision_minor"] == 0
+
+    def test_coord_scalar_override(self, mock_filesystem: MemoryFileSystem) -> None:
+        """Make a rev0 file and modify coord scalar using trace header override."""
+        test_config = generate_test_segy(
+            filesystem=mock_filesystem, segy_standard=SegyStandard.REV0
+        )
+
+        overrides = SegyHeaderOverrides(trace_header={"coordinate_scalar": -100})
+        segy_file = SegyFile(test_config.uri, header_overrides=overrides)
+
+        assert segy_file.header[0]["coordinate_scalar"] == -100
 
     def test_revision_endian_override(self, mock_filesystem: MemoryFileSystem) -> None:
-        """Make big-rev0 file and open it as little-rev1 from settings override."""
+        """Make a big-rev0 file and open it as little-rev1 from settings/overrides."""
         test_config = generate_test_segy(
             filesystem=mock_filesystem,
             segy_standard=SegyStandard.REV0,
@@ -421,8 +444,7 @@ class TestSegyFileSettingsOverride:
         # Now ensure overriding endian works. This should raise an
         # error because with little endian the sample format will be
         # interpreted incorrectly from binary header.
-        settings_dict_both = {"endianness": "little"}
-        settings = SegySettings.model_validate(settings_dict_both)
+        settings = SegyFileSettings(endianness=Endianness.LITTLE)
 
         with pytest.raises(ValueError, match="is not a valid DataSampleFormatCode"):
             SegyFile(test_config.uri, settings=settings)
@@ -452,8 +474,8 @@ class TestSegyFileSettingsOverride:
             SegyFile(test_config.uri)
 
         # Make it work with override
-        bin_override = BinaryHeaderSettings(ext_text_header=num_extended_text_headers)
-        settings = SegySettings(binary=bin_override)
-        segy_file = SegyFile(test_config.uri, settings=settings)
+        bin_overrides = {"num_extended_text_headers": num_extended_text_headers}
+        header_overrides = SegyHeaderOverrides(binary_header=bin_overrides)
+        segy_file = SegyFile(test_config.uri, header_overrides=header_overrides)
 
         assert segy_file.num_ext_text == num_extended_text_headers
