@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 class SegyStandard(float, Enum):
     """Allowed values for SEG-Y standards in SegySpec."""
 
-    CUSTOM = -1
+    CUSTOM = -1.0
     REV0 = 0.0
     REV1 = 1.0
     REV2 = 2.0
