@@ -34,7 +34,7 @@ class TestSegySpecCustomize:
 
         custom_spec = segy_spec.customize(text_header_spec=custom_text_spec)
 
-        assert custom_spec.segy_standard is None
+        assert custom_spec.segy_standard is segy_spec.segy_standard
         assert custom_spec.text_header == custom_text_spec
 
     def test_custom_binary_file_headers(self, segy_spec: SegySpec) -> None:
@@ -52,7 +52,7 @@ class TestSegySpecCustomize:
 
         expected_itemsize = segy_spec.binary_header.dtype.itemsize
         expected_num_fields = len(segy_spec.binary_header.fields)  # 3 new, 3 drops
-        assert custom_spec.segy_standard is None
+        assert custom_spec.segy_standard is segy_spec.segy_standard
         assert len(custom_spec.binary_header.fields) == expected_num_fields
         assert custom_spec.binary_header.dtype.itemsize == expected_itemsize
 
@@ -76,7 +76,7 @@ class TestSegySpecCustomize:
 
         expected_itemsize = segy_spec.trace.header.dtype.itemsize
         expected_num_fields = len(segy_spec.trace.header.fields) - 1  # 2 new, 3 drops
-        assert custom_spec.segy_standard is None
+        assert custom_spec.segy_standard is segy_spec.segy_standard
         assert len(custom_spec.trace.header.fields) == expected_num_fields
         assert custom_spec.trace.header.dtype.itemsize == expected_itemsize
 
@@ -97,7 +97,7 @@ class TestSegySpecCustomize:
         custom_ext_text_spec = ExtendedTextHeaderSpec(spec=custom_text_spec, count=1)
         custom_spec = segy_spec.customize(ext_text_spec=custom_ext_text_spec)
 
-        assert custom_spec.segy_standard is None
+        assert custom_spec.segy_standard is segy_spec.segy_standard
         assert custom_spec.ext_text_header == custom_ext_text_spec
 
     def test_custom_trace_samples(self, segy_spec: SegySpec) -> None:
@@ -107,7 +107,7 @@ class TestSegySpecCustomize:
         custom_spec = segy_spec.customize(trace_data_spec=custom_samples)
 
         expected_subdtype = (np.dtype("uint16"), (3,))
-        assert custom_spec.segy_standard is None
+        assert custom_spec.segy_standard is segy_spec.segy_standard
         assert custom_spec.trace.dtype.itemsize == 246
         assert custom_spec.trace.data.dtype.itemsize == 6
         assert custom_spec.trace.data.dtype.subdtype == expected_subdtype

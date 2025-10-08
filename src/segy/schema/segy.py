@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 class SegyStandard(float, Enum):
     """Allowed values for SEG-Y standards in SegySpec."""
 
+    CUSTOM = -1
     REV0 = 0.0
     REV1 = 1.0
     REV2 = 2.0
@@ -32,9 +33,7 @@ class SegyStandard(float, Enum):
 class SegySpec(CamelCaseModel):
     """A class defining a SEG-Y file spec."""
 
-    segy_standard: SegyStandard | None = Field(
-        ..., description="SEG-Y Revision / Standard. Can also be custom."
-    )
+    segy_standard: SegyStandard = Field(..., description="Base SEG-Y Revision.")
     text_header: TextHeaderSpec = Field(..., description="Textual file header spec.")
     binary_header: HeaderSpec = Field(..., description="Binary file header spec.")
     ext_text_header: ExtendedTextHeaderSpec | None = Field(
@@ -94,7 +93,6 @@ class SegySpec(CamelCaseModel):
             A modified SEG-Y spec with "custom" segy standard.
         """
         new_spec = self.model_copy(deep=True)
-        new_spec.segy_standard = None
 
         if text_header_spec is not None:
             new_spec.text_header = text_header_spec

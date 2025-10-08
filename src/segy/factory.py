@@ -60,7 +60,8 @@ def get_default_text(spec: SegySpec) -> str:
     text_lines[5] = text_lines[5].format(timestamp=now)
 
     # Populate revision
-    revision = "unknown" if spec.segy_standard is None else spec.segy_standard.value
+    standard = spec.segy_standard
+    revision = "unknown" if standard is SegyStandard.CUSTOM else standard
     text_lines[7] = text_lines[7].format(revision=revision)
 
     # Populate sample interval and number of samples
@@ -112,9 +113,6 @@ class SegyFactory:
     @property
     def segy_revision(self) -> SegyStandard:
         """Revision of the SEG-Y file."""
-        if self.spec.segy_standard is None:
-            return SegyStandard.REV0
-
         return self.spec.segy_standard
 
     def create_textual_header(self, text: str | None = None) -> bytes:
