@@ -5,6 +5,7 @@ from segy.schema.format import ScalarType
 from segy.schema.format import TextHeaderEncoding
 from segy.schema.header import HeaderSpec
 from segy.schema.segy import SegySpec
+from segy.schema.segy import SegyStandard
 from segy.schema.text_header import TextHeaderSpec
 from segy.schema.trace import TraceDataSpec
 from segy.schema.trace import TraceSpec
@@ -30,7 +31,7 @@ textual_file_header = TextHeaderSpec(
 )
 
 minimal_segy = SegySpec(
-    segy_standard=None,
+    segy_standard=SegyStandard.CUSTOM,
     text_header=textual_file_header,
     binary_header=HeaderSpec(fields=BIN_HDR_FIELD_MODELS, item_size=400, offset=3200),
     trace=TraceSpec(
