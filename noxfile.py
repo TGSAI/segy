@@ -191,7 +191,9 @@ def tests(session: Session) -> None:
             session.notify("coverage", posargs=[])
 
 
-@session(python=python_versions[0])
+# We must pass `--clear` due to different session options during pipeline runs
+# https://github.com/TGSAI/segy/blob/0e8d439610a6d8a9b12d8c83470528d161e9b9e6/.github/workflows/tests.yaml#L123-L129
+@session(python=python_versions[0], venv_params=["--clear"])
 def coverage(session: Session) -> None:
     """Produce the coverage report."""
     args = session.posargs or ["report"]
