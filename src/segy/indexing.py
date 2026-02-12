@@ -124,7 +124,7 @@ if fsspec.__version__.startswith("2026.2."):
             new_ends = ends[:1]
             for i in range(1, len(paths)):
                 if paths[i] == paths[i - 1] and new_ends[-1] is None:
-                    continue
+                    continue  # type: ignore[unreachable]
                 if (
                     paths[i] != paths[i - 1]
                     or ((starts[i] - new_ends[-1]) > max_gap)
@@ -146,7 +146,7 @@ if fsspec.__version__.startswith("2026.2."):
         # `paths` is empty. Just return input lists
         return paths, starts, ends
 else:
-    from fsspec.utils import merge_offset_ranges
+    from fsspec.utils import merge_offset_ranges  # type: ignore[no-redef]
 
 
 def merge_cat_file(
@@ -171,8 +171,8 @@ def merge_cat_file(
     """
     paths = [url] * len(starts)
 
-    paths, starts, ends = merge_offset_ranges(
-        paths,
+    paths, starts, ends = merge_offset_ranges(  # type: ignore[assignment]
+        paths,  # type: ignore[arg-type]
         starts,
         ends,
         max_block=block_size,
