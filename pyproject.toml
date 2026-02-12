@@ -1,6 +1,6 @@
 [project]
 name = "segy"
-version = "0.5.3"  # Don't manually update; use bump-my-version
+version = "0.5.4"  # Don't manually update; use bump-my-version
 description = "The Ultimate Python SEG-Y I/O with Cloud Support and Schemas"
 authors = [{ name = "Altay Sansal", email = "altay.sansal@tgs.com" }]
 license = "Apache-2.0"
@@ -178,7 +178,7 @@ init_typed = true
 warn_required_dynamic_aliases = true
 
 [tool.bumpversion]
-current_version = "0.5.3"
+current_version = "0.5.4"
 allow_dirty = true
 commit = false
 tag = false
