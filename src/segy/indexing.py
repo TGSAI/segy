@@ -72,7 +72,7 @@ if fsspec.__version__.startswith("2026.2."):
     # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
     # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     # -----------------------------------------------------------------------------
-    def merge_offset_ranges(  # noqa: PLR0913
+    def merge_offset_ranges(  # noqa: PLR0913  # pragma: no cover
         paths: list[str],
         starts: list[int] | int,
         ends: list[int] | int,
