@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 import fsspec  # noqa: E402
 
-if fsspec.__version__.startswith("2026.2."):
+if fsspec.__version__.startswith("2026.2."):  # pragma: no cover
     logger.debug(
         "Using a patched `merge_offset_ranges` due to performance regression in fsspec 2026.2.0."
         "See: https://github.com/TGSAI/segy/issues/343"
@@ -72,7 +72,7 @@ if fsspec.__version__.startswith("2026.2."):
     # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
     # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     # -----------------------------------------------------------------------------
-    def merge_offset_ranges(  # noqa: PLR0913  # pragma: no cover
+    def merge_offset_ranges(  # noqa: PLR0913
         paths: list[str],
         starts: list[int] | int,
         ends: list[int] | int,
@@ -145,7 +145,7 @@ if fsspec.__version__.startswith("2026.2."):
 
         # `paths` is empty. Just return input lists
         return paths, starts, ends
-else:
+else:  # pragma: no cover
     from fsspec.utils import merge_offset_ranges  # type: ignore[no-redef]
 
 
