@@ -11,6 +11,7 @@ import pytest
 from numpy.testing import assert_array_equal
 
 from segy.factory import SegyFactory
+from segy.ibm import ibm2ieee
 from segy.ibm import ieee2ibm
 from segy.schema import Endianness
 from segy.schema import HeaderField
@@ -262,6 +263,75 @@ class TestSegyFactoryTraces:
             expected_traces = expected_traces.view(expected_dtype)
 
         assert trace_bytes == expected_traces.tobytes()
+
+
+@pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])
+@pytest.mark.parametrize("num_traces", [1, 42])
+class TestSegyFactoryIbmHeader:
+    """ibm32 *header* fields must be IBM-encoded on write.
+
+    The read path (TraceAccessor) IBM-decodes ibm32 header fields, so the
+    write path must IBM-encode them symmetrically; otherwise an ibm32 header
+    round-trips to a different value than it was written with.
+    """
+
+    @staticmethod
+    def _make_factory(endianness: Endianness) -> SegyFactory:
+        spec = minimal_segy
+        spec.endianness = endianness
+        spec.segy_standard = SegyStandard.REV1
+        spec.trace.header.item_size = 32
+        spec.trace.header.fields = [
+            HeaderField(name="ibm_field", format=ScalarType.IBM32, byte=5),
+            HeaderField(name="int_field", format=ScalarType.INT32, byte=9),
+        ]
+        return SegyFactory(spec, sample_interval=2000, samples_per_trace=4)
+
+    def test_ibm32_header_serialize(
+        self, endianness: Endianness, num_traces: int
+    ) -> None:
+        """On-disk ibm32 header bytes equal the IBM-encoding of the value."""
+        factory = self._make_factory(endianness)
+        rng = np.random.default_rng(0)
+        values = np.float32(100 * rng.random(size=num_traces))
+        int_values = rng.integers(-1000, 1000, dtype="int32", size=num_traces)
+
+        headers = factory.create_trace_header_template(num_traces)
+        headers["ibm_field"] = values
+        headers["int_field"] = int_values
+        samples = factory.create_trace_sample_template(num_traces)
+
+        trace_bytes = factory.create_traces(headers, samples)
+
+        trace_native = factory.spec.trace.dtype.newbyteorder("=")
+        traces = np.frombuffer(trace_bytes, dtype=factory.spec.trace.dtype)
+        traces = traces.astype(trace_native)
+
+        assert_array_equal(traces["header"]["ibm_field"], ieee2ibm(values))
+        assert_array_equal(traces["header"]["int_field"], int_values)
+
+    def test_ibm32_header_round_trip(
+        self, endianness: Endianness, num_traces: int
+    ) -> None:
+        """Writing then decoding an ibm32 header returns the original value."""
+        factory = self._make_factory(endianness)
+        rng = np.random.default_rng(1)
+        # Integer-valued floats are exact in both IBM32 and IEEE float32, so the
+        # round trip is lossless and can be compared exactly.
+        values = rng.integers(-10000, 10000, size=num_traces).astype("float32")
+
+        headers = factory.create_trace_header_template(num_traces)
+        headers["ibm_field"] = values
+        samples = factory.create_trace_sample_template(num_traces)
+
+        trace_bytes = factory.create_traces(headers, samples)
+
+        trace_native = factory.spec.trace.dtype.newbyteorder("=")
+        traces = np.frombuffer(trace_bytes, dtype=factory.spec.trace.dtype)
+        traces = traces.astype(trace_native)
+        decoded = ibm2ieee(traces["header"]["ibm_field"].astype("uint32"))
+
+        assert_array_equal(decoded, values)
 
 
 class TestSegyFactoryExceptions:
