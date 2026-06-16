@@ -21,11 +21,11 @@ from segy.standards.codes import DataSampleFormatCode
 from segy.standards.codes import SegyEndianCode
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
+from segy.transforms import _modify_dtype_field
 
 if TYPE_CHECKING:
     from typing import Any
 
-    from numpy.typing import DTypeLike
     from numpy.typing import NDArray
 
     from segy.schema import HeaderSpec
@@ -73,29 +73,6 @@ def get_default_text(spec: SegySpec) -> str:
 
     text_lines = [line.ljust(80) for line in text_lines]
     return "\n".join(text_lines)
-
-
-def _retype_struct_fields(
-    dtype: np.dtype[np.void], names: set[str], new_format: DTypeLike
-) -> np.dtype[np.void]:
-    """Return a copy of struct `dtype` with the given field `names` set to `new_format`."""
-    field_names = dtype.names
-    fields = dtype.fields
-    if field_names is None or fields is None:
-        msg = "Expected a structured dtype with named fields."
-        raise ValueError(msg)
-
-    new_type = np.dtype(new_format)
-    return np.dtype(
-        {
-            "names": list(field_names),
-            "formats": [
-                new_type if name in names else fields[name][0] for name in field_names
-            ],
-            "offsets": [fields[name][1] for name in field_names],
-            "itemsize": dtype.itemsize,
-        }
-    )
 
 
 def _ibm32_field_names(header_spec: HeaderSpec) -> set[str]:
@@ -226,9 +203,8 @@ class SegyFactory:
 
         # Expose ibm32 fields as float32 so callers fill real floats that
         # create_traces IBM-encodes (symmetric with the read-side decode).
-        ibm_fields = _ibm32_field_names(trace_header_spec)
-        if ibm_fields:
-            dtype = _retype_struct_fields(dtype, ibm_fields, "float32")
+        for name in _ibm32_field_names(trace_header_spec):
+            dtype = _modify_dtype_field(dtype, name, np.dtype("float32"))
 
         header_template = HeaderArray(np.zeros(shape=size, dtype=dtype))
 
