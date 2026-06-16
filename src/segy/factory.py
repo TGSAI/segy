@@ -21,12 +21,14 @@ from segy.standards.codes import DataSampleFormatCode
 from segy.standards.codes import SegyEndianCode
 from segy.transforms import TransformFactory
 from segy.transforms import TransformPipeline
+from segy.transforms import _modify_dtype_field
 
 if TYPE_CHECKING:
     from typing import Any
 
     from numpy.typing import NDArray
 
+    from segy.schema import HeaderSpec
     from segy.schema import SegySpec
 
 
@@ -71,6 +73,11 @@ def get_default_text(spec: SegySpec) -> str:
 
     text_lines = [line.ljust(80) for line in text_lines]
     return "\n".join(text_lines)
+
+
+def _ibm32_field_names(header_spec: HeaderSpec) -> set[str]:
+    """Names of header fields declared as ibm32."""
+    return {f.name for f in header_spec.fields if f.format == ScalarType.IBM32}
 
 
 class SegyFactory:
@@ -194,6 +201,11 @@ class SegyFactory:
         trace_header_spec = self.spec.trace.header
         dtype = trace_header_spec.dtype.newbyteorder("=")
 
+        # Expose ibm32 fields as float32 so callers fill real floats that
+        # create_traces IBM-encodes (symmetric with the read-side decode).
+        for name in _ibm32_field_names(trace_header_spec):
+            dtype = _modify_dtype_field(dtype, name, np.dtype("float32"))
+
         header_template = HeaderArray(np.zeros(shape=size, dtype=dtype))
 
         # 'names' assumed not None by data structure (type ignores).
@@ -274,6 +286,21 @@ class SegyFactory:
 
         target_endian = trace_spec.endianness
         target_format = trace_spec.data.format
+
+        # IBM-encode ibm32 header fields, mirroring the read-side decode in
+        # TraceAccessor. Runs before the byte-swap so values are encoded in
+        # native order and then swapped like every other header field.
+        header_ibm_keys = [
+            field.name
+            for field in trace_spec.header.fields
+            if field.format == ScalarType.IBM32
+        ]
+        if header_ibm_keys:
+            logger.debug("Added IBM float conversion for header fields.")
+            header_ibm_float = TransformFactory.create(
+                "ibm_float", "to_ibm", keys=header_ibm_keys
+            )
+            header_pipeline.add_transform(header_ibm_float)
 
         if target_endian == Endianness.BIG:
             logger.debug("Added big endian conversion before serialization.")
