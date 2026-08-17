@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from segy.ebcdic import ASCII_TO_EBCDIC
+from segy.inference import _is_valid_text_header
 from segy.inference import infer_text_header_encoding
 from segy.schema import TextHeaderEncoding
 from segy.schema import TextHeaderSpec
@@ -22,10 +23,48 @@ def make_text() -> str:
     return "".join(cards)
 
 
+def make_wrapped_text() -> str:
+    """Build a newline-wrapped, SEG-Y sized textual header."""
+    return "\n".join(
+        f"C{row:02d} SAMPLE TEXTUAL HEADER".ljust(COLS) for row in range(1, ROWS + 1)
+    )
+
+
 def to_ebcdic(text: str) -> bytes:
     """Encode ASCII string to EBCDIC bytes."""
     buffer = np.frombuffer(text.encode("ascii"), dtype="uint8")
     return ASCII_TO_EBCDIC[buffer].tobytes()  # type: ignore[no-any-return]
+
+
+class TestIsValidTextHeader:
+    """Cover layout / printable predicates used by encoding inference."""
+
+    def test_valid_header(self) -> None:
+        """A correctly wrapped printable header is accepted."""
+        assert _is_valid_text_header(make_wrapped_text(), ROWS, COLS) is True
+
+    def test_wrong_row_count(self) -> None:
+        """Too few rows must fail the layout check."""
+        text = "\n".join([" " * COLS] * (ROWS - 1))
+        assert _is_valid_text_header(text, ROWS, COLS) is False
+
+    def test_wrong_column_count(self) -> None:
+        """A short card must fail the layout check."""
+        lines = [" " * COLS] * ROWS
+        lines[0] = " " * (COLS - 1)
+        assert _is_valid_text_header("\n".join(lines), ROWS, COLS) is False
+
+    def test_non_printable(self) -> None:
+        """NUL is 7-bit but not printable."""
+        lines = [" " * COLS] * ROWS
+        lines[0] = "\x00" + " " * (COLS - 1)
+        assert _is_valid_text_header("\n".join(lines), ROWS, COLS) is False
+
+    def test_non_ascii(self) -> None:
+        """A char above 127 must fail even if Python marks it printable."""
+        lines = [" " * COLS] * ROWS
+        lines[0] = "\u00e9" + " " * (COLS - 1)
+        assert _is_valid_text_header("\n".join(lines), ROWS, COLS) is False
 
 
 class TestInferTextHeaderEncoding:
