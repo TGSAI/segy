@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from functools import cached_property
 from typing import Any
 
 import numpy as np
@@ -73,10 +72,15 @@ class TextHeaderSpec(BaseDataType):
     )
     offset: int | None = Field(default=None, ge=0, description="Starting byte offset.")
 
-    @cached_property
+    @property
     def processor(self) -> TextProcessor:
         """Prepare transforms for encoding / decoding."""
         return TextProcessor(self.rows, self.cols, self.encoding)
+
+    @property
+    def encoding_is_explicit(self) -> bool:
+        """Whether encoding was set by the caller instead of left at its default."""
+        return "encoding" in self.model_fields_set
 
     def __len__(self) -> int:
         """Get length of the textual header (number of characters)."""

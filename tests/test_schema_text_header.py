@@ -33,6 +33,18 @@ class TestTextHeaderSpec:
         assert text_spec.dtype == np.dtype(("uint8", (num_char,)))
         assert text_roundtrip == text
 
+    def test_encoding_is_explicit(self) -> None:
+        """Test encoding is only flagged explicit when the caller provides it."""
+        assert TextHeaderSpec().encoding_is_explicit is False
+        assert (
+            TextHeaderSpec(encoding=TextHeaderEncoding.EBCDIC).encoding_is_explicit
+            is True
+        )
+
+        text_spec = TextHeaderSpec()
+        text_spec.encoding = TextHeaderEncoding.ASCII
+        assert text_spec.encoding_is_explicit is True
+
 
 class TestExtTextHeaderSpec:
     """Tests for the text header spec initialization and encoding/decoding."""

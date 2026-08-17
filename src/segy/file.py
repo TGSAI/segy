@@ -22,6 +22,7 @@ from segy.indexing import TraceIndexer
 from segy.inference import EndiannessAction
 from segy.inference import SegyInferResult
 from segy.inference import infer_endianness
+from segy.inference import infer_text_header_encoding
 from segy.inference import interpret_revision
 from segy.schema import Endianness
 from segy.schema import ScalarType
@@ -115,17 +116,21 @@ class SegyFile:
         return cast("int", self.spec.trace.count)  # we know for sure its int
 
     @cached_property
-    def text_header(self) -> str:
-        """Return textual file header."""
+    def _text_header_buffer(self) -> bytes:
+        """Read the raw textual file header bytes from store, based on spec."""
         text_hdr_spec = self.spec.text_header
 
-        buffer = self.fs.read_block(
+        buffer: bytes = self.fs.read_block(
             fn=self.url,
             offset=text_hdr_spec.offset,
             length=text_hdr_spec.itemsize,
         )
+        return buffer
 
-        return text_hdr_spec.decode(buffer)
+    @cached_property
+    def text_header(self) -> str:
+        """Return textual file header."""
+        return self.spec.text_header.decode(self._text_header_buffer)
 
     @cached_property
     def ext_text_header(self) -> list[str]:
@@ -246,6 +251,7 @@ class SegyFile:
         logger.debug("Parsed sample interval: %s", trace_data_spec.interval)
 
         self.spec.update_offsets()
+        self._update_text_header_encoding()
 
         trace_offset = cast("int", self.spec.trace.offset)  # we know for sure not None
         trace_itemsize = self.spec.trace.itemsize
@@ -261,6 +267,18 @@ class SegyFile:
             raise SegyFileSpecMismatchError(msg)
 
         self.spec.trace.count = trace_count
+
+    def _update_text_header_encoding(self) -> None:
+        """Infer the textual header encoding, unless the spec pins one."""
+        text_hdr_spec = self.spec.text_header
+
+        if text_hdr_spec.encoding_is_explicit:
+            logger.debug("Text header encoding set by spec: %s", text_hdr_spec.encoding)
+            return
+
+        text_hdr_spec.encoding = infer_text_header_encoding(
+            self._text_header_buffer, text_hdr_spec
+        )
 
     @property
     def sample(self) -> AbstractIndexer:

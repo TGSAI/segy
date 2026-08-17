@@ -20,6 +20,7 @@ from segy.exceptions import SegyFileSpecMismatchError
 from segy.schema import Endianness
 from segy.schema import ScalarType
 from segy.schema import SegyStandard
+from segy.schema import TextHeaderEncoding
 from segy.standards import get_segy_standard
 from segy.standards.codes import DataSampleFormatCode
 
@@ -205,6 +206,47 @@ class TestSegyFile:
 
         # Compare first 5 lines because rest is dynamic.
         assert segy_file.text_header[:400] == default_text[:400]
+
+    def test_infer_ascii_text_header(
+        self, mock_filesystem: MemoryFileSystem, default_text: str
+    ) -> None:
+        """ASCII textual headers must be detected when the open spec leaves encoding unset."""
+        write_spec = get_segy_standard(SegyStandard.REV0)
+        write_spec.text_header.encoding = TextHeaderEncoding.ASCII
+        factory = SegyFactory(
+            spec=write_spec,
+            sample_interval=SAMPLE_INTERVAL,
+            samples_per_trace=SAMPLES_PER_TRACE,
+        )
+
+        uri = "memory://ascii_text_header.segy"
+        with mock_filesystem.open(uri, mode="wb") as fp:
+            fp.write(factory.create_textual_header())
+            fp.write(factory.create_binary_header())
+            headers = factory.create_trace_header_template(NUM_TRACES)
+            samples = factory.create_trace_sample_template(NUM_TRACES)
+            header_data, sample_data = generate_test_trace_data(factory, NUM_TRACES)
+            headers[:] = header_data
+            samples[:] = sample_data
+            fp.write(factory.create_traces(headers, samples))
+
+        segy_file = SegyFile(uri)
+
+        assert segy_file.spec.text_header.encoding == TextHeaderEncoding.ASCII
+        assert segy_file.text_header[:400] == default_text[:400]
+
+    def test_explicit_text_header_encoding_is_preserved(
+        self, mock_filesystem: MemoryFileSystem
+    ) -> None:
+        """An explicitly set encoding must not be overridden by inference."""
+        test_config = generate_test_segy(mock_filesystem)
+        explicit_spec = get_segy_standard(SegyStandard.REV0)
+        explicit_spec.text_header.encoding = TextHeaderEncoding.EBCDIC
+
+        segy_file = SegyFile(test_config.uri, spec=explicit_spec)
+
+        assert segy_file.spec.text_header.encoding == TextHeaderEncoding.EBCDIC
+        assert segy_file.spec.text_header.encoding_is_explicit is True
 
     @pytest.mark.parametrize("standard", [SegyStandard.REV0, SegyStandard.REV1])
     @pytest.mark.parametrize("endianness", [Endianness.BIG, Endianness.LITTLE])

@@ -3,6 +3,7 @@
 We have the following inference options:
 1. Endianness inference
 2. Revision interpretation
+3. Textual file header encoding inference
 """
 
 from __future__ import annotations
@@ -20,13 +21,19 @@ from segy.config import SegyHeaderOverrides
 from segy.exceptions import EndiannessInferenceError
 from segy.schema import Endianness
 from segy.schema import SegyStandard
+from segy.schema import TextHeaderEncoding
+from segy.schema.text_header import TextProcessor
 from segy.standards.codes import DataSampleFormatCode
 from segy.standards.codes import SegyEndianCode
 
 if TYPE_CHECKING:
     from numpy._typing import DTypeLike
 
+    from segy.schema import TextHeaderSpec
+
 logger = logging.getLogger(__name__)
+
+ASCII_MAX_ORD = 127
 
 
 class EndiannessAction(Enum):
@@ -167,3 +174,53 @@ def interpret_revision(
     revision_float = int(major_revision) + int(minor_revision) / 10
     logger.info("Detected revision from binary header as %s", revision_float)
     return revision_float
+
+
+def _is_valid_text_header(text: str, rows: int, cols: int) -> bool:
+    """Check text is `rows` lines of `cols` printable 7-bit ASCII characters."""
+    lines = text.split("\n")
+
+    if len(lines) != rows or any(len(line) != cols for line in lines):
+        return False
+
+    return all(
+        ord(char) <= ASCII_MAX_ORD and char.isprintable()
+        for line in lines
+        for char in line
+    )
+
+
+def infer_text_header_encoding(
+    buffer: bytes,
+    spec: TextHeaderSpec,
+) -> TextHeaderEncoding:
+    """Infer the encoding of the textual file header.
+
+    SEG-Y allows the textual header to be EBCDIC or ASCII and has no binary header
+    field telling the two apart. Each candidate encoding is decoded and the first one
+    that yields a valid header (correct card layout, printable 7-bit characters) wins.
+    The spec encoding is tried first, so it also breaks ties and is the fallback.
+
+    Args:
+        buffer: Bytes representing the textual file header.
+        spec: Spec of the textual file header.
+
+    Returns:
+        The inferred textual file header encoding.
+    """
+    logger.debug("Starting text header encoding inference.")
+
+    others = [encoding for encoding in TextHeaderEncoding if encoding != spec.encoding]
+    for encoding in [spec.encoding, *others]:
+        processor = TextProcessor(spec.rows, spec.cols, encoding)
+        text = processor.wrap(processor.decode(buffer))
+
+        if _is_valid_text_header(text, spec.rows, spec.cols):
+            logger.info("Detected text header encoding: %s", encoding)
+            return encoding
+
+    logger.warning(
+        "Text header is not valid in any supported encoding, assuming %s.",
+        spec.encoding,
+    )
+    return spec.encoding
