@@ -33,8 +33,7 @@ BIN_HDR_FIELDS_REV21 = sorted(BIN_HDR_FIELDS_REV21, key=lambda f: f.byte)
 TRC_HDR_FIELDS_REV21 = TRC_HDR_FIELDS_REV2  # no change
 
 
-# SEG-Y permits EBCDIC or ASCII textual headers, so the encoding is left at its
-# EBCDIC default and gets inferred from the file when reading.
+# Shared by every revision below, so mutate only copies from `get_segy_standard`.
 text_header = TextHeaderSpec(rows=40, cols=80)
 
 ext_text_header_3200 = ExtendedTextHeaderSpec(spec=text_header)
