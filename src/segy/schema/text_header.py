@@ -34,7 +34,7 @@ class TextProcessor:
             buffer_int = np.frombuffer(buffer, dtype=self.dtype)
             buffer = EBCDIC_TO_ASCII[buffer_int].tobytes()
 
-        return buffer.decode("ascii", errors="replace")
+        return buffer.decode("ascii", errors="replace").replace("\x00", " ")
 
     def encode(self, text: str) -> bytes:
         """Encode string into bytes given encoding."""

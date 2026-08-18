@@ -114,6 +114,26 @@ class TestInferTextHeaderEncoding:
     ) -> None:
         """A header that is valid in neither encoding must keep the spec encoding."""
         spec = TextHeaderSpec(rows=ROWS, cols=COLS, encoding=spec_encoding)
-        buffer = bytes(ROWS * COLS)
+        buffer = b"\x01" * (ROWS * COLS)
 
         assert infer_text_header_encoding(buffer, spec) == spec_encoding
+
+    def test_infer_ascii_with_nul_padding(self) -> None:
+        """ASCII header with NUL padding must still be detected as ASCII."""
+        spec = TextHeaderSpec(rows=ROWS, cols=COLS)
+        text = make_text()
+        raw = bytearray(text.encode("ascii"))
+        raw[292] = 0
+        raw[397] = 0
+        raw[553] = 0
+        raw[798] = 0
+
+        buffer = bytes(raw)
+
+        assert infer_text_header_encoding(buffer, spec) == TextHeaderEncoding.ASCII
+        ascii_spec = TextHeaderSpec(
+            rows=ROWS, cols=COLS, encoding=TextHeaderEncoding.ASCII
+        )
+        decoded = ascii_spec.processor.decode(buffer)
+        assert "\x00" not in decoded
+        assert decoded[292] == " "
