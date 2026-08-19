@@ -18,22 +18,24 @@ import numpy as np
 
 from segy.config import SegyFileSettings
 from segy.config import SegyHeaderOverrides
+from segy.ebcdic import EBCDIC_TO_ASCII
 from segy.exceptions import EndiannessInferenceError
 from segy.schema import Endianness
 from segy.schema import SegyStandard
 from segy.schema import TextHeaderEncoding
-from segy.schema.text_header import TextProcessor
 from segy.standards.codes import DataSampleFormatCode
 from segy.standards.codes import SegyEndianCode
 
 if TYPE_CHECKING:
     from numpy._typing import DTypeLike
-
-    from segy.schema import TextHeaderSpec
+    from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
-ASCII_MAX_ORD = 127
+PRINTABLE_ASCII = np.zeros(256, dtype="bool")
+PRINTABLE_ASCII[0x00] = True  # NUL padding
+PRINTABLE_ASCII[0x0A] = True  # newline
+PRINTABLE_ASCII[0x20:0x7F] = True  # printable 7-bit ASCII
 
 
 class EndiannessAction(Enum):
@@ -176,51 +178,36 @@ def interpret_revision(
     return revision_float
 
 
-def _is_valid_text_header(text: str, rows: int, cols: int) -> bool:
-    """Check text is `rows` lines of `cols` printable 7-bit ASCII characters."""
-    lines = text.split("\n")
-
-    if len(lines) != rows or any(len(line) != cols for line in lines):
-        return False
-
-    return all(
-        ord(char) <= ASCII_MAX_ORD and char.isprintable()
-        for line in lines
-        for char in line
-    )
+def _is_printable_ascii(buffer: NDArray[np.uint8]) -> bool:
+    """Check if all bytes are printable 7-bit ASCII, NUL padding, or newline."""
+    return bool(PRINTABLE_ASCII[buffer].all())
 
 
-def infer_text_header_encoding(
-    buffer: bytes,
-    spec: TextHeaderSpec,
-) -> TextHeaderEncoding:
-    """Infer the encoding of the textual file header.
+def infer_text_header_encoding(buffer: bytes) -> TextHeaderEncoding:
+    """Infer the encoding of a textual header.
 
-    SEG-Y allows the textual header to be EBCDIC or ASCII and has no binary header
-    field telling the two apart. Each candidate encoding is decoded and the first one
-    that yields a valid header (correct card layout, printable 7-bit characters) wins.
-    The spec encoding is tried first, so it also breaks ties and is the fallback.
+    Tries EBCDIC first (stricter), then ASCII. Falls back to EBCDIC.
 
     Args:
-        buffer: Bytes representing the textual file header.
-        spec: Spec of the textual file header.
+        buffer: Bytes representing the textual header.
 
     Returns:
-        The inferred textual file header encoding.
+        The inferred textual header encoding.
     """
     logger.debug("Starting text header encoding inference.")
 
-    others = [encoding for encoding in TextHeaderEncoding if encoding != spec.encoding]
-    for encoding in [spec.encoding, *others]:
-        processor = TextProcessor(spec.rows, spec.cols, encoding)
-        text = processor.wrap(processor.decode(buffer))
+    raw = np.frombuffer(buffer, dtype="uint8")
 
-        if _is_valid_text_header(text, spec.rows, spec.cols):
-            logger.info("Detected text header encoding: %s", encoding)
-            return encoding
+    if _is_printable_ascii(EBCDIC_TO_ASCII[raw]):
+        logger.info("Detected text header encoding: %s", TextHeaderEncoding.EBCDIC)
+        return TextHeaderEncoding.EBCDIC
+
+    if _is_printable_ascii(raw):
+        logger.info("Detected text header encoding: %s", TextHeaderEncoding.ASCII)
+        return TextHeaderEncoding.ASCII
 
     logger.warning(
         "Text header is not valid in any supported encoding, assuming %s.",
-        spec.encoding,
+        TextHeaderEncoding.EBCDIC,
     )
-    return spec.encoding
+    return TextHeaderEncoding.EBCDIC

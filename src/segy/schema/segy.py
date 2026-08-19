@@ -12,6 +12,7 @@ from segy.schema.base import CamelCaseModel
 
 if TYPE_CHECKING:
     from segy.schema.base import Endianness
+    from segy.schema.format import TextHeaderEncoding
     from segy.schema.header import HeaderField
     from segy.schema.header import HeaderSpec
     from segy.schema.text_header import ExtendedTextHeaderSpec
@@ -71,6 +72,13 @@ class SegySpec(CamelCaseModel):
 
         if self.trace.offset is None:
             self.trace.offset = cursor
+
+    def set_text_header_encoding(self, encoding: TextHeaderEncoding) -> None:
+        """Set the encoding of the textual headers, extended ones included."""
+        self.text_header.encoding = encoding
+
+        if self.ext_text_header is not None:
+            self.ext_text_header.spec.encoding = encoding
 
     def customize(  # noqa: PLR0913
         self: SegySpec,

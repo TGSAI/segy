@@ -33,17 +33,28 @@ class TestTextHeaderSpec:
         assert text_spec.dtype == np.dtype(("uint8", (num_char,)))
         assert text_roundtrip == text
 
-    def test_encoding_is_explicit(self) -> None:
-        """Test encoding is only flagged explicit when the caller provides it."""
-        assert TextHeaderSpec().encoding_is_explicit is False
-        assert (
-            TextHeaderSpec(encoding=TextHeaderEncoding.EBCDIC).encoding_is_explicit
-            is True
-        )
+    def test_default_encoding_is_ebcdic(self) -> None:
+        """Default encoding stays EBCDIC."""
+        assert TextHeaderSpec().encoding is TextHeaderEncoding.EBCDIC
 
-        text_spec = TextHeaderSpec()
+    def test_inferred_encoding_cannot_transcode(self) -> None:
+        """INFERRED is a read-time request, so transcoding with it must fail."""
+        text_spec = TextHeaderSpec(rows=1, cols=5, encoding=TextHeaderEncoding.INFERRED)
+
+        with pytest.raises(ValueError, match="must be resolved"):
+            text_spec.encode("hello")
+
+        with pytest.raises(ValueError, match="must be resolved"):
+            text_spec.decode(b"hello")
+
+    def test_encoding_change_is_not_cached(self) -> None:
+        """Readers mutate encoding after construction, so decoding must follow."""
+        text_spec = TextHeaderSpec(rows=1, cols=5, encoding=TextHeaderEncoding.EBCDIC)
+        buffer = text_spec.encode("hello")
+
         text_spec.encoding = TextHeaderEncoding.ASCII
-        assert text_spec.encoding_is_explicit is True
+
+        assert text_spec.decode(buffer) != "hello"
 
 
 class TestExtTextHeaderSpec:

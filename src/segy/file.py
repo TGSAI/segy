@@ -26,6 +26,7 @@ from segy.inference import infer_text_header_encoding
 from segy.inference import interpret_revision
 from segy.schema import Endianness
 from segy.schema import ScalarType
+from segy.schema import TextHeaderEncoding
 from segy.standards import get_segy_standard
 from segy.standards.codes import DataSampleFormatCode
 from segy.transforms import TransformFactory
@@ -77,6 +78,10 @@ class SegyFile:
 
         self.spec = self._initialize_spec(spec)
         self._update_spec()
+
+        if self.spec.text_header.encoding is TextHeaderEncoding.INFERRED:
+            encoding = infer_text_header_encoding(self._text_header_buffer)
+            self.spec.set_text_header_encoding(encoding)
 
         self.accessors = TraceAccessor(self.spec.trace, self.header_overrides)
 
@@ -185,13 +190,18 @@ class SegyFile:
         return HeaderArray(transforms.apply(bin_hdr))
 
     def _initialize_spec(self, spec: SegySpec | None) -> SegySpec:
-        """Initialize the spec based on the settings and/or file contents."""
+        """Initialize the spec based on the settings and/or file contents.
+
+        Copies the spec so opening a file does not mutate the caller's instance.
+        """
         if spec is None:
             logger.info("No spec provided, inferring standard from binary header.")
             scan_result = self._infer_spec()
-            inferred_spec = get_segy_standard(scan_result.revision)
-            inferred_spec.endianness = scan_result.endianness
-            spec = inferred_spec
+            spec = get_segy_standard(scan_result.revision)
+            spec.endianness = scan_result.endianness
+        else:
+            spec = spec.model_copy(deep=True)
+
         if spec.endianness is None:
             logger.info("No endianness provided, inferring from binary header.")
             spec.endianness = self._infer_spec().endianness
@@ -251,7 +261,6 @@ class SegyFile:
         logger.debug("Parsed sample interval: %s", trace_data_spec.interval)
 
         self.spec.update_offsets()
-        self._update_text_header_encoding()
 
         trace_offset = cast("int", self.spec.trace.offset)  # we know for sure not None
         trace_itemsize = self.spec.trace.itemsize
@@ -267,18 +276,6 @@ class SegyFile:
             raise SegyFileSpecMismatchError(msg)
 
         self.spec.trace.count = trace_count
-
-    def _update_text_header_encoding(self) -> None:
-        """Infer the textual header encoding, unless the spec pins one."""
-        text_hdr_spec = self.spec.text_header
-
-        if text_hdr_spec.encoding_is_explicit:
-            logger.debug("Text header encoding set by spec: %s", text_hdr_spec.encoding)
-            return
-
-        text_hdr_spec.encoding = infer_text_header_encoding(
-            self._text_header_buffer, text_hdr_spec
-        )
 
     @property
     def sample(self) -> AbstractIndexer:

@@ -54,6 +54,30 @@ The [`text_header`](#SegySpec.text_header) stores the information required to pa
 the textual file header of the SEG-Y file. This includes important metadata that
 pertains to the seismic data in human-readable format.
 
+Textual headers are generally expected to be EBCDIC encoded, which is the default. Some files
+are written as ASCII instead, and SEG-Y has no field that tells the two apart. When
+you don't know which one you have, set the encoding to
+[`TextHeaderEncoding.INFERRED`](#TextHeaderEncoding) and the encoding will be
+detected from the header contents when the file is opened.
+
+```python
+from segy import SegyFile
+from segy.schema import TextHeaderEncoding
+from segy.standards import get_segy_standard
+
+spec = get_segy_standard(1.0)
+spec.set_text_header_encoding(TextHeaderEncoding.INFERRED)
+
+segy_file = SegyFile("file.segy", spec=spec)
+print(segy_file.spec.text_header.encoding)
+```
+
+```{warning}
+Detection is a heuristic, so the encoding a file resolves to may change between
+releases. Set an explicit encoding when you need stable results. Writing with
+[SegyFactory](#SegyFactory) always requires an explicit encoding.
+```
+
 #### Binary File Header
 
 The [`binary_header`](#SegySpec.binary_header) item talks about
