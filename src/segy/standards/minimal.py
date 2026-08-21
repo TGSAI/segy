@@ -2,7 +2,6 @@
 
 from segy.schema.base import Endianness
 from segy.schema.format import ScalarType
-from segy.schema.format import TextHeaderEncoding
 from segy.schema.header import HeaderSpec
 from segy.schema.segy import SegySpec
 from segy.schema.segy import SegyStandard
@@ -23,12 +22,7 @@ BIN_HDR_FIELDS = [
 ]
 BIN_HDR_FIELD_MODELS = [field.model for field in BIN_HDR_FIELDS]
 
-textual_file_header = TextHeaderSpec(
-    rows=40,
-    cols=80,
-    offset=0,
-    encoding=TextHeaderEncoding.EBCDIC,
-)
+textual_file_header = TextHeaderSpec(rows=40, cols=80, offset=0)
 
 minimal_segy = SegySpec(
     segy_standard=SegyStandard.CUSTOM,

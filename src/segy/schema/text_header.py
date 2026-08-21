@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from functools import cached_property
 from typing import Any
 
 import numpy as np
@@ -11,7 +10,10 @@ from pydantic import Field
 from segy.ebcdic import ASCII_TO_EBCDIC
 from segy.ebcdic import EBCDIC_TO_ASCII
 from segy.schema.base import BaseDataType
+from segy.schema.format import ScalarType
 from segy.schema.format import TextHeaderEncoding  # noqa: TCH001
+
+TEXT_DTYPE = ScalarType.UINT8.dtype
 
 
 class TextProcessor:
@@ -21,13 +23,20 @@ class TextProcessor:
         rows: Number of rows in text. Used for wrap/unwrap.
         cols: Number of columns in text. Used for wrap/unwrap.
         encoding: Text encoding used in transcoding.
+
+    Raises:
+        ValueError: If encoding is INFERRED.
     """
 
     def __init__(self, rows: int, cols: int, encoding: TextHeaderEncoding):
+        if encoding is TextHeaderEncoding.INFERRED:
+            msg = "Text header encoding must be resolved before transcoding."
+            raise ValueError(msg)
+
         self.rows = rows
         self.cols = cols
         self.encoding = encoding
-        self.dtype = encoding.dtype
+        self.dtype = TEXT_DTYPE
 
     def decode(self, buffer: bytes) -> str:
         """Decode bytes into a string given encoding."""
@@ -69,11 +78,12 @@ class TextHeaderSpec(BaseDataType):
     rows: int = Field(default=40, description="Number of rows in text header.")
     cols: int = Field(default=80, description="Number of columns in text header.")
     encoding: TextHeaderEncoding = Field(
-        default=TextHeaderEncoding.EBCDIC, description="String encoding."
+        default=TextHeaderEncoding.EBCDIC,
+        description="String encoding. INFERRED detects ASCII vs EBCDIC on read.",
     )
     offset: int | None = Field(default=None, ge=0, description="Starting byte offset.")
 
-    @cached_property
+    @property
     def processor(self) -> TextProcessor:
         """Prepare transforms for encoding / decoding."""
         return TextProcessor(self.rows, self.cols, self.encoding)
@@ -85,7 +95,7 @@ class TextHeaderSpec(BaseDataType):
     @property
     def dtype(self) -> np.dtype[Any]:
         """Get numpy dtype."""
-        return np.dtype((self.encoding.dtype, len(self)))
+        return np.dtype((TEXT_DTYPE, len(self)))
 
     def decode(self, buffer: bytes) -> str:
         """Decode EBCDIC or ASCII bytes into string."""
@@ -112,23 +122,23 @@ class ExtendedTextHeaderSpec(BaseDataType):
     @property
     def dtype(self) -> np.dtype[Any]:
         """Get numpy dtype."""
-        return np.dtype((self.spec.encoding.dtype, len(self)))
+        return np.dtype((TEXT_DTYPE, len(self)))
 
     def decode(self, buffer: bytes) -> list[str]:
         """Decode EBCDIC or ASCII bytes into string."""
-        string = self.spec.processor.decode(buffer)
+        processor = self.spec.processor
+        string = processor.decode(buffer)
 
         chunk_size = len(self.spec)
         strings = []
         for start in range(0, len(self), chunk_size):
             stop = start + chunk_size
-            text = self.spec.processor.wrap(string[start:stop])
-            strings.append(text)
+            strings.append(processor.wrap(string[start:stop]))
 
         return strings
 
     def encode(self, strings: list[str]) -> bytes:
         """Encode string to EBCDIC or ASCII bytes."""
-        string = "".join(strings)
-        string = self.spec.processor.unwrap(string)
-        return self.spec.processor.encode(string)
+        processor = self.spec.processor
+        string = processor.unwrap("".join(strings))
+        return processor.encode(string)

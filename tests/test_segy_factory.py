@@ -40,6 +40,15 @@ SEGY_FACTORY_TEST_CONFIGS = [
 ]
 
 
+def test_factory_requires_explicit_text_header_encoding() -> None:
+    """Writing requires choosing ASCII or EBCDIC, INFERRED is read-only."""
+    spec = minimal_segy.model_copy(deep=True)
+    spec.set_text_header_encoding(TextHeaderEncoding.INFERRED)
+
+    with pytest.raises(ValueError, match="requires an explicit text header encoding"):
+        SegyFactory(spec)
+
+
 @pytest.fixture(params=SEGY_FACTORY_TEST_CONFIGS)
 def mock_segy_factory(request: pytest.FixtureRequest) -> SegyFactory:
     """Generates the test cases for SegyFactory.
