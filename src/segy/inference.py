@@ -3,6 +3,7 @@
 We have the following inference options:
 1. Endianness inference
 2. Revision interpretation
+3. Textual file header encoding inference
 """
 
 from __future__ import annotations
@@ -17,16 +18,24 @@ import numpy as np
 
 from segy.config import SegyFileSettings
 from segy.config import SegyHeaderOverrides
+from segy.ebcdic import EBCDIC_TO_ASCII
 from segy.exceptions import EndiannessInferenceError
 from segy.schema import Endianness
 from segy.schema import SegyStandard
+from segy.schema import TextHeaderEncoding
 from segy.standards.codes import DataSampleFormatCode
 from segy.standards.codes import SegyEndianCode
 
 if TYPE_CHECKING:
     from numpy._typing import DTypeLike
+    from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
+
+PRINTABLE_ASCII = np.zeros(256, dtype="bool")
+PRINTABLE_ASCII[0x00] = True  # NUL padding
+PRINTABLE_ASCII[0x0A] = True  # newline
+PRINTABLE_ASCII[0x20:0x7F] = True  # printable 7-bit ASCII
 
 
 class EndiannessAction(Enum):
@@ -167,3 +176,38 @@ def interpret_revision(
     revision_float = int(major_revision) + int(minor_revision) / 10
     logger.info("Detected revision from binary header as %s", revision_float)
     return revision_float
+
+
+def _is_printable_ascii(buffer: NDArray[np.uint8]) -> bool:
+    """Check if all bytes are printable 7-bit ASCII, NUL padding, or newline."""
+    return bool(PRINTABLE_ASCII[buffer].all())
+
+
+def infer_text_header_encoding(buffer: bytes) -> TextHeaderEncoding:
+    """Infer the encoding of a textual header.
+
+    Tries EBCDIC first (stricter), then ASCII. Falls back to EBCDIC.
+
+    Args:
+        buffer: Bytes representing the textual header.
+
+    Returns:
+        The inferred textual header encoding.
+    """
+    logger.debug("Starting text header encoding inference.")
+
+    raw = np.frombuffer(buffer, dtype="uint8")
+
+    if _is_printable_ascii(EBCDIC_TO_ASCII[raw]):
+        logger.info("Detected text header encoding: %s", TextHeaderEncoding.EBCDIC)
+        return TextHeaderEncoding.EBCDIC
+
+    if _is_printable_ascii(raw):
+        logger.info("Detected text header encoding: %s", TextHeaderEncoding.ASCII)
+        return TextHeaderEncoding.ASCII
+
+    logger.warning(
+        "Text header is not valid in any supported encoding, assuming %s.",
+        TextHeaderEncoding.EBCDIC,
+    )
+    return TextHeaderEncoding.EBCDIC

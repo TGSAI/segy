@@ -16,6 +16,7 @@ from segy.constants import REV1_BASE16
 from segy.exceptions import NonSpecFieldError
 from segy.schema.base import Endianness
 from segy.schema.format import ScalarType
+from segy.schema.format import TextHeaderEncoding
 from segy.schema.segy import SegyStandard
 from segy.standards.codes import DataSampleFormatCode
 from segy.standards.codes import SegyEndianCode
@@ -95,6 +96,13 @@ class SegyFactory:
         sample_interval: int = 4000,
         samples_per_trace: int = 1500,
     ) -> None:
+        if spec.text_header.encoding is TextHeaderEncoding.INFERRED:
+            msg = (
+                "Writing requires an explicit text header encoding; INFERRED is a "
+                "read-time request. Choose ASCII or EBCDIC."
+            )
+            raise ValueError(msg)
+
         self.spec = spec
 
         self.spec.trace.data.interval = sample_interval

@@ -22,9 +22,11 @@ from segy.indexing import TraceIndexer
 from segy.inference import EndiannessAction
 from segy.inference import SegyInferResult
 from segy.inference import infer_endianness
+from segy.inference import infer_text_header_encoding
 from segy.inference import interpret_revision
 from segy.schema import Endianness
 from segy.schema import ScalarType
+from segy.schema import TextHeaderEncoding
 from segy.standards import get_segy_standard
 from segy.standards.codes import DataSampleFormatCode
 from segy.transforms import TransformFactory
@@ -77,6 +79,10 @@ class SegyFile:
         self.spec = self._initialize_spec(spec)
         self._update_spec()
 
+        if self.spec.text_header.encoding is TextHeaderEncoding.INFERRED:
+            encoding = infer_text_header_encoding(self._text_header_buffer)
+            self.spec.set_text_header_encoding(encoding)
+
         self.accessors = TraceAccessor(self.spec.trace, self.header_overrides)
 
     @property
@@ -115,17 +121,21 @@ class SegyFile:
         return cast("int", self.spec.trace.count)  # we know for sure its int
 
     @cached_property
-    def text_header(self) -> str:
-        """Return textual file header."""
+    def _text_header_buffer(self) -> bytes:
+        """Read the raw textual file header bytes from store, based on spec."""
         text_hdr_spec = self.spec.text_header
 
-        buffer = self.fs.read_block(
+        buffer: bytes = self.fs.read_block(
             fn=self.url,
             offset=text_hdr_spec.offset,
             length=text_hdr_spec.itemsize,
         )
+        return buffer
 
-        return text_hdr_spec.decode(buffer)
+    @cached_property
+    def text_header(self) -> str:
+        """Return textual file header."""
+        return self.spec.text_header.decode(self._text_header_buffer)
 
     @cached_property
     def ext_text_header(self) -> list[str]:
@@ -180,13 +190,18 @@ class SegyFile:
         return HeaderArray(transforms.apply(bin_hdr))
 
     def _initialize_spec(self, spec: SegySpec | None) -> SegySpec:
-        """Initialize the spec based on the settings and/or file contents."""
+        """Initialize the spec based on the settings and/or file contents.
+
+        Copies the spec so opening a file does not mutate the caller's instance.
+        """
         if spec is None:
             logger.info("No spec provided, inferring standard from binary header.")
             scan_result = self._infer_spec()
-            inferred_spec = get_segy_standard(scan_result.revision)
-            inferred_spec.endianness = scan_result.endianness
-            spec = inferred_spec
+            spec = get_segy_standard(scan_result.revision)
+            spec.endianness = scan_result.endianness
+        else:
+            spec = spec.model_copy(deep=True)
+
         if spec.endianness is None:
             logger.info("No endianness provided, inferring from binary header.")
             spec.endianness = self._infer_spec().endianness

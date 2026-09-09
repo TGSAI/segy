@@ -43,12 +43,11 @@ class ScalarType(StrEnum):
 
 
 class TextHeaderEncoding(StrEnum):
-    """Supported textual header encodings."""
+    """Supported textual header encodings.
+
+    `INFERRED` asks the reader to detect ASCII vs EBCDIC on open.
+    """
 
     ASCII = "ascii"
     EBCDIC = "ebcdic"
-
-    @property
-    def dtype(self) -> ScalarType:
-        """Converts the byte order and data type of the object into a NumPy dtype."""
-        return ScalarType.UINT8
+    INFERRED = "inferred"
