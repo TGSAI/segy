@@ -191,9 +191,11 @@ def tests(session: Session) -> None:
             session.notify("coverage", posargs=[])
 
 
-# We must pass `--clear` due to different session options during pipeline runs
-# https://github.com/TGSAI/segy/blob/0e8d439610a6d8a9b12d8c83470528d161e9b9e6/.github/workflows/tests.yaml#L123-L129
-@session(python=python_versions[0], venv_params=["--clear"])
+# Nox passes ``--clear`` itself when creating a uv>=0.8 environment. The
+# coverage job runs this session twice with different arguments, so the
+# environment is recreated. A second ``--clear`` in ``venv_params`` makes
+# ``uv venv`` fail with "cannot be used multiple times".
+@session(python=python_versions[0])
 def coverage(session: Session) -> None:
     """Produce the coverage report."""
     args = session.posargs or ["report"]
