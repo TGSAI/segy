@@ -73,46 +73,46 @@ Let's take a look at the text header.
 ```console
 $ segy dump text-header \
     https://gdr-data-lake.s3.us-west-2.amazonaws.com/soda_lake/raw_seismic/2010/v1.0.0/F7733R1.SGY
-C 1 CLIENT                        COMPANY                       CREW NO         
-C 2 LINE            AREA                        MAP ID                          
-C 3 REEL NO           DAY-START OF REEL     YEAR      OBSERVER                  
-C 4 INSTRUMENT: MFG            MODEL            SERIAL NO                       
-C 5 DATA TRACES/RECORD        AUXILIARY TRACES/RECORD         CDP FOLD          
-C 6 SAMPLE INTERVAL         SAMPLES/TRACE       BITS/IN      BYTES/SAMPLE       
-C 7 RECORDING FORMAT        FORMAT THIS REEL        MEASUREMENT SYSTEM          
-C 8 SAMPLE CODE: FLOATING PT     FIXED PT     FIXED PT-GAIN     CORRELATED      
-C 9 GAIN  TYPE: FIXED     BINARY     FLOATING POINT     OTHER                   
+C 1 CLIENT                        COMPANY                       CREW NO
+C 2 LINE            AREA                        MAP ID
+C 3 REEL NO           DAY-START OF REEL     YEAR      OBSERVER
+C 4 INSTRUMENT: MFG            MODEL            SERIAL NO
+C 5 DATA TRACES/RECORD        AUXILIARY TRACES/RECORD         CDP FOLD
+C 6 SAMPLE INTERVAL         SAMPLES/TRACE       BITS/IN      BYTES/SAMPLE
+C 7 RECORDING FORMAT        FORMAT THIS REEL        MEASUREMENT SYSTEM
+C 8 SAMPLE CODE: FLOATING PT     FIXED PT     FIXED PT-GAIN     CORRELATED
+C 9 GAIN  TYPE: FIXED     BINARY     FLOATING POINT     OTHER
 C10 FILTERS: ALIAS     HZ  NOTCH     HZ  BAND     -     HZ  SLOPE    -    DB/OCT
-C11 SOURCE: TYPE            NUMBER/POINT        POINT INTERVAL                  
-C12     PATTERN:                           LENGTH        WIDTH                  
-C13 SWEEP: START     HZ  END     HZ  LENGTH      MS  CHANNEL NO     TYPE        
-C14 TAPER: START LENGTH       MS  END LENGTH       MS  TYPE                     
-C15 SPREAD: OFFSET        MAX DISTANCE        GROUP INTERVAL                    
-C16 GEOPHONES: PER GROUP     SPACING     FREQUENCY     MFG          MODEL       
-C17     PATTERN:                           LENGTH        WIDTH                  
-C18 TRACES SORTED BY: RECORD     CDP     OTHER                                  
-C19 AMPLITUDE RECOVERY: NONE      SPHERICAL DIV      AGC     OTHER              
-C20 MAP PROJECTION                      ZONE ID       COORDINATE UNITS          
-C21 PROCESSING:                                                                 
-C22 PROCESSING:                                                                 
-C23                                                                             
-C24                                                                             
-C25                                                                             
-C26                                                                             
-C27                                                                             
-C28                                                                             
-C29                                                                             
-C30                                                                             
-C31                                                                             
-C32                                                                             
-C33                                                                             
-C34                                                                             
-C35                                                                             
-C36                                                                             
-C37                                                                             
-C38                                                                             
-C39                                                                             
-C40 END EBCDIC                                                                  
+C11 SOURCE: TYPE            NUMBER/POINT        POINT INTERVAL
+C12     PATTERN:                           LENGTH        WIDTH
+C13 SWEEP: START     HZ  END     HZ  LENGTH      MS  CHANNEL NO     TYPE
+C14 TAPER: START LENGTH       MS  END LENGTH       MS  TYPE
+C15 SPREAD: OFFSET        MAX DISTANCE        GROUP INTERVAL
+C16 GEOPHONES: PER GROUP     SPACING     FREQUENCY     MFG          MODEL
+C17     PATTERN:                           LENGTH        WIDTH
+C18 TRACES SORTED BY: RECORD     CDP     OTHER
+C19 AMPLITUDE RECOVERY: NONE      SPHERICAL DIV      AGC     OTHER
+C20 MAP PROJECTION                      ZONE ID       COORDINATE UNITS
+C21 PROCESSING:
+C22 PROCESSING:
+C23
+C24
+C25
+C26
+C27
+C28
+C29
+C30
+C31
+C32
+C33
+C34
+C35
+C36
+C37
+C38
+C39
+C40 END EBCDIC
 ```
 
 #### File Binary Header
