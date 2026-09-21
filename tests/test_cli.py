@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
 import pytest
 from typer.testing import CliRunner
 
@@ -14,17 +12,15 @@ runner = CliRunner()
 
 @pytest.fixture
 def s3_path() -> str:
-    """Fixture for Stratton dataset on S3 (SEG Wiki)."""
-    return "s3://open.source.geoscience/open_data/stratton/segy/navmerged/swath_1_geometry.sgy"
+    """Fixture for the Soda Lake field record (public HTTPS)."""
+    return (
+        "https://gdr-data-lake.s3.us-west-2.amazonaws.com/"
+        "soda_lake/raw_seismic/2010/v1.0.0/F7733R1.SGY"
+    )
 
 
 class TestDump:
     """Test class for CLI's dump options."""
-
-    @classmethod
-    def setup_class(cls: type[TestDump]) -> None:
-        """Set environment variable for anon access to S3."""
-        os.environ["SEGY_STORAGE_OPTIONS"] = '{"anon": true}'
 
     def test_info_dump(self, s3_path: str) -> None:
         """Test generic info dump."""
@@ -37,7 +33,7 @@ class TestDump:
         """Test text header dump."""
         result = runner.invoke(app, ["dump", "text-header", s3_path])
         assert result.exit_code == 0
-        assert "CLIENT: BUREAU OF ECONOMIC GEOLOGY" in result.stdout
+        assert "END EBCDIC" in result.stdout
 
     def test_binary_header_dump(self, s3_path: str) -> None:
         """Test binary header dump."""
@@ -58,15 +54,15 @@ class TestDump:
         assert "source_coord_x" in result.stdout
         assert "coordinate_scalar" in result.stdout
         assert "101" in result.stdout
-        assert "70628086" in result.stdout
-        assert "-100" in result.stdout
+        assert "7735193" in result.stdout
+        assert "-1" in result.stdout
 
     def test_trace_data_dump(self, s3_path: str) -> None:
         """Test trace data dump."""
         args = ["dump", "trace-data", s3_path]
-        args += ["--index", "501", "--index", "1000"]
+        args += ["--index", "1", "--index", "100"]
 
         result = runner.invoke(app, args)
         assert result.exit_code == 0
-        assert "-5.3372304e-08" in result.stdout
-        assert "4.2979627e-07" in result.stdout
+        assert "5.4378182e-02" in result.stdout
+        assert "6.1868603e-05" in result.stdout
